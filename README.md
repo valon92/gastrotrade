@@ -1,8 +1,3 @@
-<<<<<<< HEAD
-# gastrotrade
-
-GastroTrade - Laravel 10 + Vue.js 3 e-commerce platform with product management, client pricing, order management, and discount system
-=======
 # GastroTrade
 
 Platform moderne e-commerce për menaxhimin e produkteve, klientëve dhe porosive, e ndërtuar me Laravel 10 dhe Vue.js 3.
@@ -179,4 +174,3 @@ Valon Sylejmani
 - Telefon: 048 75 66 46 / 044 82 43 14
 - Viber: +383 48 75 66 46 / +383 44 82 43 14
 - Adresa: Ferizaj, Kosovë, Rruga Lidhja E Prizerent
->>>>>>> 3faaa60 (Update README.md with project documentation)
