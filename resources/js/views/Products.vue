@@ -66,20 +66,44 @@
 
         <!-- Products Grid -->
         <div class="lg:w-3/4">
+          <div class="bg-white rounded-lg shadow-sm p-4 mb-6">
+            <div class="relative">
+              <input
+                v-model.trim="searchQuery"
+                type="search"
+                placeholder="Kërko produkt (p.sh. Kese, Letër Kuzhine...)"
+                class="w-full px-4 py-3 pl-11 border border-gray-300 rounded-lg shadow-sm focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+              >
+              <span class="absolute inset-y-0 left-3 flex items-center text-gray-400">
+                🔍
+              </span>
+              <button
+                v-if="searchQuery"
+                @click="searchQuery = ''"
+                class="absolute inset-y-0 right-3 flex items-center text-gray-400 hover:text-gray-600"
+                aria-label="Pastro kërkimin"
+              >
+                ✖
+              </button>
+            </div>
+            <p class="text-xs text-gray-500 mt-2">
+              Kërkimi aplikohet menjëherë mbi produktet e listuara.
+            </p>
+          </div>
           <div v-if="loading" class="text-center py-12">
             <div class="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-primary-600"></div>
             <p class="mt-4 text-gray-600">Duke ngarkuar produktet...</p>
           </div>
           
-          <div v-else-if="products.length === 0" class="text-center py-12">
+          <div v-else-if="filteredProducts.length === 0" class="text-center py-12">
             <div class="text-gray-400 text-6xl mb-4">📦</div>
             <h3 class="text-lg font-medium text-gray-900 mb-2">Nuk u gjetën produkte</h3>
-            <p class="text-gray-600">Provo të zgjedhësh një kategori tjetër</p>
+            <p class="text-gray-600">Provo një kërkim tjetër ose ndrysho kategorinë.</p>
           </div>
           
           <div v-else class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
             <ProductCard 
-              v-for="product in products" 
+              v-for="product in filteredProducts" 
               :key="product.id" 
               :product="product"
             />
@@ -104,7 +128,23 @@ export default {
       products: [],
       categories: [],
       loading: true,
-      selectedCategory: null
+      selectedCategory: null,
+      searchQuery: ''
+    }
+  },
+  computed: {
+    filteredProducts() {
+      if (!this.searchQuery) {
+        return this.products
+      }
+      const query = this.searchQuery.toLowerCase()
+      return this.products.filter(product => {
+        return (
+          product.name?.toLowerCase().includes(query) ||
+          product.description?.toLowerCase().includes(query) ||
+          product.category?.name?.toLowerCase().includes(query)
+        )
+      })
     }
   },
   async mounted() {

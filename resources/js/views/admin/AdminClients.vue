@@ -11,12 +11,108 @@
             + Shto Klient të Ri
           </button>
         </div>
-        <button 
-          @click="logout"
-          class="btn-secondary w-full sm:w-auto"
-        >
-          🚪 Dil
-        </button>
+        <div class="flex flex-col sm:flex-row gap-3 w-full sm:w-auto">
+          <router-link
+            to="/admin/products"
+            class="btn-secondary text-center"
+          >
+            📦 Produktet
+          </router-link>
+          <router-link
+            to="/admin/stock"
+            class="btn-secondary text-center"
+          >
+            📊 Stoku
+          </router-link>
+          <router-link
+            to="/admin/trash"
+            class="btn-secondary text-center"
+          >
+            🗑️ Historia e Fshirjeve
+          </router-link>
+          <button 
+            @click="logout"
+            class="btn-secondary w-full sm:w-auto"
+          >
+            🚪 Dil
+          </button>
+        </div>
+      </div>
+
+      <!-- Overall Payment Statistics -->
+      <div class="mb-6 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div class="bg-gradient-to-br from-green-50 to-green-100 rounded-xl p-5 border border-green-200 shadow-sm">
+          <div class="flex items-center justify-between mb-2">
+            <h3 class="text-sm font-semibold text-green-800">Të Paguara</h3>
+            <span class="text-2xl">✅</span>
+          </div>
+          <p class="text-3xl font-bold text-green-900">{{ overallPaymentStats.paidCount }}</p>
+          <p class="text-sm text-green-700 mt-1">{{ formatPrice(overallPaymentStats.paidTotal) }}</p>
+        </div>
+        <div class="bg-gradient-to-br from-red-50 to-red-100 rounded-xl p-5 border border-red-200 shadow-sm">
+          <div class="flex items-center justify-between mb-2">
+            <h3 class="text-sm font-semibold text-red-800">Të Papaguara</h3>
+            <span class="text-2xl">⚠️</span>
+          </div>
+          <p class="text-3xl font-bold text-red-900">{{ overallPaymentStats.unpaidCount }}</p>
+          <p class="text-sm text-red-700 mt-1">{{ formatPrice(overallPaymentStats.unpaidTotal) }}</p>
+        </div>
+        <div class="bg-gradient-to-br from-blue-50 to-blue-100 rounded-xl p-5 border border-blue-200 shadow-sm">
+          <div class="flex items-center justify-between mb-2">
+            <h3 class="text-sm font-semibold text-blue-800">Total Porosi</h3>
+            <span class="text-2xl">📦</span>
+          </div>
+          <p class="text-3xl font-bold text-blue-900">{{ overallPaymentStats.totalCount }}</p>
+          <p class="text-sm text-blue-700 mt-1">{{ formatPrice(overallPaymentStats.totalAmount) }}</p>
+        </div>
+        <div class="bg-gradient-to-br from-purple-50 to-purple-100 rounded-xl p-5 border border-purple-200 shadow-sm">
+          <div class="flex items-center justify-between mb-2">
+            <h3 class="text-sm font-semibold text-purple-800">Klientë</h3>
+            <span class="text-2xl">👥</span>
+          </div>
+          <p class="text-3xl font-bold text-purple-900">{{ clients.length }}</p>
+          <p class="text-sm text-purple-700 mt-1">Total klientë</p>
+        </div>
+      </div>
+
+      <!-- Search Filters -->
+      <div class="bg-white rounded-lg shadow p-4 mb-6 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div>
+          <label class="block text-xs font-semibold text-gray-600 mb-1">Kërko sipas Emrit</label>
+          <input 
+            v-model.trim="searchFilters.name"
+            type="text"
+            placeholder="p.sh. Valon"
+            class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+          >
+        </div>
+        <div>
+          <label class="block text-xs font-semibold text-gray-600 mb-1">Kërko sipas Biznesit</label>
+          <input 
+            v-model.trim="searchFilters.business"
+            type="text"
+            placeholder="p.sh. GastroTrade"
+            class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+          >
+        </div>
+        <div>
+          <label class="block text-xs font-semibold text-gray-600 mb-1">Kërko sipas Nr. Fiskal</label>
+          <input 
+            v-model.trim="searchFilters.fiscal"
+            type="text"
+            placeholder="p.sh. 600123..."
+            class="w-full px-3 py-2 border border-gray-300 rounded-md uppercase tracking-wide focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+          >
+        </div>
+        <div>
+          <label class="block text-xs font-semibold text-gray-600 mb-1">Kërko sipas Qytetit</label>
+          <input 
+            v-model.trim="searchFilters.city"
+            type="text"
+            placeholder="p.sh. Ferizaj"
+            class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+          >
+        </div>
       </div>
 
       <!-- Clients Table - Desktop -->
@@ -36,7 +132,7 @@
               </tr>
             </thead>
             <tbody class="bg-white divide-y divide-gray-200">
-              <tr v-for="client in clients" :key="client.id">
+              <tr v-for="client in filteredClients" :key="client.id">
                 <td class="px-4 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{{ client.name }}</td>
                 <td class="px-4 py-4 whitespace-nowrap text-sm text-gray-500">{{ client.store_name || '-' }}</td>
                 <td class="px-4 py-4 whitespace-nowrap text-sm text-gray-500">{{ client.fiscal_number || '-' }}</td>
@@ -64,7 +160,7 @@
       <!-- Clients Cards - Mobile -->
       <div class="md:hidden space-y-4">
         <div 
-          v-for="client in clients" 
+          v-for="client in filteredClients" 
           :key="client.id"
           class="bg-white rounded-lg shadow-lg p-4"
         >
@@ -137,10 +233,10 @@
                        class="mt-1 block w-full border-gray-300 rounded-md shadow-sm">
               </div>
               <div>
-                <label class="block text-sm font-medium text-gray-700">Numri Fiskal i Biznesit</label>
-                <input v-model="clientForm.fiscal_number" type="text" 
+                <label class="block text-sm font-medium text-gray-700">Numri Fiskal i Biznesit *</label>
+                <input v-model="clientForm.fiscal_number" type="text" required
                        placeholder="p.sh. 123456789"
-                       class="mt-1 block w-full border-gray-300 rounded-md shadow-sm">
+                       class="mt-1 block w-full border-gray-300 rounded-md shadow-sm uppercase tracking-wide">
               </div>
               <div>
                 <label class="block text-sm font-medium text-gray-700">Shënime</label>
@@ -183,6 +279,65 @@
             </div>
 
             <div class="px-4 sm:px-6 py-4 sm:py-5 max-h-[70vh] overflow-y-auto">
+              <!-- Payment Statistics -->
+              <div v-if="!ordersLoading && !ordersError && selectedClientOrders.length > 0" class="mb-6 grid grid-cols-1 sm:grid-cols-3 gap-4">
+                <div class="bg-gradient-to-br from-green-50 to-green-100 rounded-xl p-4 border border-green-200">
+                  <div class="flex items-center justify-between">
+                    <div>
+                      <p class="text-xs font-medium text-green-700 mb-1">Të Paguara</p>
+                      <p class="text-2xl font-bold text-green-900">{{ paymentStats.paidCount }}</p>
+                      <p class="text-xs text-green-600 mt-1">{{ formatPrice(paymentStats.paidTotal) }}</p>
+                    </div>
+                    <div class="text-3xl">✅</div>
+                  </div>
+                </div>
+                <div class="bg-gradient-to-br from-red-50 to-red-100 rounded-xl p-4 border border-red-200">
+                  <div class="flex items-center justify-between">
+                    <div>
+                      <p class="text-xs font-medium text-red-700 mb-1">Të Papaguara</p>
+                      <p class="text-2xl font-bold text-red-900">{{ paymentStats.unpaidCount }}</p>
+                      <p class="text-xs text-red-600 mt-1">{{ formatPrice(paymentStats.unpaidTotal) }}</p>
+                    </div>
+                    <div class="text-3xl">⚠️</div>
+                  </div>
+                </div>
+                <div class="bg-gradient-to-br from-blue-50 to-blue-100 rounded-xl p-4 border border-blue-200">
+                  <div class="flex items-center justify-between">
+                    <div>
+                      <p class="text-xs font-medium text-blue-700 mb-1">Totali</p>
+                      <p class="text-2xl font-bold text-blue-900">{{ paymentStats.totalCount }}</p>
+                      <p class="text-xs text-blue-600 mt-1">{{ formatPrice(paymentStats.totalAmount) }}</p>
+                    </div>
+                    <div class="text-3xl">💰</div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Payment Filter -->
+              <div v-if="!ordersLoading && !ordersError && selectedClientOrders.length > 0" class="mb-4 flex flex-wrap gap-2">
+                <button 
+                  @click="paymentFilter = 'all'"
+                  :class="paymentFilter === 'all' ? 'bg-primary-600 text-white' : 'bg-gray-200 text-gray-700 hover:bg-gray-300'"
+                  class="px-4 py-2 text-sm font-medium rounded-lg transition-colors duration-200"
+                >
+                  Të Gjitha ({{ selectedClientOrders.length }})
+                </button>
+                <button 
+                  @click="paymentFilter = 'paid'"
+                  :class="paymentFilter === 'paid' ? 'bg-green-600 text-white' : 'bg-gray-200 text-gray-700 hover:bg-gray-300'"
+                  class="px-4 py-2 text-sm font-medium rounded-lg transition-colors duration-200"
+                >
+                  ✅ Të Paguara ({{ paymentStats.paidCount }})
+                </button>
+                <button 
+                  @click="paymentFilter = 'unpaid'"
+                  :class="paymentFilter === 'unpaid' ? 'bg-red-600 text-white' : 'bg-gray-200 text-gray-700 hover:bg-gray-300'"
+                  class="px-4 py-2 text-sm font-medium rounded-lg transition-colors duration-200"
+                >
+                  ⚠️ Të Papaguara ({{ paymentStats.unpaidCount }})
+                </button>
+              </div>
+
               <div v-if="ordersLoading" class="flex items-center gap-3 text-gray-600">
                 <span class="inline-block h-5 w-5 border-2 border-primary-600 border-t-transparent rounded-full animate-spin"></span>
                 Duke ngarkuar porositë...
@@ -192,15 +347,26 @@
                 {{ ordersError }}
               </div>
 
-              <div v-else-if="selectedClientOrders.length === 0" class="p-6 text-center text-gray-500">
-                Ky klient ende nuk ka porosi të ruajtura.
+              <div v-else-if="filteredOrders.length === 0" class="p-6 text-center text-gray-500">
+                <div class="text-4xl mb-2">{{ paymentFilter === 'paid' ? '✅' : paymentFilter === 'unpaid' ? '⚠️' : '📦' }}</div>
+                <p class="text-lg font-medium mb-1">
+                  {{ paymentFilter === 'paid' ? 'Nuk ka porosi të paguara' : paymentFilter === 'unpaid' ? 'Nuk ka porosi të papaguara' : 'Ky klient ende nuk ka porosi të ruajtura' }}
+                </p>
+                <p v-if="paymentFilter !== 'all'" class="text-sm text-gray-400 mt-1">
+                  Të gjitha porositë janë {{ paymentFilter === 'paid' ? 'të papaguara' : 'të paguara' }}
+                </p>
               </div>
 
               <div v-else class="space-y-4">
                 <div 
-                  v-for="order in selectedClientOrders" 
+                  v-for="order in filteredOrders" 
                   :key="order.id"
-                  class="border border-gray-200 rounded-xl p-4 bg-gray-50"
+                  :class="[
+                    'border rounded-xl p-4 transition-all duration-200',
+                    order.is_paid 
+                      ? 'border-green-300 bg-green-50 hover:bg-green-100' 
+                      : 'border-red-300 bg-red-50 hover:bg-red-100'
+                  ]"
                 >
                   <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
                     <div>
@@ -209,7 +375,14 @@
                     </div>
                     <div class="text-sm text-gray-600">
                       <p><strong>Produkte:</strong> {{ order.total_items }}</p>
-                      <p><strong>Vlera totale:</strong> {{ order.total_amount ? formatPrice(order.total_amount) : 'Sipas kërkesës' }}</p>
+                      <p v-if="order.has_vat && order.amount_before_vat && order.vat_amount">
+                        <strong>Shuma para TVSH:</strong> {{ formatPrice(order.amount_before_vat) }}<br>
+                        <strong>TVSH (18%):</strong> {{ formatPrice(order.vat_amount) }}<br>
+                        <strong>Vlera totale me TVSH:</strong> {{ order.total_amount ? formatPrice(order.total_amount) : 'Sipas kërkesës' }}
+                      </p>
+                      <p v-else>
+                        <strong>Vlera totale:</strong> {{ order.total_amount ? formatPrice(order.total_amount) : 'Sipas kërkesës' }}
+                      </p>
                       <p class="mt-1">
                         <strong>Statusi i Pagesës:</strong> 
                         <span :class="order.is_paid ? 'text-green-600 font-semibold' : 'text-red-600 font-semibold'">
@@ -330,6 +503,10 @@
                     <input v-model="editingOrder.business_name" type="text" class="w-full px-3 py-2 border border-gray-300 rounded-md text-sm">
                   </div>
                   <div>
+                    <label class="block text-xs font-medium text-gray-700 mb-1">Numri Fiskal</label>
+                    <input v-model="editingOrder.fiscal_number" type="text" class="w-full px-3 py-2 border border-gray-300 rounded-md text-sm uppercase tracking-wide">
+                  </div>
+                  <div>
                     <label class="block text-xs font-medium text-gray-700 mb-1">Qyteti</label>
                     <input v-model="editingOrder.city" type="text" class="w-full px-3 py-2 border border-gray-300 rounded-md text-sm">
                   </div>
@@ -371,6 +548,7 @@
                         <label class="block text-xs font-medium text-gray-700 mb-1">Sasia</label>
                         <input 
                           v-model.number="item.quantity" 
+                          @input="onItemDiscountChange(item)"
                           type="number" 
                           min="1"
                           class="w-full px-3 py-2 border border-gray-300 rounded-md text-sm"
@@ -380,6 +558,7 @@
                         <label class="block text-xs font-medium text-gray-700 mb-1">Çmimi Njësi</label>
                         <input 
                           v-model.number="item.unit_price" 
+                          @input="onItemDiscountChange(item)"
                           type="number" 
                           step="0.01"
                           min="0"
@@ -405,9 +584,134 @@
                         </button>
                       </div>
                     </div>
+                    <div class="mt-3 grid grid-cols-1 sm:grid-cols-7 gap-3">
+                      <div class="sm:col-span-3">
+                        <label class="block text-xs font-medium text-gray-700 mb-1">Tipi i Zbritjes</label>
+                        <select 
+                          v-model="item.discount_type"
+                          @change="onItemDiscountChange(item)"
+                          class="w-full px-3 py-2 border border-gray-300 rounded-md text-sm"
+                        >
+                          <option value="">Pa zbritje</option>
+                          <option value="percentage">% (përqindje)</option>
+                          <option value="fixed">€ (shumë fikse)</option>
+                        </select>
+                      </div>
+                      <div class="sm:col-span-2">
+                        <label class="block text-xs font-medium text-gray-700 mb-1">Vlera</label>
+                        <input 
+                          v-model.number="item.discount_value"
+                          @input="onItemDiscountChange(item)"
+                          type="number"
+                          min="0"
+                          step="0.01"
+                          class="w-full px-3 py-2 border border-gray-300 rounded-md text-sm"
+                          placeholder="0.00"
+                        >
+                      </div>
+                      <div class="sm:col-span-2">
+                        <label class="block text-xs font-medium text-gray-700 mb-1">Zbritja aktuale</label>
+                        <input 
+                          :value="item.discount_amount ? formatPrice(item.discount_amount) : '€0.00'"
+                          type="text"
+                          readonly
+                          class="w-full px-3 py-2 border border-gray-300 rounded-md text-sm bg-gray-50"
+                        >
+                      </div>
+                    </div>
+                    <p v-if="item.discount_amount > 0" class="mt-1 text-xs text-green-600">
+                      Zbritje e aplikuar: -{{ formatPrice(item.discount_amount) }}
+                    </p>
                     <div v-if="item.sold_by_package && item.pieces_per_package" class="mt-2 text-xs text-gray-500">
                       {{ item.quantity }} kompleti × {{ item.pieces_per_package }}cp = {{ item.quantity * item.pieces_per_package }} copa
                     </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- VAT Controls -->
+              <div class="mb-6 p-4 bg-blue-50 rounded-lg">
+                <h4 class="font-semibold text-gray-900 mb-3">TVSH (18%)</h4>
+                <div class="flex items-center gap-3 mb-3">
+                  <label class="flex items-center gap-2 cursor-pointer">
+                    <input 
+                      type="checkbox" 
+                      v-model="editingOrder.has_vat"
+                      @change="onVatChange"
+                      class="w-5 h-5 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                    >
+                    <span class="text-sm font-medium text-gray-700">
+                      {{ editingOrder.has_vat ? '✓ Faturë me TVSH' : 'Faturë pa TVSH' }}
+                    </span>
+                  </label>
+                </div>
+                <div v-if="editingOrder.has_vat && calculateTotalAmount() > 0" class="grid grid-cols-1 sm:grid-cols-3 gap-3 mt-3">
+                  <div>
+                    <label class="block text-xs font-medium text-gray-700 mb-1">Shuma para TVSH</label>
+                    <input 
+                      :value="formatPrice(calculateAmountBeforeVat())"
+                      type="text"
+                      readonly
+                      class="w-full px-3 py-2 border border-gray-300 rounded-md text-sm bg-white"
+                    >
+                  </div>
+                  <div>
+                    <label class="block text-xs font-medium text-gray-700 mb-1">TVSH (18%)</label>
+                    <input 
+                      :value="formatPrice(calculateVatAmount())"
+                      type="text"
+                      readonly
+                      class="w-full px-3 py-2 border border-gray-300 rounded-md text-sm bg-white"
+                    >
+                  </div>
+                  <div>
+                    <label class="block text-xs font-medium text-gray-700 mb-1">Totali me TVSH</label>
+                    <input 
+                      :value="formatPrice(calculateTotalAmount())"
+                      type="text"
+                      readonly
+                      class="w-full px-3 py-2 border border-gray-300 rounded-md text-sm bg-white font-semibold"
+                    >
+                  </div>
+                </div>
+              </div>
+
+              <!-- General Discount Controls -->
+              <div class="mb-6 p-4 bg-amber-50 rounded-lg">
+                <h4 class="font-semibold text-gray-900 mb-3">Zbritja e Përgjithshme (vetëm admin)</h4>
+                <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                  <div>
+                    <label class="block text-xs font-medium text-gray-700 mb-1">Tipi i zbritjes</label>
+                    <select 
+                      v-model="editingOrder.discount_type"
+                      @change="onGeneralDiscountChange"
+                      class="w-full px-3 py-2 border border-gray-300 rounded-md text-sm"
+                    >
+                      <option value="">Pa zbritje</option>
+                      <option value="percentage">% (përqindje)</option>
+                      <option value="fixed">€ (shumë fikse)</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label class="block text-xs font-medium text-gray-700 mb-1">Vlera</label>
+                    <input 
+                      v-model.number="editingOrder.discount_value"
+                      @input="onGeneralDiscountChange"
+                      type="number"
+                      min="0"
+                      step="0.01"
+                      class="w-full px-3 py-2 border border-gray-300 rounded-md text-sm"
+                      placeholder="0.00"
+                    >
+                  </div>
+                  <div>
+                    <label class="block text-xs font-medium text-gray-700 mb-1">Zbritja aktuale</label>
+                    <input 
+                      :value="formatPrice(editingOrder.discount_amount || 0)"
+                      type="text"
+                      readonly
+                      class="w-full px-3 py-2 border border-gray-300 rounded-md text-sm bg-white"
+                    >
                   </div>
                 </div>
               </div>
@@ -418,8 +722,33 @@
                   <span class="font-semibold text-gray-900">Total Produkte:</span>
                   <span class="font-bold text-gray-900">{{ calculateTotalItems() }}</span>
                 </div>
-                <div class="flex justify-between items-center">
-                  <span class="font-semibold text-gray-900">Vlera Totale:</span>
+                <div class="flex justify-between items-center text-sm mb-1">
+                  <span class="text-gray-700">Nëntotali:</span>
+                  <span class="font-medium text-gray-900">{{ formatPrice(editingOrder && editingOrder.has_vat ? calculateAmountBeforeVat() : calculateTotalAmount()) }}</span>
+                </div>
+                <div 
+                  v-if="calculateItemDiscountTotal() > 0" 
+                  class="flex justify-between items-center text-sm text-red-600 mb-1"
+                >
+                  <span>Zbritje e produkteve:</span>
+                  <span>-{{ formatPrice(calculateItemDiscountTotal()) }}</span>
+                </div>
+                <div 
+                  v-if="editingOrder && editingOrder.discount_amount > 0" 
+                  class="flex justify-between items-center text-sm text-red-600 mb-1"
+                >
+                  <span>Zbritje e përgjithshme:</span>
+                  <span>-{{ formatPrice(editingOrder.discount_amount) }}</span>
+                </div>
+                <div 
+                  v-if="editingOrder && editingOrder.has_vat && calculateAmountBeforeVat() > 0" 
+                  class="flex justify-between items-center text-sm text-gray-700 mb-1 pt-2 border-t border-blue-200"
+                >
+                  <span>TVSH (18%):</span>
+                  <span class="font-medium">{{ formatPrice(calculateVatAmount()) }}</span>
+                </div>
+                <div class="flex justify-between items-center mt-2 pt-2 border-t border-blue-100">
+                  <span class="font-semibold text-gray-900">Vlera Totale{{ editingOrder && editingOrder.has_vat ? ' me TVSH' : '' }}:</span>
                   <span class="font-bold text-primary-600 text-lg">{{ formatPrice(calculateTotalAmount()) }}</span>
                 </div>
               </div>
@@ -456,6 +785,12 @@ export default {
   data() {
     return {
       clients: [],
+      searchFilters: {
+        name: '',
+        business: '',
+        fiscal: '',
+        city: ''
+      },
       showAddModal: false,
       editingClient: null,
       clientForm: {
@@ -480,12 +815,109 @@ export default {
       editingOrder: null,
       editingOrderItems: [],
       savingOrder: false,
-      tempItemIdCounter: 0
+      tempItemIdCounter: 0,
+      paymentFilter: 'all',
+      paymentStatsData: null
     }
   },
   async mounted() {
     await this.checkAuth()
     await this.loadClients()
+    await this.loadAllOrders()
+  },
+  computed: {
+    filteredClients() {
+      const name = this.searchFilters.name.trim().toLowerCase()
+      const business = this.searchFilters.business.trim().toLowerCase()
+      const fiscal = this.searchFilters.fiscal.trim().toLowerCase()
+      const city = this.searchFilters.city.trim().toLowerCase()
+
+      if (!this.clients || this.clients.length === 0) {
+        return []
+      }
+
+      return this.clients.filter(client => {
+        const clientName = (client.name || '').toLowerCase()
+        const clientBusiness = (client.store_name || '').toLowerCase()
+        const clientFiscal = (client.fiscal_number || '').toLowerCase()
+        const clientCity = (client.city || '').toLowerCase()
+
+        const matchesName = !name || clientName.includes(name)
+        const matchesBusiness = !business || clientBusiness.includes(business)
+        const matchesFiscal = !fiscal || clientFiscal.includes(fiscal)
+        const matchesCity = !city || clientCity.includes(city)
+
+        return matchesName && matchesBusiness && matchesFiscal && matchesCity
+      })
+    },
+    filteredOrders() {
+      if (!this.selectedClientOrders || this.selectedClientOrders.length === 0) {
+        return []
+      }
+
+      if (this.paymentFilter === 'all') {
+        return this.selectedClientOrders
+      }
+
+      return this.selectedClientOrders.filter(order => {
+        if (this.paymentFilter === 'paid') {
+          return order.is_paid === true || order.is_paid === 1
+        }
+        if (this.paymentFilter === 'unpaid') {
+          return !order.is_paid || order.is_paid === 0 || order.is_paid === false
+        }
+        return true
+      })
+    },
+    paymentStats() {
+      if (!this.selectedClientOrders || this.selectedClientOrders.length === 0) {
+        return {
+          paidCount: 0,
+          unpaidCount: 0,
+          totalCount: 0,
+          paidTotal: 0,
+          unpaidTotal: 0,
+          totalAmount: 0
+        }
+      }
+
+      const paid = this.selectedClientOrders.filter(o => o.is_paid === true || o.is_paid === 1)
+      const unpaid = this.selectedClientOrders.filter(o => !o.is_paid || o.is_paid === 0 || o.is_paid === false)
+
+      const paidTotal = paid.reduce((sum, o) => sum + (parseFloat(o.total_amount) || 0), 0)
+      const unpaidTotal = unpaid.reduce((sum, o) => sum + (parseFloat(o.total_amount) || 0), 0)
+      const totalAmount = this.selectedClientOrders.reduce((sum, o) => sum + (parseFloat(o.total_amount) || 0), 0)
+
+      return {
+        paidCount: paid.length,
+        unpaidCount: unpaid.length,
+        totalCount: this.selectedClientOrders.length,
+        paidTotal,
+        unpaidTotal,
+        totalAmount
+      }
+    },
+    overallPaymentStats() {
+      if (!this.paymentStatsData) {
+        return {
+          paidCount: 0,
+          unpaidCount: 0,
+          totalCount: 0,
+          paidTotal: 0,
+          unpaidTotal: 0,
+          totalAmount: 0
+        }
+      }
+
+      return {
+        paidCount: this.paymentStatsData.paid_count || 0,
+        unpaidCount: this.paymentStatsData.unpaid_count || 0,
+        totalCount: this.paymentStatsData.total_count || 0,
+        paidTotal: this.paymentStatsData.paid_total || 0,
+        unpaidTotal: this.paymentStatsData.unpaid_total || 0,
+        totalAmount: this.paymentStatsData.total_amount || 0
+      }
+    }
   },
   methods: {
     async checkAuth() {
@@ -520,6 +952,20 @@ export default {
       } catch (error) {
         console.error('Error loading clients:', error)
         alert('Gabim në ngarkimin e klientëve')
+      }
+    },
+    async loadAllOrders() {
+      try {
+        // Use dedicated stats endpoint for better performance
+        const statsResponse = await axios.get('/api/orders/stats/payments')
+        if (statsResponse.data.success) {
+          this.paymentStatsData = statsResponse.data.data
+        } else {
+          this.paymentStatsData = null
+        }
+      } catch (error) {
+        console.error('Error loading payment stats:', error)
+        this.paymentStatsData = null
       }
     },
     editClient(client) {
@@ -605,6 +1051,7 @@ export default {
       this.selectedClientBusiness = ''
       this.selectedClientFiscal = ''
       this.selectedClientId = null
+      this.paymentFilter = 'all'
     },
     formatPrice(price) {
       if (price === null || price === undefined) {
@@ -638,22 +1085,57 @@ export default {
       const paidAt = order.paid_at ? this.formatDate(order.paid_at) : null
       const isPaid = order.is_paid === true || order.is_paid === 1
       const paymentStatus = isPaid ? 'E PAGUAR' : 'JO E PAGUAR'
-      
+      const paymentStatusClass = isPaid ? 'color: #059669; font-weight: bold;' : 'color: #dc2626; font-weight: bold;'
+
       const itemsRows = (order.items || [])
         .map(item => {
           const quantityText = this.formatQuantity(item)
           const unitPrice = item.unit_price ? this.formatPrice(item.unit_price) : 'Sipas kërkesës'
-          const total = item.total_price ? this.formatPrice(item.total_price) : 'Sipas kërkesës'
+
+          let itemSubtotal = 0
+          if (item.unit_price) {
+            if (item.sold_by_package && item.pieces_per_package) {
+              itemSubtotal = item.unit_price * item.quantity * item.pieces_per_package
+            } else {
+              itemSubtotal = item.unit_price * item.quantity
+            }
+          }
+
+          const itemDiscount = item.discount_amount || 0
+          const itemTotal = item.total_price || (itemSubtotal > 0 ? itemSubtotal - itemDiscount : 0)
+
           return `
             <tr>
               <td>${item.product_name}</td>
               <td>${quantityText}</td>
               <td>${unitPrice}</td>
-              <td>${total}</td>
+              <td>
+                ${itemSubtotal > 0 ? this.formatPrice(itemSubtotal) : 'Sipas kërkesës'}
+                ${itemDiscount > 0 ? '<br><span style="color: #dc2626; font-size: 11px;">- ' + this.formatPrice(itemDiscount) + '</span>' : ''}
+                <br><strong>${itemTotal > 0 ? this.formatPrice(itemTotal) : 'Sipas kërkesës'}</strong>
+              </td>
             </tr>
           `
         })
         .join('')
+
+      // Calculate total item discounts
+      const totalItemDiscounts = (order.items || []).reduce((sum, item) => {
+        return sum + (parseFloat(item.discount_amount) || 0)
+      }, 0)
+
+      const orderDataJson = JSON.stringify({
+        order_number: order.order_number || 'N/A',
+        customer_name: order.customer_name || 'N/A',
+        business_name: order.business_name || 'N/A',
+        fiscal_number: order.fiscal_number || 'N/A',
+        city: order.city || 'N/A',
+        phone: order.phone || 'N/A',
+        total_amount: order.total_amount
+      })
+
+      const scriptTag = '<' + 'script' + '>'
+      const scriptClose = '<' + '/' + 'script' + '>'
 
       const printWindow = window.open('', '_blank', 'width=900,height=650')
       if (!printWindow) {
@@ -661,69 +1143,127 @@ export default {
         return
       }
 
-      printWindow.document.write(`
-        <html>
-          <head>
-            <title>Faturë ${order.order_number}</title>
-            <style>
-              body { font-family: Arial, sans-serif; padding: 24px; color: #111827; }
-              h1 { font-size: 24px; margin-bottom: 8px; }
-              .meta { margin-bottom: 16px; font-size: 14px; }
-              .payment-status { 
-                margin-top: 12px; 
-                padding: 8px 12px; 
-                border-radius: 4px; 
-                display: inline-block;
-                font-size: 14px;
-              }
-              .payment-status.paid { 
-                background-color: #d1fae5; 
-                color: #059669; 
-                font-weight: bold; 
-              }
-              .payment-status.unpaid { 
-                background-color: #fee2e2; 
-                color: #dc2626; 
-                font-weight: bold; 
-              }
-              table { width: 100%; border-collapse: collapse; margin-top: 16px; }
-              th, td { border: 1px solid #e5e7eb; padding: 8px; text-align: left; font-size: 14px; }
-              th { background-color: #f9fafb; }
-              .totals { margin-top: 16px; font-weight: bold; }
-            </style>
-          </head>
-          <body>
-            <h1>Faturë ${order.order_number}</h1>
-            <div class="meta">
-              <p><strong>Data e Porosisë:</strong> ${createdAt}</p>
-              <p><strong>Klienti:</strong> ${order.customer_name} — ${order.business_name}</p>
-              <p><strong>Qyteti:</strong> ${order.city}</p>
-              <p><strong>Telefon/Viber:</strong> ${order.phone || 'N/A'}</p>
-              <div class="payment-status ${isPaid ? 'paid' : 'unpaid'}">
-                <strong>Statusi i Pagesës:</strong> ${paymentStatus}
-                ${paidAt ? `<br><span style="font-size: 12px;">E paguar më: ${paidAt}</span>` : ''}
-              </div>
-            </div>
-            <table>
-              <thead>
-                <tr>
-                  <th>Produkti</th>
-                  <th>Sasia</th>
-                  <th>Çmimi Njësi</th>
-                  <th>Totali</th>
-                </tr>
-              </thead>
-              <tbody>
-                ${itemsRows}
-              </tbody>
-            </table>
-            <div class="totals">
-              Totali i produkteve: ${order.total_items} | Vlera Totale: ${totalAmount}
-            </div>
-          </body>
-        </html>
-      `)
+      const htmlContent = '<html>' +
+        '<head>' +
+        '<title>Faturë ' + (order.order_number || 'N/A') + '</title>' +
+        '<style>' +
+        'body { font-family: Arial, sans-serif; padding: 24px; color: #111827; }' +
+        'h1 { font-size: 24px; margin-bottom: 8px; }' +
+        '.meta { margin-bottom: 16px; font-size: 14px; }' +
+        '.payment-status { margin-top: 12px; padding: 8px 12px; border-radius: 4px; display: inline-block; font-size: 14px; }' +
+        '.payment-status.paid { background-color: #d1fae5; color: #059669; font-weight: bold; }' +
+        '.payment-status.unpaid { background-color: #fee2e2; color: #dc2626; font-weight: bold; }' +
+        'table { width: 100%; border-collapse: collapse; margin-top: 16px; }' +
+        'th, td { border: 1px solid #e5e7eb; padding: 8px; text-align: left; font-size: 14px; }' +
+        'th { background-color: #f9fafb; }' +
+        '.totals { margin-top: 16px; font-weight: bold; }' +
+        '</style>' +
+        '</head>' +
+        '<body>' +
+        '<h1>Faturë ' + (order.order_number || 'N/A') + '</h1>' +
+        '<div class="meta">' +
+        '<p><strong>Data e Porosisë:</strong> ' + createdAt + '</p>' +
+        '<p><strong>Klienti:</strong> ' + (order.customer_name || 'N/A') + ' — ' + (order.business_name || 'N/A') + '</p>' +
+        '<p><strong>Nr. Fiskal:</strong> ' + (order.fiscal_number || 'N/A') + '</p>' +
+        '<p><strong>Qyteti:</strong> ' + (order.city || 'N/A') + '</p>' +
+        '<p><strong>Telefon/Viber:</strong> ' + (order.phone || 'N/A') + '</p>' +
+        (isPaid ? '<div class="payment-status paid">' +
+        '<strong>Statusi i Pagesës:</strong> ' + paymentStatus +
+        (paidAt ? '<br><span style="font-size: 12px;">E paguar më: ' + paidAt + '</span>' : '') +
+        '</div>' : '') +
+        '</div>' +
+        '<table>' +
+        '<thead>' +
+        '<tr><th>Produkti</th><th>Sasia</th><th>Çmimi Njësi</th><th>Totali</th></tr>' +
+        '</thead>' +
+        '<tbody>' +
+        itemsRows +
+        '</tbody>' +
+        '</table>' +
+        '<div class="totals">' +
+        '<div style="margin-bottom: 8px;">' +
+        '<p><strong>Totali i produkteve:</strong> ' + order.total_items + '</p>' +
+        (order.subtotal ? '<p><strong>Nëntotali (para zbritjeve):</strong> ' + this.formatPrice(order.subtotal) + '</p>' : '') +
+        (totalItemDiscounts > 0 ? '<p style="color: #dc2626;"><strong>Totali i zbritjeve të produkteve:</strong> -' + this.formatPrice(totalItemDiscounts) + '</p>' : '') +
+        (order.discount_amount && order.discount_amount > 0 ? '<p style="color: #dc2626;"><strong>Zbritje e përgjithshme ' + (order.discount_type === 'percentage' ? order.discount_value + '%' : 'fikse') + ':</strong> -' + this.formatPrice(order.discount_amount) + '</p>' : '') +
+        (order.has_vat && order.amount_before_vat && order.vat_amount ? 
+          '<div style="margin-top: 12px; padding-top: 12px; border-top: 1px solid #e5e7eb;">' +
+          '<p><strong>Shuma para TVSH:</strong> ' + this.formatPrice(order.amount_before_vat) + '</p>' +
+          '<p><strong>TVSH (18%):</strong> ' + this.formatPrice(order.vat_amount) + '</p>' +
+          '<p style="font-size: 16px; margin-top: 8px;"><strong>Vlera Totale me TVSH:</strong> ' + totalAmount + '</p>' +
+          '</div>' :
+          '<p style="font-size: 16px; margin-top: 8px;"><strong>Vlera Totale:</strong> ' + totalAmount + '</p>'
+        ) +
+        '</div>' +
+        '</div>' +
+        '<div style="margin-top: 48px; padding-top: 24px; border-top: 2px solid #e5e7eb;">' +
+        '<div style="display: flex; justify-content: space-between; margin-bottom: 60px;">' +
+        '<div style="width: 45%; text-align: center;">' +
+        '<p style="font-weight: bold; margin-bottom: 40px; border-top: 1px solid #111827; padding-top: 4px; display: inline-block; min-width: 200px;">Nënshkrimi i Blerësit</p>' +
+        '<p style="font-size: 12px; color: #6b7280; margin-top: 8px;">' + (order.business_name || order.customer_name || '') + '</p>' +
+        '</div>' +
+        '<div style="width: 45%; text-align: center;">' +
+        '<p style="font-weight: bold; margin-bottom: 40px; border-top: 1px solid #111827; padding-top: 4px; display: inline-block; min-width: 200px;">Nënshkrimi i Shitësit</p>' +
+        '<p style="font-size: 12px; color: #6b7280; margin-top: 8px;">GastroTrade</p>' +
+        '</div>' +
+        '</div>' +
+        '<div style="text-align: center; margin-top: 24px; font-size: 12px; color: #6b7280;">' +
+        '<p><strong>Data e lëshimit:</strong> ' + createdAt + '</p>' +
+        '</div>' +
+        '</div>' +
+        '<div style="margin-top: 24px; padding: 16px; border-top: 2px solid #e5e7eb; text-align: center;">' +
+        '<h3 style="margin-bottom: 12px; font-size: 16px;">Ndaj Faturën:</h3>' +
+        '<div style="display: flex; gap: 8px; justify-content: center; flex-wrap: wrap;">' +
+        '<button onclick="shareToViber()" style="padding: 8px 16px; background-color: #7360F2; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 14px;">💬 Viber</button>' +
+        '<button onclick="shareToWhatsApp()" style="padding: 8px 16px; background-color: #25D366; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 14px;">📱 WhatsApp</button>' +
+        '<button onclick="shareToGmail()" style="padding: 8px 16px; background-color: #EA4335; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 14px;">📧 Gmail</button>' +
+        '<button onclick="window.print()" style="padding: 8px 16px; background-color: #6B7280; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 14px;">🖨 Printo</button>' +
+        '</div>' +
+        '</div>' +
+        scriptTag +
+        'const orderData = ' + orderDataJson + ';' +
+        'function shareToViber() {' +
+        'const orderText = "📦 Faturë " + orderData.order_number + "\\n\\nKlienti: " + orderData.customer_name + " — " + orderData.business_name + "\\nQyteti: " + orderData.city + "\\nTelefon: " + orderData.phone + "\\n\\nTotal: " + (orderData.total_amount ? orderData.total_amount.toFixed(2) + " €" : "Sipas kërkesës");' +
+        'if (navigator.share) {' +
+        'navigator.share({' +
+        'title: "Faturë " + orderData.order_number,' +
+        'text: orderText' +
+        '}).catch(function(err) {' +
+        'console.log("Error sharing:", err);' +
+        'fallbackShareViber(orderText);' +
+        '});' +
+        '} else {' +
+        'fallbackShareViber(orderText);' +
+        '}' +
+        '}' +
+        'function fallbackShareViber(text) {' +
+        'if (navigator.clipboard) {' +
+        'navigator.clipboard.writeText(text).then(function() {' +
+        'alert("Teksti u kopjua në clipboard. Mund ta ngjitni në Viber.");' +
+        '}).catch(function(err) {' +
+        'console.error("Failed to copy:", err);' +
+        'prompt("Kopjoni këtë tekst dhe ngjisni në Viber:", text);' +
+        '});' +
+        '} else {' +
+        'prompt("Kopjoni këtë tekst dhe ngjisni në Viber:", text);' +
+        '}' +
+        '}' +
+        'function shareToWhatsApp() {' +
+        'const orderText = "📦 Faturë " + orderData.order_number + "\\n\\nKlienti: " + orderData.customer_name + " — " + orderData.business_name + "\\nQyteti: " + orderData.city + "\\nTelefon: " + orderData.phone + "\\n\\nTotal: " + (orderData.total_amount ? orderData.total_amount.toFixed(2) + " €" : "Sipas kërkesës");' +
+        'const whatsappUrl = "https://wa.me/?text=" + encodeURIComponent(orderText);' +
+        'window.open(whatsappUrl, "_blank");' +
+        '}' +
+        'function shareToGmail() {' +
+        'const subject = encodeURIComponent("Faturë " + orderData.order_number);' +
+        'const body = encodeURIComponent("Faturë: " + orderData.order_number + "\\n\\nKlienti: " + orderData.customer_name + " — " + orderData.business_name + "\\nQyteti: " + orderData.city + "\\nTelefon: " + orderData.phone + "\\n\\nTotal: " + (orderData.total_amount ? orderData.total_amount.toFixed(2) + " €" : "Sipas kërkesës"));' +
+        'const gmailUrl = "mailto:svalon95@gmail.com?subject=" + subject + "&body=" + body;' +
+        'window.location.href = gmailUrl;' +
+        '}' +
+        scriptClose +
+        '</body>' +
+        '</html>'
 
+      printWindow.document.write(htmlContent)
       printWindow.document.close()
     },
     async updateOrderStatus(order) {
@@ -764,6 +1304,8 @@ export default {
         if (this.selectedClientId) {
           await this.loadClientOrders(this.selectedClientId)
         }
+        // Reload overall stats
+        await this.loadAllOrders()
       } catch (error) {
         console.error('Error updating payment status:', error)
         // Revert on error
@@ -784,6 +1326,8 @@ export default {
         await axios.delete(`/api/orders/${order.id}`)
         // Remove from local array
         this.selectedClientOrders = this.selectedClientOrders.filter(o => o.id !== order.id)
+        // Reload overall stats
+        await this.loadAllOrders()
         alert('Porosia u fshi me sukses!')
       } catch (error) {
         console.error('Error deleting order:', error)
@@ -792,11 +1336,26 @@ export default {
     },
     editOrder(order) {
       // Deep clone the order and items
-      this.editingOrder = JSON.parse(JSON.stringify(order))
-      this.editingOrderItems = (order.items || []).map(item => ({
+      const clonedOrder = JSON.parse(JSON.stringify(order))
+      this.editingOrder = {
+        ...clonedOrder,
+        discount_type: clonedOrder.discount_type || '',
+        discount_value: clonedOrder.discount_value ?? 0,
+        discount_amount: clonedOrder.discount_amount ?? 0,
+        has_vat: clonedOrder.has_vat || false,
+        vat_amount: clonedOrder.vat_amount || null,
+        amount_before_vat: clonedOrder.amount_before_vat || null,
+        fiscal_number: clonedOrder.fiscal_number ? String(clonedOrder.fiscal_number).trim().toUpperCase() : ''
+      }
+      this.editingOrderItems = (clonedOrder.items || []).map(item => ({
         ...item,
+        discount_amount: item.discount_amount || 0,
+        discount_type: item.discount_type || '',
+        discount_value: item.discount_value ?? 0,
         temp_id: null // Keep original id for updates
       }))
+      this.editingOrderItems.forEach(item => this.onItemDiscountChange(item))
+      this.recalculateGeneralDiscountAmount()
       this.tempItemIdCounter = 0
       this.showEditOrderModal = true
     },
@@ -816,18 +1375,88 @@ export default {
         sold_by_package: false,
         pieces_per_package: null,
         unit_price: null,
-        total_price: null
+        total_price: null,
+        discount_amount: 0,
+        discount_type: '',
+        discount_value: 0
       })
+      this.recalculateGeneralDiscountAmount()
     },
     removeOrderItem(index) {
       this.editingOrderItems.splice(index, 1)
+      this.recalculateGeneralDiscountAmount()
+    },
+    getOrderItemBaseAmount(item) {
+      if (!item || !item.unit_price) return 0
+      if (item.sold_by_package && item.pieces_per_package) {
+        return item.unit_price * item.quantity * item.pieces_per_package
+      }
+      return item.unit_price * item.quantity
+    },
+    getOrderItemDiscount(item) {
+      if (!item) return 0
+      const baseAmount = this.getOrderItemBaseAmount(item)
+      if (!baseAmount) {
+        item.discount_amount = 0
+        return 0
+      }
+      const discountValue = Number(item.discount_value) || 0
+      let discount = 0
+      if (item.discount_type === 'percentage') {
+        discount = (baseAmount * discountValue) / 100
+      } else if (item.discount_type === 'fixed') {
+        discount = Math.min(discountValue, baseAmount)
+      } else {
+        discount = item.discount_amount || 0
+      }
+      item.discount_amount = discount
+      return discount
+    },
+    getOrderItemTotal(item) {
+      if (!item || !item.unit_price) return 0
+      const base = this.getOrderItemBaseAmount(item)
+      const discount = this.getOrderItemDiscount(item)
+      return Math.max(0, base - discount)
+    },
+    calculateItemsSubtotal() {
+      if (!Array.isArray(this.editingOrderItems)) return 0
+      return this.editingOrderItems.reduce((sum, item) => sum + this.getOrderItemBaseAmount(item), 0)
+    },
+    calculateItemsTotalAfterDiscount() {
+      if (!Array.isArray(this.editingOrderItems)) return 0
+      return this.editingOrderItems.reduce((sum, item) => sum + this.getOrderItemTotal(item), 0)
+    },
+    calculateItemDiscountTotal() {
+      const subtotal = this.calculateItemsSubtotal()
+      const afterDiscount = this.calculateItemsTotalAfterDiscount()
+      return Math.max(0, subtotal - afterDiscount)
+    },
+    recalculateGeneralDiscountAmount(itemsTotal = null) {
+      if (!this.editingOrder) return 0
+      const totalAfterItems = itemsTotal !== null ? itemsTotal : this.calculateItemsTotalAfterDiscount()
+      const type = this.editingOrder.discount_type
+      const value = Number(this.editingOrder.discount_value) || 0
+      let amount = 0
+      if (type === 'percentage') {
+        amount = (totalAfterItems * value) / 100
+      } else if (type === 'fixed') {
+        amount = Math.min(value, totalAfterItems)
+      } else {
+        amount = 0
+      }
+      this.editingOrder.discount_amount = amount
+      return amount
+    },
+    onItemDiscountChange(item) {
+      this.getOrderItemDiscount(item)
+      this.recalculateGeneralDiscountAmount()
+    },
+    onGeneralDiscountChange() {
+      this.recalculateGeneralDiscountAmount()
     },
     calculateItemTotal(item) {
       if (!item.unit_price) return 'Sipas kërkesës'
-      const total = item.sold_by_package && item.pieces_per_package
-        ? item.unit_price * item.quantity * item.pieces_per_package
-        : item.unit_price * item.quantity
-      return this.formatPrice(total)
+      return this.formatPrice(this.getOrderItemTotal(item))
     },
     calculateTotalItems() {
       return this.editingOrderItems.reduce((total, item) => {
@@ -838,13 +1467,44 @@ export default {
       }, 0)
     },
     calculateTotalAmount() {
-      return this.editingOrderItems.reduce((total, item) => {
-        if (!item.unit_price) return total
-        if (item.sold_by_package && item.pieces_per_package) {
-          return total + (item.unit_price * item.quantity * item.pieces_per_package)
-        }
-        return total + (item.unit_price * item.quantity)
-      }, 0)
+      const itemsTotal = this.calculateItemsTotalAfterDiscount()
+      const generalDiscount = this.recalculateGeneralDiscountAmount(itemsTotal)
+      return Math.max(0, itemsTotal - generalDiscount)
+    },
+    calculateVatAmount() {
+      if (!this.editingOrder || !this.editingOrder.has_vat) {
+        return 0
+      }
+      const totalWithVat = this.calculateTotalAmount()
+      if (totalWithVat <= 0) {
+        return 0
+      }
+      // TVSH = Totali me TVSH / 6.5555
+      return totalWithVat / 6.5555
+    },
+    calculateAmountBeforeVat() {
+      if (!this.editingOrder || !this.editingOrder.has_vat) {
+        return this.calculateTotalAmount()
+      }
+      const totalWithVat = this.calculateTotalAmount()
+      const vatAmount = this.calculateVatAmount()
+      // Shuma para TVSH = Totali me TVSH - TVSH
+      return totalWithVat - vatAmount
+    },
+    onVatChange() {
+      // Recalculate VAT when checkbox changes
+      if (this.editingOrder && this.editingOrder.has_vat) {
+        const totalWithVat = this.calculateTotalAmount()
+        const vatAmount = this.calculateVatAmount()
+        const amountBeforeVat = this.calculateAmountBeforeVat()
+        
+        // Update the VAT fields
+        this.editingOrder.vat_amount = vatAmount
+        this.editingOrder.amount_before_vat = amountBeforeVat
+      } else {
+        this.editingOrder.vat_amount = null
+        this.editingOrder.amount_before_vat = null
+      }
     },
     async saveEditedOrder() {
       if (!this.editingOrder || this.editingOrderItems.length === 0) {
@@ -863,16 +1523,55 @@ export default {
           sold_by_package: item.sold_by_package || false,
           pieces_per_package: item.pieces_per_package || null,
           unit_price: item.unit_price || null,
+          discount_amount: item.discount_amount || 0,
+          discount_type: item.discount_type || null,
+          discount_value: item.discount_value || 0,
           total_price: this.calculateItemTotalValue(item)
         }))
 
-        const response = await axios.put(`/api/orders/${this.editingOrder.id}`, {
+        const subtotal = this.calculateItemsSubtotal()
+        const itemsTotalAfterDiscount = this.calculateItemsTotalAfterDiscount()
+        const generalDiscountAmount = this.recalculateGeneralDiscountAmount(itemsTotalAfterDiscount)
+        const itemDiscountAmount = this.calculateItemDiscountTotal()
+        const totalAmount = Math.max(0, itemsTotalAfterDiscount - generalDiscountAmount)
+
+        // Calculate VAT if enabled
+        let finalTotalAmount = totalAmount
+        let vatAmount = null
+        let amountBeforeVat = null
+        
+        if (this.editingOrder.has_vat && totalAmount > 0) {
+          // Totali aktual përfshin TVSH-në
+          // TVSH = Totali me TVSH / 6.5555
+          vatAmount = totalAmount / 6.5555
+          // Shuma para TVSH = Totali me TVSH - TVSH
+          amountBeforeVat = totalAmount - vatAmount
+          // Totali me TVSH mbetet i njëjtë
+          finalTotalAmount = totalAmount
+        }
+
+        const payload = {
           customer_name: this.editingOrder.customer_name,
           business_name: this.editingOrder.business_name,
           city: this.editingOrder.city,
           phone: this.editingOrder.phone,
-          items: items
-        })
+          subtotal,
+          item_discount_total: itemDiscountAmount,
+          discount_amount: generalDiscountAmount,
+          discount_type: this.editingOrder.discount_type || null,
+          discount_value: this.editingOrder.discount_value || 0,
+          total_amount: finalTotalAmount,
+          has_vat: this.editingOrder.has_vat || false,
+          vat_amount: vatAmount,
+          amount_before_vat: amountBeforeVat,
+          items
+        }
+
+        if (this.editingOrder.fiscal_number && String(this.editingOrder.fiscal_number).trim() !== '') {
+          payload.fiscal_number = String(this.editingOrder.fiscal_number).trim().toUpperCase()
+        }
+
+        const response = await axios.put(`/api/orders/${this.editingOrder.id}`, payload)
 
         // Update local order
         const updatedOrder = response.data.data
@@ -882,20 +1581,34 @@ export default {
         }
 
         alert('Porosia u përditësua me sukses!')
+        // Reload overall stats
+        await this.loadAllOrders()
         this.closeEditOrderModal()
       } catch (error) {
         console.error('Error saving order:', error)
-        alert('Gabim në ruajtjen e porosisë')
+        if (error.response && error.response.data) {
+          console.error('Server response:', error.response.data)
+        }
+        let errorMessage = 'Gabim në ruajtjen e porosisë'
+        if (error.response && error.response.data) {
+          if (error.response.data.message) {
+            errorMessage = error.response.data.message
+          }
+          if (error.response.data.errors) {
+            const errors = Object.values(error.response.data.errors).flat()
+            if (errors.length) {
+              errorMessage = errors.join('\n')
+            }
+          }
+        }
+        alert(errorMessage)
       } finally {
         this.savingOrder = false
       }
     },
     calculateItemTotalValue(item) {
       if (!item.unit_price) return null
-      if (item.sold_by_package && item.pieces_per_package) {
-        return item.unit_price * item.quantity * item.pieces_per_package
-      }
-      return item.unit_price * item.quantity
+      return this.getOrderItemTotal(item)
     }
   }
 }

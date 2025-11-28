@@ -25,6 +25,7 @@ class StoreOrderRequest extends FormRequest
             'client_id' => ['nullable', 'exists:clients,id'],
             'customer.name' => ['required', 'string', 'max:255'],
             'customer.business_name' => ['required', 'string', 'max:255'],
+            'customer.fiscal_number' => ['required', 'string', 'max:255'],
             'customer.city' => ['required', 'string', 'max:255'],
             'customer.phone' => ['nullable', 'string', 'max:50'],
             'customer.viber' => ['nullable', 'string', 'max:50'],
@@ -45,6 +46,9 @@ class StoreOrderRequest extends FormRequest
             'totals.discount_type' => ['nullable', 'string', 'in:percentage,fixed'],
             'totals.discount_value' => ['nullable', 'numeric', 'min:0'],
             'totals.total_amount' => ['nullable', 'numeric', 'min:0'],
+            'has_vat' => ['nullable', 'boolean'],
+            'vat_amount' => ['nullable', 'numeric', 'min:0'],
+            'amount_before_vat' => ['nullable', 'numeric', 'min:0'],
             'is_paid' => ['nullable', 'boolean'],
             'paid_at' => ['nullable', 'date'],
         ];

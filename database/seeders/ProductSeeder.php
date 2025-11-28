@@ -376,6 +376,6 @@ Të gjitha llojet janë të sigurta për kontakt me ushqim dhe të lehta për tr
                 'is_featured' => true,
                 'sort_order' => 1,
             ]);
-        }
     }
+}
 }

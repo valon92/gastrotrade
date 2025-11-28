@@ -5,6 +5,7 @@ const cartStore = reactive({
   items: [],
   client: null,
   clientPrices: {},
+  clientPieceSales: {}, // Store allow_piece_sales for each product
   
   // Load cart from localStorage on initialization
   init() {
@@ -32,11 +33,13 @@ const cartStore = reactive({
     this.client = client
     localStorage.setItem('gastrotrade_client', JSON.stringify(client))
     
-    // Load client prices
+    // Load client prices and piece sales settings
     if (client && client.prices && Array.isArray(client.prices)) {
       this.clientPrices = {}
+      this.clientPieceSales = {}
       client.prices.forEach(price => {
         this.clientPrices[price.product_id] = price.price
+        this.clientPieceSales[price.product_id] = price.allow_piece_sales || false
       })
       
       // Update cart items with client prices (only if client has price for that product)
@@ -52,6 +55,7 @@ const cartStore = reactive({
     } else {
       // If no client or no prices, clear all prices
       this.clientPrices = {}
+      this.clientPieceSales = {}
       this.items.forEach(item => {
         item.price = null
       })
@@ -63,6 +67,7 @@ const cartStore = reactive({
   clearClient() {
     this.client = null
     this.clientPrices = {}
+    this.clientPieceSales = {}
     localStorage.removeItem('gastrotrade_client')
     
     // Remove all prices from cart items (set to null)
@@ -140,7 +145,9 @@ const cartStore = reactive({
     return this.items.reduce((total, item) => {
       if (item.price) {
         // If client can buy by pieces and we have actual pieces stored
-        if (this.client && this.client.allow_piece_sales && item.sold_by_package && item.pieces_per_package && item.actual_pieces) {
+        // Check if this specific product allows piece sales for this client
+        const canBuyByPieces = this.client && this.clientPieceSales[item.id] && item.sold_by_package && item.pieces_per_package
+        if (canBuyByPieces && item.actual_pieces) {
           return total + (item.price * item.actual_pieces)
         }
         // For products sold by package: price per piece × quantity (packages) × pieces per package
@@ -215,6 +222,9 @@ const cartStore = reactive({
         message += '👤 TË DHËNAT E POROSITËSIT:\n'
         message += `Emri: ${customerData.name || 'N/A'}\n`
         message += `Biznesi: ${customerData.storeName || 'N/A'}\n`
+        if (customerData.fiscalNumber) {
+          message += `Nr. Fiskal: ${customerData.fiscalNumber}\n`
+        }
         message += `Qyteti: ${customerData.city || 'N/A'}\n`
         if (customerData.phone) {
           message += `📞 Telefon/Viber: ${customerData.phone}\n`
@@ -237,7 +247,8 @@ const cartStore = reactive({
         const soldByPackage = item.sold_by_package || false
         const piecesPerPackage = item.pieces_per_package || null
         const actualPieces = item.actual_pieces || null
-        const canBuyByPieces = this.client && this.client.allow_piece_sales && soldByPackage && piecesPerPackage
+        // Check if this specific product allows piece sales for this client
+        const canBuyByPieces = this.client && this.clientPieceSales[item.id] && soldByPackage && piecesPerPackage
 
         message += `${index + 1}. ${itemName}\n`
         

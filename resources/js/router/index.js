@@ -9,6 +9,10 @@ import OrderConfirmation from '../views/OrderConfirmation.vue'
 import AdminClients from '../views/admin/AdminClients.vue'
 import AdminClientPrices from '../views/admin/AdminClientPrices.vue'
 import AdminLogin from '../views/admin/AdminLogin.vue'
+import AdminProducts from '../views/admin/AdminProducts.vue'
+import AdminStock from '../views/admin/AdminStock.vue'
+import AdminSupplierInvoices from '../views/admin/AdminSupplierInvoices.vue'
+import AdminTrash from '../views/admin/AdminTrash.vue'
 
 const routes = [
   {
@@ -63,6 +67,30 @@ const routes = [
     name: 'AdminClientPrices',
     component: AdminClientPrices,
     props: true,
+    meta: { requiresAuth: true }
+  },
+  {
+    path: '/admin/products',
+    name: 'AdminProducts',
+    component: AdminProducts,
+    meta: { requiresAuth: true }
+  },
+  {
+    path: '/admin/stock',
+    name: 'AdminStock',
+    component: AdminStock,
+    meta: { requiresAuth: true }
+  },
+  {
+    path: '/admin/supplier-invoices',
+    name: 'AdminSupplierInvoices',
+    component: AdminSupplierInvoices,
+    meta: { requiresAuth: true }
+  },
+  {
+    path: '/admin/trash',
+    name: 'AdminTrash',
+    component: AdminTrash,
     meta: { requiresAuth: true }
   }
 ]

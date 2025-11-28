@@ -27,10 +27,15 @@ class ClientController extends Controller
      */
     public function store(Request $request)
     {
+        $request->merge([
+            'store_name' => trim((string) $request->input('store_name')),
+            'fiscal_number' => strtoupper(preg_replace('/\s+/', '', (string) $request->input('fiscal_number'))),
+        ]);
+
         $validator = Validator::make($request->all(), [
             'name' => 'required|string|max:255',
             'store_name' => 'required|string|max:255|unique:clients,store_name',
-            'fiscal_number' => 'nullable|string|max:255',
+            'fiscal_number' => 'required|string|max:255|unique:clients,fiscal_number',
             'city' => 'nullable|string|max:255',
             'phone' => 'nullable|string',
             'viber' => 'nullable|string',
@@ -87,10 +92,22 @@ class ClientController extends Controller
             ], 404);
         }
 
+        if ($request->has('store_name')) {
+            $request->merge([
+                'store_name' => trim((string) $request->input('store_name')),
+            ]);
+        }
+
+        if ($request->has('fiscal_number')) {
+            $request->merge([
+                'fiscal_number' => strtoupper(preg_replace('/\s+/', '', (string) $request->input('fiscal_number'))),
+            ]);
+        }
+
         $validator = Validator::make($request->all(), [
             'name' => 'sometimes|required|string|max:255',
             'store_name' => 'sometimes|required|string|max:255|unique:clients,store_name,' . $id,
-            'fiscal_number' => 'nullable|string|max:255',
+            'fiscal_number' => 'sometimes|required|string|max:255|unique:clients,fiscal_number,' . $id,
             'city' => 'nullable|string|max:255',
             'phone' => 'nullable|string',
             'viber' => 'nullable|string',
@@ -184,10 +201,11 @@ class ClientController extends Controller
     /**
      * Find client by business name
      */
-    public function findByBusinessName(Request $request)
+    public function findByBusinessAndFiscal(Request $request)
     {
         $validator = Validator::make($request->all(), [
             'business_name' => 'required|string',
+            'fiscal_number' => 'required|string',
         ]);
 
         if ($validator->fails()) {
@@ -197,10 +215,12 @@ class ClientController extends Controller
             ], 422);
         }
 
-        $businessName = trim($request->business_name);
+        $businessName = strtolower(trim($request->business_name));
+        $fiscalNumber = strtoupper(preg_replace('/\s+/', '', trim($request->fiscal_number)));
 
         $client = Client::where('is_active', true)
-            ->where('store_name', $businessName)
+            ->whereRaw('LOWER(store_name) = ?', [$businessName])
+            ->where('fiscal_number', $fiscalNumber)
             ->with('prices.product')
             ->first();
 

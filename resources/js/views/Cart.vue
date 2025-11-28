@@ -57,32 +57,8 @@
                 </div>
               </div>
               
-              <!-- Discount for individual product -->
-              <div v-if="item.price" class="mt-2 flex items-center gap-2">
-                <label class="text-xs text-gray-600">Zbritje produkti:</label>
-                <div class="flex items-center gap-1">
-                  <input 
-                    type="number" 
-                    v-model.number="item.discount_value"
-                    @input="updateItemDiscount(item)"
-                    min="0"
-                    step="0.01"
-                    placeholder="0"
-                    class="w-20 px-2 py-1 text-xs border border-gray-300 rounded focus:ring-1 focus:ring-primary-500 focus:border-primary-500"
-                  />
-                  <select 
-                    v-model="item.discount_type"
-                    @change="updateItemDiscount(item)"
-                    class="px-2 py-1 text-xs border border-gray-300 rounded focus:ring-1 focus:ring-primary-500 focus:border-primary-500"
-                  >
-                    <option value="">Pa zbritje</option>
-                    <option value="percentage">%</option>
-                    <option value="fixed">€</option>
-                  </select>
-                </div>
-                <span v-if="item.discount_amount > 0" class="text-xs text-green-600 font-semibold">
-                  -{{ formatPrice(item.discount_amount) }}
-                </span>
+              <div v-if="item.discount_amount > 0" class="mt-1 text-xs text-green-600 font-semibold">
+                Zbritje e aplikuar nga administratori: -{{ formatPrice(item.discount_amount) }}
               </div>
               
               <div class="flex items-center gap-4">
@@ -187,60 +163,58 @@
                 <div class="flex justify-between text-gray-700">
                   <span>Nëntotali:</span>
                   <span class="font-semibold">
-                    {{ formatPrice(cartStore.subtotal) }}
+                    {{ formatPrice(hasVat ? amountBeforeVat : cartStore.totalPrice) }}
                   </span>
                 </div>
                 
-                <!-- General Discount -->
-                <div class="pt-2 border-t border-gray-200">
-                  <div class="flex items-center gap-2 mb-2">
-                    <label class="text-xs text-gray-600">Zbritje e përgjithshme:</label>
-                    <div class="flex items-center gap-1">
-                      <input 
-                        type="number" 
-                        v-model.number="generalDiscountValue"
-                        @input="updateGeneralDiscount"
-                        min="0"
-                        step="0.01"
-                        placeholder="0"
-                        class="w-20 px-2 py-1 text-xs border border-gray-300 rounded focus:ring-1 focus:ring-primary-500 focus:border-primary-500"
-                      />
-                      <select 
-                        v-model="generalDiscountType"
-                        @change="updateGeneralDiscount"
-                        class="px-2 py-1 text-xs border border-gray-300 rounded focus:ring-1 focus:ring-primary-500 focus:border-primary-500"
-                      >
-                        <option value="">Pa zbritje</option>
-                        <option value="percentage">%</option>
-                        <option value="fixed">€</option>
-                      </select>
-                    </div>
-                  </div>
-                  <div v-if="cartStore.generalDiscountAmount > 0" class="flex justify-between text-red-600 text-sm">
-                    <span>Zbritje:</span>
+                <div v-if="cartStore.generalDiscountAmount > 0" class="pt-2 border-t border-gray-200">
+                  <div class="flex justify-between text-red-600 text-sm">
+                    <span>Zbritje e përgjithshme (aplikuar nga administratori):</span>
                     <span class="font-semibold">-{{ formatPrice(cartStore.generalDiscountAmount) }}</span>
                   </div>
                 </div>
                 
+                <div v-if="hasVat && cartStore.totalPrice > 0" class="pt-2 border-t border-gray-200">
+                  <div class="flex justify-between text-gray-700 text-sm">
+                    <span>TVSH (18%):</span>
+                    <span class="font-semibold">{{ formatPrice(vatAmount) }}</span>
+                  </div>
+                </div>
+                
                 <div class="flex justify-between text-gray-700 pt-2 border-t border-gray-200">
-                  <span>Vlera Totale:</span>
+                  <span>Vlera Totale{{ hasVat ? ' me TVSH' : '' }}:</span>
                   <span class="font-bold text-primary-600 text-xl">
-                    {{ formatPrice(cartStore.totalPrice) }}
+                    {{ formatPrice(hasVat ? totalWithVat : cartStore.totalPrice) }}
                   </span>
                 </div>
                 <!-- Show calculation breakdown for all products with prices -->
                 <div class="text-xs text-gray-500 pt-2 border-t border-gray-200">
                   <p class="mb-1"><strong>Si llogaritet:</strong></p>
-                  <div v-for="item in cartStore.items.filter(i => i.price)" :key="item.id" class="text-xs">
-                    <span v-if="item.sold_by_package && item.pieces_per_package && canBuyByPieces(item)">
-                      • {{ item.name }}: {{ formatPrice(item.price) }} × {{ getPiecesQuantity(item) }}copa = {{ formatPrice(getItemTotal(item)) }}
-                    </span>
-                    <span v-else-if="item.sold_by_package && item.pieces_per_package">
-                      • {{ item.name }}: {{ formatPrice(item.price) }} × {{ item.quantity }}(komplete) × {{ item.pieces_per_package }}cp = {{ formatPrice(getItemTotal(item)) }}
-                    </span>
-                    <span v-else>
-                      • {{ item.name }}: {{ formatPrice(item.price) }} × {{ item.quantity }} = {{ formatPrice(getItemTotal(item)) }}
-                    </span>
+                  <div 
+                    v-for="item in cartStore.items.filter(i => i.price)" 
+                    :key="item.id" 
+                    class="text-xs mb-1"
+                  >
+                    <div>
+                      <span v-if="item.sold_by_package && item.pieces_per_package && canBuyByPieces(item)">
+                        • {{ item.name }}: {{ formatPrice(item.price) }} × {{ getPiecesQuantity(item) }}copa = {{ formatPrice(getItemBaseTotal(item)) }}
+                      </span>
+                      <span v-else-if="item.sold_by_package && item.pieces_per_package">
+                        • {{ item.name }}: {{ formatPrice(item.price) }} × {{ item.quantity }}(komplete) × {{ item.pieces_per_package }}cp = {{ formatPrice(getItemBaseTotal(item)) }}
+                      </span>
+                      <span v-else>
+                        • {{ item.name }}: {{ formatPrice(item.price) }} × {{ item.quantity }} = {{ formatPrice(getItemBaseTotal(item)) }}
+                      </span>
+                    </div>
+                    <div v-if="item.discount_amount > 0" class="pl-4 text-red-600">
+                      − Zbritje: {{ formatPrice(item.discount_amount) }}
+                    </div>
+                    <div class="pl-4 font-semibold text-gray-700">
+                      = {{ formatPrice(getItemTotal(item)) }}
+                    </div>
+                  </div>
+                  <div v-if="cartStore.generalDiscountAmount > 0" class="mt-1 text-red-600">
+                    Zbritje e përgjithshme: -{{ formatPrice(cartStore.generalDiscountAmount) }}
                   </div>
                 </div>
               </div>
@@ -268,6 +242,7 @@
                     type="text" 
                     id="customerName"
                     v-model="customerData.name"
+                    @input="persistCustomerData"
                     required
                     placeholder="Shkruani emrin tuaj"
                     class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
@@ -287,6 +262,22 @@
                   />
                 </div>
                 <div>
+                  <label for="fiscalNumber" class="block text-sm font-medium text-gray-700 mb-1">
+                    Numri Fiskal <span class="text-red-500">*</span>
+                  </label>
+                  <input 
+                    type="text" 
+                    id="fiscalNumber"
+                    v-model="customerData.fiscalNumber"
+                    required
+                    placeholder="Shkruani numrin fiskal të biznesit"
+                    class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 uppercase tracking-wide"
+                  />
+                  <p class="mt-1 text-xs text-gray-500">
+                    Numri fiskal duhet të përputhet me të dhënat e regjistruara nga administratori për të shfaqur çmimet e personalizuara.
+                  </p>
+                </div>
+                <div>
                   <label for="city" class="block text-sm font-medium text-gray-700 mb-1">
                     Qyteti <span class="text-red-500">*</span>
                   </label>
@@ -294,6 +285,7 @@
                     type="text" 
                     id="city"
                     v-model="customerData.city"
+                    @input="persistCustomerData"
                     required
                     placeholder="Shkruani qytetin"
                     class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
@@ -307,6 +299,7 @@
                     type="tel" 
                     id="phone"
                     v-model="customerData.phone"
+                    @input="persistCustomerData"
                     placeholder="+383 XX XXX XXX ose 0XX XXX XXX"
                     class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
                   />
@@ -318,21 +311,26 @@
             </div>
 
             <div class="space-y-3">
-              <!-- Payment Status Toggle -->
-              <div class="mb-4 p-3 bg-gray-50 border border-gray-200 rounded-lg">
+              <!-- VAT Toggle -->
+              <div class="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
                 <label class="flex items-center gap-2 cursor-pointer">
                   <input 
                     type="checkbox" 
-                    v-model="isPaidForPrint"
-                    class="w-5 h-5 rounded border-gray-300 text-green-600 focus:ring-green-500"
+                    v-model="hasVat"
+                    class="w-5 h-5 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
                   >
                   <span class="text-sm font-medium text-gray-700">
-                    {{ isPaidForPrint ? '✓ E Paguar' : 'Jo e Paguar' }}
+                    {{ hasVat ? '✓ Faturë me TVSH' : 'Faturë pa TVSH' }}
                   </span>
                 </label>
                 <p class="text-xs text-gray-500 mt-1">
-                  Shënoni nëse porosia është e paguar për ta shfaqur në faturë
+                  Shënoni nëse faktura duhet të jetë me TVSH (18%)
                 </p>
+                <div v-if="hasVat && cartStore.totalPrice > 0" class="mt-2 text-xs text-gray-600">
+                  <p><strong>Shuma para TVSH:</strong> {{ formatPrice(amountBeforeVat) }}</p>
+                  <p><strong>TVSH (18%):</strong> {{ formatPrice(vatAmount) }}</p>
+                  <p><strong>Totali me TVSH:</strong> {{ formatPrice(totalWithVat) }}</p>
+                </div>
               </div>
               
               <button 
@@ -450,6 +448,7 @@ export default {
       customerData: {
         name: '',
         storeName: '',
+        fiscalNumber: '',
         city: '',
         phone: ''
       },
@@ -457,24 +456,45 @@ export default {
       savingOrder: false,
       saveSuccess: false,
       savedOrder: null,
-      isPaidForPrint: false,
+      hasVat: false,
       ordersHistory: [],
       historyLoading: false,
       historyError: null,
       phoneDebounce: null,
-      orderHistoryLoaded: false,
-      generalDiscountType: '',
-      generalDiscountValue: 0
+      orderHistoryLoaded: false
     }
   },
   computed: {
     isFormValid() {
       return this.customerData.name.trim() !== '' && 
              this.customerData.storeName.trim() !== '' && 
+             this.customerData.fiscalNumber.trim() !== '' &&
              this.customerData.city.trim() !== ''
     },
     hasClientPrices() {
       return this.cartStore.client && Object.keys(this.cartStore.clientPrices).length > 0
+    },
+    vatAmount() {
+      if (!this.hasVat || !this.cartStore.totalPrice || this.cartStore.totalPrice <= 0) {
+        return 0
+      }
+      // Totali aktual përfshin TVSH-në
+      // TVSH = Totali me TVSH / 6.5555
+      return this.cartStore.totalPrice / 6.5555
+    },
+    amountBeforeVat() {
+      if (!this.hasVat || !this.cartStore.totalPrice || this.cartStore.totalPrice <= 0) {
+        return this.cartStore.totalPrice
+      }
+      // Shuma para TVSH = Totali me TVSH - TVSH
+      return this.cartStore.totalPrice - this.vatAmount
+    },
+    totalWithVat() {
+      // Totali me TVSH është totali aktual kur TVSH është e aktivizuar
+      if (!this.hasVat || !this.cartStore.totalPrice || this.cartStore.totalPrice <= 0) {
+        return this.cartStore.totalPrice
+      }
+      return this.cartStore.totalPrice
     },
     uniqueOrdersHistory() {
       // Remove duplicates by order ID
@@ -486,45 +506,24 @@ export default {
         seen.add(order.id)
         return true
       })
-    },
-    generalDiscountAmount() {
-      return this.cartStore.generalDiscountAmount || 0
     }
   },
   watch: {
-    generalDiscountType() {
-      this.updateGeneralDiscount()
-    },
-    generalDiscountValue() {
-      this.updateGeneralDiscount()
-    },
     'customerData.storeName'(newBusinessName) {
-      if (this.phoneDebounce) {
-        clearTimeout(this.phoneDebounce)
+      this.scheduleClientIdentification()
+    },
+    'customerData.fiscalNumber'(newFiscal) {
+      if (typeof newFiscal === 'string') {
+        const normalized = newFiscal.toUpperCase().replace(/\s+/g, '')
+        if (normalized !== newFiscal) {
+          this.customerData.fiscalNumber = normalized
+          return
+        }
       }
-
-      if (!newBusinessName || newBusinessName.trim().length < 2) {
-        this.ordersHistory = []
-        this.orderHistoryLoaded = false
-        this.cartStore.clearClient()
-        return
-      }
-
-      // Clear previous timeout
-      if (this.phoneDebounce) {
-        clearTimeout(this.phoneDebounce)
-      }
-
-      this.phoneDebounce = setTimeout(() => {
-        this.identifyClientByBusinessName(newBusinessName.trim())
-      }, 600)
+      this.scheduleClientIdentification()
     }
   },
   mounted() {
-    // Initialize discount values from cart store
-    this.generalDiscountType = this.cartStore.generalDiscountType || ''
-    this.generalDiscountValue = this.cartStore.generalDiscountValue || 0
-    
     // Initialize item discounts
     this.cartStore.items.forEach(item => {
       if (!item.discount_amount) item.discount_amount = 0
@@ -545,8 +544,8 @@ export default {
       }
     }
 
-    if (this.customerData.storeName) {
-      this.identifyClientByBusinessName(this.customerData.storeName)
+    if (this.customerData.storeName && this.customerData.fiscalNumber) {
+      this.identifyClient(this.customerData.storeName, this.customerData.fiscalNumber)
     }
   },
   beforeUnmount() {
@@ -576,54 +575,23 @@ export default {
       }
       return `${item.quantity} copë`
     },
+    getItemBaseTotal(item) {
+      if (!item.price) return 0
+      if (this.canBuyByPieces(item) && item.actual_pieces) {
+        return item.price * item.actual_pieces
+      }
+      if (item.sold_by_package && item.pieces_per_package) {
+        return item.price * item.quantity * item.pieces_per_package
+      }
+      return item.price * item.quantity
+    },
     getItemTotal(item) {
       if (!item.price) return 0
       
-      let subtotal = 0
-      // If client can buy by pieces and we have actual pieces stored
-      if (this.canBuyByPieces(item) && item.actual_pieces) {
-        subtotal = item.price * item.actual_pieces
-      }
-      // For products sold by package: price per piece × quantity (packages) × pieces per package
-      else if (item.sold_by_package && item.pieces_per_package) {
-        subtotal = item.price * item.quantity * item.pieces_per_package
-      }
-      // For regular products: price per piece × quantity
-      else {
-        subtotal = item.price * item.quantity
-      }
-      
+      const subtotal = this.getItemBaseTotal(item)
       // Apply item discount
       const discount = item.discount_amount || 0
       return Math.max(0, subtotal - discount)
-    },
-    calculateItemDiscount(item) {
-      if (!item.price || !item.discount_type || !item.discount_value || item.discount_value <= 0) {
-        item.discount_amount = 0
-        return
-      }
-      
-      let itemSubtotal = 0
-      if (this.canBuyByPieces(item) && item.actual_pieces) {
-        itemSubtotal = item.price * item.actual_pieces
-      } else if (item.sold_by_package && item.pieces_per_package) {
-        itemSubtotal = item.price * item.quantity * item.pieces_per_package
-      } else {
-        itemSubtotal = item.price * item.quantity
-      }
-      
-      if (item.discount_type === 'percentage') {
-        item.discount_amount = (itemSubtotal * item.discount_value) / 100
-      } else if (item.discount_type === 'fixed') {
-        item.discount_amount = Math.min(item.discount_value, itemSubtotal)
-      } else {
-        item.discount_amount = 0
-      }
-      
-      this.cartStore.save()
-    },
-    updateItemDiscount(item) {
-      this.calculateItemDiscount(item)
     },
     updateGeneralDiscount() {
       this.cartStore.generalDiscountType = this.generalDiscountType
@@ -684,7 +652,8 @@ export default {
       }
     },
     canBuyByPieces(item) {
-      return this.cartStore.client && this.cartStore.client.allow_piece_sales && item.sold_by_package && item.pieces_per_package
+      // Check if this specific product allows piece sales for this client
+      return this.cartStore.client && this.cartStore.clientPieceSales[item.id] && item.sold_by_package && item.pieces_per_package
     },
     getPiecesQuantity(item) {
       if (this.canBuyByPieces(item)) {
@@ -707,6 +676,7 @@ export default {
         this.customerData = {
           name: '',
           storeName: '',
+          fiscalNumber: '',
           city: '',
           phone: ''
         }
@@ -714,28 +684,52 @@ export default {
         localStorage.removeItem('gastrotrade_order_data')
       }
     },
-    async identifyClientByBusinessName(businessName) {
-      if (!businessName || businessName.trim().length < 2) {
+    scheduleClientIdentification() {
+      if (this.phoneDebounce) {
+        clearTimeout(this.phoneDebounce)
+      }
+
+      const businessName = (this.customerData.storeName || '').trim()
+      const fiscalNumber = (this.customerData.fiscalNumber || '').trim()
+
+      this.persistCustomerData()
+
+      if (businessName.length < 2 || fiscalNumber.length < 3) {
         this.ordersHistory = []
         this.orderHistoryLoaded = false
         this.cartStore.clearClient()
         return
       }
-      
-      // Prevent duplicate identification
+
+      this.persistCustomerData()
+
+      this.phoneDebounce = setTimeout(() => {
+        this.identifyClient(businessName, fiscalNumber)
+      }, 600)
+    },
+    async identifyClient(businessName, fiscalNumber) {
+      if (!businessName || !fiscalNumber) {
+        this.cartStore.clearClient()
+        return
+      }
+
       if (this.identifyingClient) {
         return
       }
-      
+
       this.identifyingClient = true
       try {
-        const response = await axios.post('/api/clients/find-by-business-name', { business_name: businessName.trim() })
+        const response = await axios.post('/api/clients/find-by-business-and-fiscal', { 
+          business_name: businessName.trim(),
+          fiscal_number: fiscalNumber.trim()
+        })
         if (response.data.success && response.data.data) {
           const client = response.data.data
           await this.cartStore.setClient(client)
           
           if (!this.customerData.name) this.customerData.name = client.name
           if (!this.customerData.storeName) this.customerData.storeName = client.store_name || ''
+          this.customerData.fiscalNumber = client.fiscal_number || fiscalNumber
           if (!this.customerData.city) this.customerData.city = client.city || ''
           if (!this.customerData.phone && client.phone) this.customerData.phone = client.phone
           
@@ -839,7 +833,8 @@ export default {
           client_id: this.cartStore.client ? this.cartStore.client.id : null,
           customer: {
             name: this.customerData.name,
-            business_name: this.customerData.storeName,
+            business_name: this.customerData.storeName.trim(),
+            fiscal_number: this.customerData.fiscalNumber.trim(),
             city: this.customerData.city,
             phone: this.customerData.phone || null,
             viber: this.customerData.phone || null
@@ -864,8 +859,11 @@ export default {
             discount_value: this.cartStore.generalDiscountValue || 0,
             total_amount: this.cartStore.totalPrice > 0 ? this.cartStore.totalPrice : null
           },
-          is_paid: this.isPaidForPrint,
-          paid_at: this.isPaidForPrint ? new Date().toISOString() : null
+          has_vat: this.hasVat,
+          vat_amount: this.hasVat && this.cartStore.totalPrice > 0 ? this.vatAmount : null,
+          amount_before_vat: this.hasVat && this.cartStore.totalPrice > 0 ? this.amountBeforeVat : null,
+          is_paid: false,
+          paid_at: null
         }
 
         const response = await axios.post('/api/orders', payload)
@@ -944,10 +942,16 @@ export default {
         })
         .join('')
 
+      // Calculate total item discounts
+      const totalItemDiscounts = (order.items || []).reduce((sum, item) => {
+        return sum + (parseFloat(item.discount_amount) || 0)
+      }, 0)
+
       const orderDataJson = JSON.stringify({
         order_number: order.order_number || 'N/A',
         customer_name: order.customer_name || 'N/A',
         business_name: order.business_name || 'N/A',
+        fiscal_number: order.fiscal_number || 'N/A',
         city: order.city || 'N/A',
         phone: order.phone || 'N/A',
         total_amount: order.total_amount
@@ -977,12 +981,13 @@ export default {
         '<div class="meta">' +
         '<p><strong>Data e Porosisë:</strong> ' + createdAt + '</p>' +
         '<p><strong>Klienti:</strong> ' + (order.customer_name || 'N/A') + ' — ' + (order.business_name || 'N/A') + '</p>' +
+        '<p><strong>Nr. Fiskal:</strong> ' + (order.fiscal_number || 'N/A') + '</p>' +
         '<p><strong>Qyteti:</strong> ' + (order.city || 'N/A') + '</p>' +
         '<p><strong>Telefon/Viber:</strong> ' + (order.phone || 'N/A') + '</p>' +
-        '<div class="payment-status ' + (isPaid ? 'paid' : 'unpaid') + '">' +
+        (isPaid ? '<div class="payment-status paid">' +
         '<strong>Statusi i Pagesës:</strong> ' + paymentStatus +
         (paidAt ? '<br><span style="font-size: 12px;">E paguar më: ' + paidAt + '</span>' : '') +
-        '</div>' +
+        '</div>' : '') +
         '</div>' +
         '<table>' +
         '<thead>' +
@@ -995,9 +1000,32 @@ export default {
         '<div class="totals">' +
         '<div style="margin-bottom: 8px;">' +
         '<p><strong>Totali i produkteve:</strong> ' + order.total_items + '</p>' +
-        (order.subtotal ? '<p><strong>Nëntotali:</strong> ' + this.formatPrice(order.subtotal) + '</p>' : '') +
-        (order.discount_amount && order.discount_amount > 0 ? '<p style="color: #dc2626;"><strong>Zbritje ' + (order.discount_type === 'percentage' ? order.discount_value + '%' : 'fikse') + ':</strong> -' + this.formatPrice(order.discount_amount) + '</p>' : '') +
-        '<p style="font-size: 16px; margin-top: 8px;"><strong>Vlera Totale:</strong> ' + totalAmount + '</p>' +
+        (order.subtotal ? '<p><strong>Nëntotali (para zbritjeve):</strong> ' + this.formatPrice(order.subtotal) + '</p>' : '') +
+        (totalItemDiscounts > 0 ? '<p style="color: #dc2626;"><strong>Totali i zbritjeve të produkteve:</strong> -' + this.formatPrice(totalItemDiscounts) + '</p>' : '') +
+        (order.discount_amount && order.discount_amount > 0 ? '<p style="color: #dc2626;"><strong>Zbritje e përgjithshme ' + (order.discount_type === 'percentage' ? order.discount_value + '%' : 'fikse') + ':</strong> -' + this.formatPrice(order.discount_amount) + '</p>' : '') +
+        (order.has_vat === true || order.has_vat === 1 ? 
+          '<div style="margin-top: 12px; padding-top: 12px; border-top: 1px solid #e5e7eb;">' +
+          '<p><strong>Shuma para TVSH:</strong> ' + (order.amount_before_vat ? this.formatPrice(order.amount_before_vat) : (order.total_amount ? this.formatPrice(parseFloat(order.total_amount) / 1.18) : '-')) + '</p>' +
+          '<p><strong>TVSH (18%):</strong> ' + (order.vat_amount ? this.formatPrice(order.vat_amount) : (order.total_amount ? this.formatPrice(parseFloat(order.total_amount) - (parseFloat(order.total_amount) / 1.18)) : '-')) + '</p>' +
+          '<p style="font-size: 16px; margin-top: 8px;"><strong>Vlera Totale me TVSH:</strong> ' + totalAmount + '</p>' +
+          '</div>' :
+          '<p style="font-size: 16px; margin-top: 8px;"><strong>Vlera Totale:</strong> ' + totalAmount + '</p>'
+        ) +
+        '</div>' +
+        '</div>' +
+        '<div style="margin-top: 48px; padding-top: 24px; border-top: 2px solid #e5e7eb;">' +
+        '<div style="display: flex; justify-content: space-between; margin-bottom: 60px;">' +
+        '<div style="width: 45%; text-align: center;">' +
+        '<p style="font-weight: bold; margin-bottom: 40px; border-top: 1px solid #111827; padding-top: 4px; display: inline-block; min-width: 200px;">Nënshkrimi i Blerësit</p>' +
+        '<p style="font-size: 12px; color: #6b7280; margin-top: 8px;">' + (order.business_name || order.customer_name || '') + '</p>' +
+        '</div>' +
+        '<div style="width: 45%; text-align: center;">' +
+        '<p style="font-weight: bold; margin-bottom: 40px; border-top: 1px solid #111827; padding-top: 4px; display: inline-block; min-width: 200px;">Nënshkrimi i Shitësit</p>' +
+        '<p style="font-size: 12px; color: #6b7280; margin-top: 8px;">GastroTrade</p>' +
+        '</div>' +
+        '</div>' +
+        '<div style="text-align: center; margin-top: 24px; font-size: 12px; color: #6b7280;">' +
+        '<p><strong>Data e lëshimit:</strong> ' + createdAt + '</p>' +
         '</div>' +
         '</div>' +
         '<div style="margin-top: 24px; padding: 16px; border-top: 2px solid #e5e7eb; text-align: center;">' +
@@ -1072,6 +1100,7 @@ export default {
         order_number: 'DRAFT-' + Date.now(),
         customer_name: this.customerData.name,
         business_name: this.customerData.storeName,
+        fiscal_number: this.customerData.fiscalNumber,
         city: this.customerData.city,
         phone: this.customerData.phone || null,
         total_items: this.cartStore.totalItems,
@@ -1080,9 +1109,12 @@ export default {
         discount_type: this.cartStore.generalDiscountType || null,
         discount_value: this.cartStore.generalDiscountValue || 0,
         total_amount: this.cartStore.totalPrice > 0 ? this.cartStore.totalPrice : null,
+        has_vat: this.hasVat,
+        vat_amount: this.hasVat && this.cartStore.totalPrice > 0 ? this.vatAmount : null,
+        amount_before_vat: this.hasVat && this.cartStore.totalPrice > 0 ? this.amountBeforeVat : null,
         created_at: new Date().toISOString(),
-        is_paid: this.isPaidForPrint,
-        paid_at: this.isPaidForPrint ? new Date().toISOString() : null,
+        is_paid: false,
+        paid_at: null,
         items: this.cartStore.items.map(item => {
           // Format quantity correctly
           let quantityText = ''

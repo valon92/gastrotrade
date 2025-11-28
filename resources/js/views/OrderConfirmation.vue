@@ -29,6 +29,10 @@
               <p class="text-lg font-semibold text-gray-900">{{ customerData.storeName }}</p>
             </div>
             <div>
+              <label class="block text-sm font-medium text-gray-500 mb-1">Numri Fiskal</label>
+              <p class="text-lg font-semibold text-gray-900">{{ customerData.fiscalNumber }}</p>
+            </div>
+            <div>
               <label class="block text-sm font-medium text-gray-500 mb-1">Qyteti</label>
               <p class="text-lg font-semibold text-gray-900">{{ customerData.city }}</p>
             </div>
@@ -177,6 +181,7 @@ export default {
       customerData: {
         name: '',
         storeName: '',
+        fiscalNumber: '',
         city: '',
         phone: ''
       },
@@ -213,7 +218,13 @@ export default {
       return
     }
 
-    if (!this.customerData || !this.customerData.name || !this.customerData.phone) {
+    if (
+      !this.customerData ||
+      !this.customerData.name ||
+      !this.customerData.storeName ||
+      !this.customerData.fiscalNumber ||
+      !this.customerData.city
+    ) {
       alert('Të dhënat e klientit nuk janë të plotë!')
       this.$router.push('/shporta')
       return
@@ -241,7 +252,13 @@ export default {
         }
         
         // If still no data, redirect to cart
-        if (!this.customerData || !this.customerData.name || !this.customerData.phone) {
+        if (
+          !this.customerData ||
+          !this.customerData.name ||
+          !this.customerData.storeName ||
+          !this.customerData.fiscalNumber ||
+          !this.customerData.city
+        ) {
           this.$router.push('/shporta')
         }
       }
@@ -263,7 +280,13 @@ export default {
     },
     sendOrderToViber(phoneNumber) {
       // Validate customer data
-      if (!this.customerData || !this.customerData.name || !this.customerData.phone) {
+      if (
+        !this.customerData ||
+        !this.customerData.name ||
+        !this.customerData.storeName ||
+        !this.customerData.fiscalNumber ||
+        !this.customerData.city
+      ) {
         alert('Ju lutem plotësoni të gjitha fushat e detyrueshme para dërgimit të porosisë!')
         this.$router.push('/shporta')
         return

@@ -43,6 +43,7 @@ class ClientPriceController extends Controller
             'product_id' => 'required|exists:products,id',
             'price' => 'required|numeric|min:0',
             'notes' => 'nullable|string',
+            'allow_piece_sales' => 'nullable|boolean',
         ]);
 
         if ($validator->fails()) {
@@ -109,6 +110,7 @@ class ClientPriceController extends Controller
         $validator = Validator::make($request->all(), [
             'price' => 'sometimes|required|numeric|min:0',
             'notes' => 'nullable|string',
+            'allow_piece_sales' => 'nullable|boolean',
         ]);
 
         if ($validator->fails()) {
@@ -118,7 +120,7 @@ class ClientPriceController extends Controller
             ], 422);
         }
 
-        $price->update($request->only(['price', 'notes']));
+        $price->update($request->only(['price', 'notes', 'allow_piece_sales']));
 
         return response()->json([
             'success' => true,
@@ -157,8 +159,9 @@ class ClientPriceController extends Controller
             'client_id' => 'required|exists:clients,id',
             'prices' => 'required|array',
             'prices.*.product_id' => 'required|exists:products,id',
-            'prices.*.price' => 'required|numeric|min:0',
+            'prices.*.price' => 'nullable|numeric|min:0',
             'prices.*.notes' => 'nullable|string',
+            'prices.*.allow_piece_sales' => 'nullable|boolean',
         ]);
 
         if ($validator->fails()) {
@@ -172,18 +175,42 @@ class ClientPriceController extends Controller
         $prices = [];
 
         foreach ($request->prices as $priceData) {
-            $price = ClientPrice::updateOrCreate(
-                [
-                    'client_id' => $clientId,
-                    'product_id' => $priceData['product_id']
-                ],
-                [
-                    'price' => $priceData['price'],
-                    'notes' => $priceData['notes'] ?? null
-                ]
-            );
-
-            $prices[] = $price->load('product');
+            // Create/update if price is provided OR allow_piece_sales is set
+            $hasPrice = isset($priceData['price']) && $priceData['price'] !== null && $priceData['price'] > 0;
+            $hasPieceSales = isset($priceData['allow_piece_sales']) && $priceData['allow_piece_sales'] === true;
+            
+            if ($hasPrice || $hasPieceSales) {
+                $updateData = [];
+                
+                if ($hasPrice) {
+                    $updateData['price'] = $priceData['price'];
+                }
+                
+                if (isset($priceData['notes'])) {
+                    $updateData['notes'] = $priceData['notes'];
+                }
+                
+                // Always update allow_piece_sales if provided
+                if (isset($priceData['allow_piece_sales'])) {
+                    $updateData['allow_piece_sales'] = $priceData['allow_piece_sales'];
+                } else {
+                    // If not provided, keep existing value or set to false
+                    $existing = ClientPrice::where('client_id', $clientId)
+                        ->where('product_id', $priceData['product_id'])
+                        ->first();
+                    $updateData['allow_piece_sales'] = $existing ? $existing->allow_piece_sales : false;
+                }
+                
+                $price = ClientPrice::updateOrCreate(
+                    [
+                        'client_id' => $clientId,
+                        'product_id' => $priceData['product_id']
+                    ],
+                    $updateData
+                );
+                
+                $prices[] = $price->load('product');
+            }
         }
 
         return response()->json([
