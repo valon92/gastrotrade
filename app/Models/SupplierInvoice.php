@@ -24,6 +24,10 @@ class SupplierInvoice extends Model
         'status',
         'paid_date',
         'notes',
+        'deleted_reason',
+        'restored_at',
+        'restored_reason',
+        'deleted_by',
     ];
 
     protected $casts = [
@@ -35,6 +39,7 @@ class SupplierInvoice extends Model
         'vat_rate' => 'decimal:2',
         'vat_amount' => 'decimal:2',
         'total_amount' => 'decimal:2',
+        'restored_at' => 'datetime',
     ];
 
     public function supplier(): BelongsTo

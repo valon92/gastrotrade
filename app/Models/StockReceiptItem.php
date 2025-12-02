@@ -14,10 +14,11 @@ class StockReceiptItem extends Model
         'unit_cost',
         'total_cost',
         'notes',
+        'unit_type',
     ];
 
     protected $casts = [
-        'quantity' => 'integer',
+        'quantity' => 'decimal:2', // Changed to decimal to support kg (e.g., 0.01, 0.5, etc.)
         'unit_cost' => 'decimal:2',
         'total_cost' => 'decimal:2',
     ];

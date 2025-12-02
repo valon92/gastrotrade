@@ -319,12 +319,12 @@ Të gjitha llojet janë të sigurta për kontakt me ushqim dhe të lehta për tr
                 'slug' => 'gota-leter-per-kafe-4oz',
                 'description' => 'Gota letre profesionale 4oz për kafe dhe pije të ngrohta. Materiali me cilësi të lartë mban temperaturën dhe siguron përdorim të sigurt në kafene, restorante dhe evente. Ideal për përdorim profesional dhe shtëpiak. Të sigurta për kontakt me ushqim dhe rezistente ndaj rrjedhjeve.
 
-**Paketimi:** Shitet vetëm në komplete. 1 kompleti = 40 copa.',
+**Paketimi:** Shitet vetëm në komplete. 1 kompleti = 20 copa.',
                 'image_path' => '/images/IMG_6821.jpeg',
                 'is_featured' => true,
                 'sort_order' => 0,
                 'sold_by_package' => true,
-                'pieces_per_package' => 40,
+                'pieces_per_package' => 20,
             ],
             [
                 'category_id' => $tjeraCategory->id,

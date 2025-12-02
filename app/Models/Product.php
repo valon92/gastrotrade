@@ -2,10 +2,12 @@
 
 namespace App\Models;
 
+use App\Helpers\UnitConverter;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Support\Facades\DB;
 
 class Product extends Model
 {
@@ -64,5 +66,71 @@ class Product extends Model
     public function clientPrices(): HasMany
     {
         return $this->hasMany(ClientPrice::class);
+    }
+
+    /**
+     * Calculate real stock quantity based on stock movements
+     * Stock = Total Receipts - Sales - Adjustments
+     * 
+     * Count all receipts (pranimet e mallit), regardless of whether they have invoices
+     * Stock management is independent of invoicing - every receipt increases stock
+     * 
+     * @return int Real stock quantity in pieces
+     */
+    public function calculateRealStock(): int
+    {
+        // Count all receipts (pranimet e mallit)
+        // Stock should reflect all physical receipts, not just invoiced ones
+        $totalReceipts = $this->stockMovements()
+            ->where('movement_type', 'receipt')
+            ->whereNotNull('stock_receipt_id')
+            ->join('stock_receipts', 'stock_movements.stock_receipt_id', '=', 'stock_receipts.id')
+            ->whereNull('stock_receipts.deleted_at')
+            ->sum('stock_movements.quantity');
+        
+        // Subtract sales (negative movements)
+        $totalSales = $this->stockMovements()
+            ->where('movement_type', 'sale')
+            ->sum('quantity'); // Already negative
+        
+        // Subtract adjustments (can be positive or negative)
+        $totalAdjustments = $this->stockMovements()
+            ->where('movement_type', 'adjustment')
+            ->sum('quantity');
+        
+        // Real stock = Receipts - Sales - Adjustments
+        // Note: sales are already negative, so we add them (subtract)
+        $realStock = $totalReceipts + $totalSales + $totalAdjustments;
+        
+        // Ensure stock is never negative
+        return max(0, (int) $realStock);
+    }
+
+    /**
+     * Get real stock quantity (cached or calculated)
+     * 
+     * @return int Real stock quantity in pieces
+     */
+    public function getRealStockAttribute(): int
+    {
+        return $this->calculateRealStock();
+    }
+
+    /**
+     * Sync stock_quantity with real stock from movements
+     * 
+     * @return bool Success status
+     */
+    public function syncStockFromMovements(): bool
+    {
+        $realStock = $this->calculateRealStock();
+        
+        // Only update if different to avoid unnecessary database writes
+        if ($this->stock_quantity !== $realStock) {
+            $this->stock_quantity = $realStock;
+            return $this->save();
+        }
+        
+        return true;
     }
 }

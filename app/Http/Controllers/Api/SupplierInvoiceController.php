@@ -110,7 +110,7 @@ class SupplierInvoiceController extends Controller
     {
         return response()->json([
             'success' => true,
-            'data' => $supplierInvoice->load(['supplier', 'stockReceipt', 'items.product']),
+            'data' => $supplierInvoice->load(['supplier', 'stockReceipt.items', 'items.product']),
         ]);
     }
 
@@ -128,8 +128,9 @@ class SupplierInvoiceController extends Controller
             'items.*.id' => ['nullable', 'exists:supplier_invoice_items,id'],
             'items.*.product_id' => ['nullable', 'exists:products,id'],
             'items.*.product_name' => ['required_with:items', 'string', 'max:255'],
-            'items.*.quantity' => ['required_with:items', 'integer', 'min:1'],
+            'items.*.quantity' => ['required_with:items', 'numeric', 'min:0'],
             'items.*.unit_price' => ['required_with:items', 'numeric', 'min:0'],
+            'items.*.unit_type' => ['nullable', 'string'],
             'items.*.notes' => ['nullable', 'string'],
         ]);
 
@@ -156,6 +157,7 @@ class SupplierInvoiceController extends Controller
                                 'quantity' => $itemData['quantity'],
                                 'unit_price' => $itemData['unit_price'],
                                 'total_price' => $totalPrice,
+                                'unit_type' => $itemData['unit_type'] ?? $item->unit_type,
                                 'notes' => $itemData['notes'] ?? null,
                             ]);
                         }
@@ -167,6 +169,7 @@ class SupplierInvoiceController extends Controller
                             'quantity' => $itemData['quantity'],
                             'unit_price' => $itemData['unit_price'],
                             'total_price' => $totalPrice,
+                            'unit_type' => $itemData['unit_type'] ?? null,
                             'notes' => $itemData['notes'] ?? null,
                         ]);
                     }
@@ -213,7 +216,7 @@ class SupplierInvoiceController extends Controller
         });
     }
 
-    public function destroy(SupplierInvoice $supplierInvoice)
+    public function destroy(Request $request, SupplierInvoice $supplierInvoice)
     {
         // Allow deletion of cancelled invoices, but not paid ones
         if ($supplierInvoice->status === 'paid') {
@@ -223,10 +226,19 @@ class SupplierInvoiceController extends Controller
             ], 422);
         }
 
+        // Get deletion reason from request
+        $deletedReason = $request->input('deleted_reason', 'Nuk u specifikua arsyeja');
+        $deletedBy = $request->input('deleted_by', 'Sistem');
+
         // Delete invoice items first (cascade should handle this, but being explicit)
         $supplierInvoice->items()->delete();
         
-        // Delete the invoice
+        // Update invoice with deletion info before soft delete
+        $supplierInvoice->deleted_reason = $deletedReason;
+        $supplierInvoice->deleted_by = $deletedBy;
+        $supplierInvoice->save();
+        
+        // Delete the invoice (soft delete)
         $supplierInvoice->delete();
 
         return response()->json([

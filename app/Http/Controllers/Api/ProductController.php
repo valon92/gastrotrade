@@ -169,6 +169,7 @@ class ProductController extends Controller
             'category_id' => ['sometimes', 'required', 'exists:categories,id'],
             'description' => ['nullable', 'string'],
             'price' => ['nullable', 'numeric', 'min:0'],
+            'cost_price' => ['nullable', 'numeric', 'min:0'],
             'is_featured' => ['nullable', 'boolean'],
             'sort_order' => ['nullable', 'integer', 'min:0'],
             'sold_by_package' => ['nullable', 'boolean'],

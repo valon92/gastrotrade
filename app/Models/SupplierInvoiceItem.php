@@ -15,10 +15,11 @@ class SupplierInvoiceItem extends Model
         'unit_price',
         'total_price',
         'notes',
+        'unit_type',
     ];
 
     protected $casts = [
-        'quantity' => 'integer',
+        'quantity' => 'decimal:2', // Changed to decimal to support kg
         'unit_price' => 'decimal:2',
         'total_price' => 'decimal:2',
     ];

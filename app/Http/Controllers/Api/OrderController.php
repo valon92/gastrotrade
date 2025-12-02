@@ -179,21 +179,75 @@ class OrderController extends Controller
                         : $item['quantity'];
 
                     $stockBefore = $product->stock_quantity;
-                    $product->stock_quantity = max(0, $product->stock_quantity - $quantityToDeduct);
+
+                    // Llogarit stokun pas zbritjes (nuk lejojmë më pak se 0 në produkt)
+                    $stockAfter = max(0, $stockBefore - $quantityToDeduct);
+                    $product->stock_quantity = $stockAfter;
                     $product->save();
 
-                    // Create stock movement
-                    StockMovement::create([
-                        'product_id' => $product->id,
-                        'movement_type' => 'sale',
-                        'order_id' => $order->id,
-                        'quantity' => -$quantityToDeduct,
-                        'unit_cost' => $product->cost_price,
-                        'total_cost' => $product->cost_price ? $product->cost_price * $quantityToDeduct : null,
-                        'stock_before' => $stockBefore,
-                        'stock_after' => $product->stock_quantity,
-                        'notes' => 'Shitje - Porosia #' . $order->order_number,
-                    ]);
+                    // Sasia reale që mund të shitet nga stoku aktual
+                    $effectiveDeduct = min($quantityToDeduct, $stockBefore);
+
+                    // Krijo lëvizjen kryesore të stokut për shitje
+                    if ($effectiveDeduct > 0) {
+                        StockMovement::create([
+                            'product_id' => $product->id,
+                            'movement_type' => 'sale',
+                            'order_id' => $order->id,
+                            'quantity' => -$effectiveDeduct,
+                            'unit_cost' => $product->cost_price,
+                            'total_cost' => $product->cost_price ? $product->cost_price * $effectiveDeduct : null,
+                            'stock_before' => $stockBefore,
+                            'stock_after' => $stockAfter,
+                            'notes' => 'Shitje - Porosia #' . $order->order_number,
+                        ]);
+                    }
+
+                    // Nëse ka mungesë stoku (p.sh. stoku ishte 0, porosia 60cp),
+                    // regjistrojmë mungesën si lëvizje të veçantë
+                    $missing = $quantityToDeduct - $stockBefore;
+                    if ($missing > 0) {
+                        $missingCp = $missing;
+
+                        // Nëse produkti shitet me paketim, llogarisim edhe në komplete
+                        $missingPackages = null;
+                        if (!empty($item['sold_by_package']) && !empty($item['pieces_per_package'])) {
+                            $missingPackages = $missingCp / $item['pieces_per_package'];
+                        }
+
+                        $categoryName = $product->category->name ?? null;
+
+                        // Shembull i dëshiruar nga përdoruesi:
+                        // "-Foli Najlloni  Të Tjera -5 komplete -60cp"
+                        $notes = 'Mungesë stoku - ' . $product->name;
+                        if ($categoryName) {
+                            $notes .= ' - ' . $categoryName;
+                        }
+
+                        if ($missingPackages !== null) {
+                            // Formatim i thjeshtë për komplete (mund të jetë edhe jo numër i plotë)
+                            $notes .= sprintf(
+                                ' -%s komplete -%dcp',
+                                rtrim(rtrim(number_format($missingPackages, 2, '.', ''), '0'), '.'),
+                                $missingCp
+                            );
+                        } else {
+                            $notes .= sprintf(' -%dcp', $missingCp);
+                        }
+
+                        StockMovement::create([
+                            'product_id' => $product->id,
+                            'movement_type' => 'shortage', // tip i veçantë për mungesë
+                            'order_id' => $order->id,
+                            // Ruajmë mungesën në copa (cp), stokun nuk e ulim nën 0
+                            'quantity' => -$missingCp,
+                            'unit_cost' => $product->cost_price,
+                            'total_cost' => $product->cost_price ? $product->cost_price * $missingCp : null,
+                            'stock_before' => $stockAfter,
+                            'stock_after' => $stockAfter,
+                            'notes' => $notes,
+                        ]);
+                    }
                 }
             }
         }

@@ -402,8 +402,24 @@
                     </thead>
                     <tbody class="bg-white divide-y divide-gray-200">
                       <tr v-for="item in selectedInvoice.items" :key="item.id">
-                        <td class="px-3 py-2 text-sm">{{ item.product_name }}</td>
-                        <td class="px-3 py-2 text-sm">{{ item.quantity }}</td>
+                        <td class="px-3 py-2 text-sm">
+                          <div class="font-medium">{{ item.product_name }}</div>
+                          <span v-if="getItemProduct(item) && getItemProduct(item).sold_by_package && getItemProduct(item).pieces_per_package && (!isKeseMbeturinash(getItemProduct(item)) || (isKeseMbeturinash(getItemProduct(item)) && item.unit_type === 'package'))" class="text-xs text-gray-500 mt-1 block">
+                            ({{ getItemProduct(item).pieces_per_package }}cp/kompleti)
+                          </span>
+                          <span v-else-if="isKeseMbeturinash(getItemProduct(item)) && item.unit_type === 'kg'" class="text-xs text-gray-500 mt-1 block">
+                            (në kg)
+                          </span>
+                        </td>
+                        <td class="px-3 py-2 text-sm">
+                          <div class="font-medium">{{ item.unit_type === 'kg' && isKeseMbeturinash(getItemProduct(item)) ? parseFloat(item.quantity).toFixed(2) : item.quantity }}</div>
+                          <span v-if="getItemProduct(item) && getItemProduct(item).sold_by_package && getItemProduct(item).pieces_per_package && (!isKeseMbeturinash(getItemProduct(item)) || (isKeseMbeturinash(getItemProduct(item)) && item.unit_type === 'package'))" class="text-xs text-gray-500 mt-1 block">
+                            = {{ item.quantity * getItemProduct(item).pieces_per_package }} copa
+                          </span>
+                          <span v-else-if="isKeseMbeturinash(getItemProduct(item)) && item.unit_type === 'kg'" class="text-xs text-gray-500 mt-1 block">
+                            kg
+                          </span>
+                        </td>
                         <td class="px-3 py-2 text-sm">{{ formatPrice(item.unit_price) }}</td>
                         <td class="px-3 py-2 text-sm font-semibold">{{ formatPrice(item.total_price) }}</td>
                       </tr>
@@ -451,6 +467,213 @@
               >
                 🖨️ Printo
               </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Create Invoice Modal -->
+      <div v-if="showCreateInvoiceModal" class="fixed inset-0 bg-gray-900 bg-opacity-50 overflow-y-auto h-full w-full z-50">
+        <div class="relative top-0 sm:top-4 mx-auto max-w-4xl w-full p-3 sm:p-6">
+          <div class="bg-white rounded-xl shadow-2xl overflow-hidden">
+            <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between px-4 sm:px-6 py-4 border-b border-gray-200 gap-3">
+              <h3 class="text-xl sm:text-2xl font-bold text-gray-900">Faturë e Re</h3>
+              <button @click="closeCreateInvoiceModal" class="text-gray-500 hover:text-gray-700 text-2xl leading-none self-start sm:self-auto">
+                &times;
+              </button>
+            </div>
+            <div class="px-4 sm:px-6 py-4 sm:py-5 max-h-[90vh] sm:max-h-[80vh] overflow-y-auto">
+              <form @submit.prevent="saveNewInvoice">
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
+                  <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Prodhuesi *</label>
+                    <select 
+                      v-model="newInvoiceForm.supplier_id"
+                      required
+                      class="w-full px-3 py-2 border border-gray-300 rounded-md"
+                    >
+                      <option value="">Zgjidh Prodhuesin</option>
+                      <option v-for="supplier in suppliers" :key="supplier.id" :value="supplier.id">
+                        {{ supplier.name }}
+                      </option>
+                    </select>
+                  </div>
+                  <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Data e Faturës *</label>
+                    <input 
+                      v-model="newInvoiceForm.invoice_date"
+                      type="date"
+                      required
+                      class="w-full px-3 py-2 border border-gray-300 rounded-md"
+                    >
+                  </div>
+                  <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Data e Maturimit</label>
+                    <input 
+                      v-model="newInvoiceForm.due_date"
+                      type="date"
+                      class="w-full px-3 py-2 border border-gray-300 rounded-md"
+                    >
+                  </div>
+                  <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Pranim i Mallit (Opsional)</label>
+                    <select 
+                      v-model="newInvoiceForm.stock_receipt_id"
+                      class="w-full px-3 py-2 border border-gray-300 rounded-md"
+                    >
+                      <option value="">Pa Pranim</option>
+                      <option v-for="receipt in stockReceipts" :key="receipt.id" :value="receipt.id">
+                        {{ receipt.receipt_number }} - {{ formatDate(receipt.receipt_date) }}
+                      </option>
+                    </select>
+                  </div>
+                </div>
+
+                <div class="mb-6">
+                  <div class="flex items-center mb-3">
+                    <input 
+                      type="checkbox"
+                      v-model="newInvoiceForm.has_vat"
+                      id="has_vat"
+                      class="mr-2 h-4 w-4 text-primary-600"
+                    >
+                    <label for="has_vat" class="text-sm font-medium text-gray-700">
+                      Me TVSH
+                    </label>
+                  </div>
+                  <div v-if="newInvoiceForm.has_vat" class="mt-2">
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Përqindja e TVSH (%)</label>
+                    <input 
+                      v-model.number="newInvoiceForm.vat_rate"
+                      type="number"
+                      step="0.01"
+                      min="0"
+                      max="100"
+                      class="w-full px-3 py-2 border border-gray-300 rounded-md"
+                    >
+                  </div>
+                </div>
+
+                <div class="mb-6">
+                  <div class="flex items-center justify-between mb-3">
+                    <h4 class="font-semibold text-gray-900">Produktet</h4>
+                    <button 
+                      type="button"
+                      @click="addInvoiceItem"
+                      class="px-3 py-1 text-sm bg-primary-600 text-white rounded-md hover:bg-primary-700"
+                    >
+                      + Shto Produkt
+                    </button>
+                  </div>
+                  <div class="space-y-3">
+                    <div 
+                      v-for="(item, index) in newInvoiceForm.items" 
+                      :key="index"
+                      class="grid grid-cols-1 sm:grid-cols-12 gap-3 p-3 border border-gray-200 rounded-md"
+                    >
+                      <div class="sm:col-span-4">
+                        <label class="block text-xs font-medium text-gray-700 mb-1">Produkti *</label>
+                        <select 
+                          v-model="item.product_id"
+                          @change="onProductSelect(item, index)"
+                          required
+                          class="w-full px-2 py-1 text-sm border border-gray-300 rounded-md"
+                        >
+                          <option value="">Zgjidh Produktin</option>
+                          <option v-for="product in allProducts" :key="product.id" :value="product.id">
+                            {{ product.name }}
+                          </option>
+                        </select>
+                      </div>
+                      <div class="sm:col-span-2">
+                        <label class="block text-xs font-medium text-gray-700 mb-1">Sasia *</label>
+                        <input 
+                          v-model.number="item.quantity"
+                          type="number"
+                          step="0.01"
+                          min="0"
+                          required
+                          @input="calculateItemTotal(item)"
+                          class="w-full px-2 py-1 text-sm border border-gray-300 rounded-md"
+                        >
+                      </div>
+                      <div class="sm:col-span-2">
+                        <label class="block text-xs font-medium text-gray-700 mb-1">Çmimi *</label>
+                        <input 
+                          v-model.number="item.unit_price"
+                          type="number"
+                          step="0.01"
+                          min="0"
+                          required
+                          @input="calculateItemTotal(item)"
+                          class="w-full px-2 py-1 text-sm border border-gray-300 rounded-md"
+                        >
+                      </div>
+                      <div class="sm:col-span-2">
+                        <label class="block text-xs font-medium text-gray-700 mb-1">Totali</label>
+                        <input 
+                          :value="formatPrice(item.total_price || 0)"
+                          readonly
+                          class="w-full px-2 py-1 text-sm border border-gray-300 rounded-md bg-gray-50"
+                        >
+                      </div>
+                      <div class="sm:col-span-2 flex items-end">
+                        <button 
+                          type="button"
+                          @click="removeInvoiceItem(index)"
+                          class="w-full px-2 py-1 text-sm bg-red-600 text-white rounded-md hover:bg-red-700"
+                        >
+                          Fshi
+                        </button>
+                      </div>
+                    </div>
+                    <div v-if="newInvoiceForm.items.length === 0" class="text-center py-4 text-gray-500">
+                      Shtoni produkte për të krijuar faturën
+                    </div>
+                  </div>
+                </div>
+
+                <div class="mb-6 border-t pt-4">
+                  <div class="flex justify-between items-center mb-2">
+                    <span class="font-semibold">Nëntotali:</span>
+                    <span class="font-bold">{{ formatPrice(calculateSubtotal) }}</span>
+                  </div>
+                  <div v-if="newInvoiceForm.has_vat" class="flex justify-between items-center mb-2">
+                    <span class="font-semibold">TVSH ({{ newInvoiceForm.vat_rate }}%):</span>
+                    <span class="font-bold">{{ formatPrice(calculateVatAmount) }}</span>
+                  </div>
+                  <div class="flex justify-between items-center pt-2 border-t">
+                    <span class="text-lg font-bold">Totali:</span>
+                    <span class="text-lg font-bold text-primary-600">{{ formatPrice(calculateTotalAmount) }}</span>
+                  </div>
+                </div>
+
+                <div class="mb-6">
+                  <label class="block text-sm font-medium text-gray-700 mb-2">Shënime</label>
+                  <textarea 
+                    v-model="newInvoiceForm.notes"
+                    rows="3"
+                    class="w-full px-3 py-2 border border-gray-300 rounded-md"
+                  ></textarea>
+                </div>
+
+                <div class="flex flex-col sm:flex-row justify-end gap-3">
+                  <button 
+                    type="button"
+                    @click="closeCreateInvoiceModal"
+                    class="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-200 rounded-md hover:bg-gray-300"
+                  >
+                    Anulo
+                  </button>
+                  <button 
+                    type="submit"
+                    :disabled="savingInvoice || newInvoiceForm.items.length === 0"
+                    class="px-4 py-2 text-sm font-medium text-white bg-primary-600 rounded-md hover:bg-primary-700 disabled:opacity-50"
+                  >
+                    {{ savingInvoice ? 'Duke ruajtur...' : 'Krijo Faturën' }}
+                  </button>
+                </div>
+              </form>
             </div>
           </div>
         </div>
@@ -576,6 +799,7 @@ export default {
     return {
       invoices: [],
       suppliers: [],
+      allProducts: [], // Store all products for checking product details
       paymentStats: {
         paidCount: 0,
         paidTotal: 0,
@@ -598,14 +822,41 @@ export default {
       showCreateInvoiceModal: false,
       selectedInvoice: null,
       editingInvoice: null,
-      savingInvoice: false
+      savingInvoice: false,
+      stockReceipts: [],
+      newInvoiceForm: {
+        supplier_id: '',
+        invoice_date: new Date().toISOString().split('T')[0],
+        due_date: '',
+        stock_receipt_id: '',
+        has_vat: false,
+        vat_rate: 18.00,
+        notes: '',
+        items: []
+      }
     }
   },
-  async mounted() {
+  computed: {
+    calculateSubtotal() {
+      return this.newInvoiceForm.items.reduce((sum, item) => {
+        return sum + (parseFloat(item.total_price || 0))
+      }, 0)
+    },
+    calculateVatAmount() {
+      if (!this.newInvoiceForm.has_vat) return 0
+      return (this.calculateSubtotal * parseFloat(this.newInvoiceForm.vat_rate || 0)) / 100
+    },
+    calculateTotalAmount() {
+      return this.calculateSubtotal + this.calculateVatAmount
+    }
+  },
+    async mounted() {
     await this.checkAuth()
     await Promise.all([
       this.loadInvoices(),
-      this.loadSuppliers()
+      this.loadSuppliers(),
+      this.loadProducts(),
+      this.loadStockReceipts()
     ])
     this.calculatePaymentStats()
   },
@@ -641,6 +892,22 @@ export default {
         this.suppliers = response.data.data || []
       } catch (error) {
         console.error('Error loading suppliers:', error)
+      }
+    },
+    async loadProducts() {
+      try {
+        const response = await axios.get('/api/products')
+        this.allProducts = response.data.data || []
+      } catch (error) {
+        console.error('Error loading products:', error)
+      }
+    },
+    async loadStockReceipts() {
+      try {
+        const response = await axios.get('/api/stock-receipts')
+        this.stockReceipts = response.data.data || []
+      } catch (error) {
+        console.error('Error loading stock receipts:', error)
       }
     },
     async loadInvoices() {
@@ -715,9 +982,33 @@ export default {
       }
       return labels[status] || status
     },
-    viewInvoice(invoice) {
-      this.selectedInvoice = invoice
-      this.showViewModal = true
+    isKeseMbeturinash(product) {
+      if (!product) return false
+      const name = product.name || ''
+      return name.toLowerCase().includes('kese mbeturinash')
+    },
+    getItemProduct(item) {
+      // Try to get product from item.product (if loaded from API) or from allProducts
+      if (item.product) {
+        return item.product
+      }
+      if (item.product_id && this.allProducts.length > 0) {
+        return this.allProducts.find(p => p.id == item.product_id)
+      }
+      return null
+    },
+    async viewInvoice(invoice) {
+      try {
+        // Load full invoice details with items and products
+        const response = await axios.get(`/api/supplier-invoices/${invoice.id}`)
+        this.selectedInvoice = response.data.data
+        this.showViewModal = true
+      } catch (error) {
+        console.error('Error loading invoice details:', error)
+        // Fallback to basic invoice data
+        this.selectedInvoice = invoice
+        this.showViewModal = true
+      }
     },
     closeViewModal() {
       this.showViewModal = false
@@ -783,13 +1074,101 @@ export default {
         }
       }
     },
+    closeCreateInvoiceModal() {
+      this.showCreateInvoiceModal = false
+      this.newInvoiceForm = {
+        supplier_id: '',
+        invoice_date: new Date().toISOString().split('T')[0],
+        due_date: '',
+        stock_receipt_id: '',
+        has_vat: false,
+        vat_rate: 18.00,
+        notes: '',
+        items: []
+      }
+    },
+    addInvoiceItem() {
+      this.newInvoiceForm.items.push({
+        product_id: '',
+        product_name: '',
+        quantity: 0,
+        unit_price: 0,
+        total_price: 0,
+        notes: ''
+      })
+    },
+    removeInvoiceItem(index) {
+      this.newInvoiceForm.items.splice(index, 1)
+    },
+    onProductSelect(item, index) {
+      const product = this.allProducts.find(p => p.id == item.product_id)
+      if (product) {
+        item.product_name = product.name
+        // Set default price from product cost_price if available
+        if (product.cost_price) {
+          item.unit_price = parseFloat(product.cost_price)
+          this.calculateItemTotal(item)
+        }
+      }
+    },
+    calculateItemTotal(item) {
+      item.total_price = parseFloat(item.quantity || 0) * parseFloat(item.unit_price || 0)
+    },
+    async saveNewInvoice() {
+      if (this.newInvoiceForm.items.length === 0) {
+        alert('Ju lutem shtoni të paktën një produkt')
+        return
+      }
+
+      this.savingInvoice = true
+      try {
+        const payload = {
+          supplier_id: this.newInvoiceForm.supplier_id,
+          invoice_date: this.newInvoiceForm.invoice_date,
+          due_date: this.newInvoiceForm.due_date || null,
+          stock_receipt_id: this.newInvoiceForm.stock_receipt_id || null,
+          has_vat: this.newInvoiceForm.has_vat || false,
+          vat_rate: this.newInvoiceForm.has_vat ? (this.newInvoiceForm.vat_rate || 18.00) : 0,
+          notes: this.newInvoiceForm.notes || null,
+          items: this.newInvoiceForm.items.map(item => ({
+            product_id: item.product_id || null,
+            product_name: item.product_name,
+            quantity: parseFloat(item.quantity),
+            unit_price: parseFloat(item.unit_price),
+            notes: item.notes || null
+          }))
+        }
+
+        await axios.post('/api/supplier-invoices', payload)
+        alert('Fatura u krijua me sukses!')
+        this.closeCreateInvoiceModal()
+        await this.loadInvoices()
+      } catch (error) {
+        console.error('Error creating invoice:', error)
+        const errorMessage = error.response?.data?.message || 'Gabim në krijimin e faturës'
+        alert(errorMessage)
+      } finally {
+        this.savingInvoice = false
+      }
+    },
     async deleteInvoice(invoice) {
       if (!confirm(`A jeni të sigurt që dëshironi të fshini faturën ${invoice.invoice_number}?`)) {
         return
       }
 
+      // Ask for deletion reason
+      const deletedReason = prompt(`Arsyeja e fshirjes për faturën ${invoice.invoice_number}:`, 'Gabim në të dhëna')
+      if (deletedReason === null) {
+        return // User cancelled
+      }
+
       try {
-        await axios.delete(`/api/supplier-invoices/${invoice.id}`)
+        await axios.delete(`/api/supplier-invoices/${invoice.id}`, {
+          data: {
+            deleted_reason: deletedReason || 'Nuk u specifikua arsyeja',
+            deleted_by: 'Admin' // You can get this from auth if available
+          }
+        })
         alert('Fatura u fshi me sukses!')
         
         // Close modal if open

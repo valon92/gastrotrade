@@ -133,17 +133,20 @@
                 🔍 Duke identifikuar klientin...
               </p>
             </div>
-            <!-- Success message - only show briefly after saving, then hide -->
+            <!-- Success message - show when order is saved -->
             <transition name="fade">
-              <div v-if="saveSuccess && savedOrder && !orderHistoryLoaded" class="mb-4 p-3 bg-green-50 border border-green-200 rounded-lg">
-                <div class="flex flex-col gap-2">
-                  <p class="text-sm text-green-900">
-                    ✅ Porosia #{{ savedOrder.order_number }} u ruajt me sukses.
-                  </p>
+              <div v-if="saveSuccess && savedOrder" class="mb-4 p-4 bg-green-50 border-2 border-green-400 rounded-lg shadow-md">
+                <div class="flex flex-col gap-3">
+                  <div class="flex items-center gap-2">
+                    <span class="text-2xl">✅</span>
+                    <p class="text-base font-semibold text-green-900">
+                      Porosia #{{ savedOrder.order_number }} u ruajt me sukses!
+                    </p>
+                  </div>
                   <div class="flex flex-wrap gap-2">
                     <button 
                       @click="printOrder(savedOrder)"
-                      class="inline-flex items-center justify-center gap-2 px-3 py-2 text-sm font-medium text-green-900 border border-green-300 rounded-md hover:bg-green-100 transition-colors duration-200"
+                      class="inline-flex items-center justify-center gap-2 px-4 py-2 text-sm font-medium text-green-900 bg-white border border-green-300 rounded-md hover:bg-green-100 transition-colors duration-200"
                     >
                       🖨 Printo Porosinë
                     </button>
@@ -869,6 +872,9 @@ export default {
         const response = await axios.post('/api/orders', payload)
         this.savedOrder = response.data.data
         this.saveSuccess = true
+        
+        // Show success notification
+        alert(`✅ Porosia #${response.data.data.order_number} u ruajt me sukses!`)
         
         // Load order history only once after saving
         if (!this.historyLoading) {
