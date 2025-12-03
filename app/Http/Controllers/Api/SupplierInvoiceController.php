@@ -13,7 +13,9 @@ class SupplierInvoiceController extends Controller
 {
     public function index(Request $request)
     {
-        $query = SupplierInvoice::with(['supplier', 'stockReceipt', 'items.product']);
+        // Only show non-deleted invoices (exclude soft-deleted invoices)
+        $query = SupplierInvoice::whereNull('deleted_at')
+            ->with(['supplier', 'stockReceipt', 'items.product']);
 
         if ($request->has('supplier_id')) {
             $query->where('supplier_id', $request->supplier_id);

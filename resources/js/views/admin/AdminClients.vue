@@ -13,6 +13,12 @@
         </div>
         <div class="flex flex-col sm:flex-row gap-3 w-full sm:w-auto">
           <router-link
+            to="/admin/sales"
+            class="btn-secondary text-center"
+          >
+            💰 Shitjet
+          </router-link>
+          <router-link
             to="/admin/products"
             class="btn-secondary text-center"
           >

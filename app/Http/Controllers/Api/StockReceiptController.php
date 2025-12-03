@@ -249,7 +249,10 @@ class StockReceiptController extends Controller
                 }
             }
 
-            $receipt->load(['supplier', 'items.product', 'supplierInvoice']);
+            // Load only active (non-deleted) supplier invoices
+            $receipt->load(['supplier', 'items.product', 'supplierInvoice' => function($query) {
+                $query->whereNull('deleted_at');
+            }]);
 
             return response()->json([
                 'success' => true,

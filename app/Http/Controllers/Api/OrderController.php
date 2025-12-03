@@ -163,6 +163,7 @@ class OrderController extends Controller
                 'quantity' => $item['quantity'],
                 'sold_by_package' => $item['sold_by_package'],
                 'pieces_per_package' => $item['pieces_per_package'] ?? null,
+                'unit_type' => $item['unit_type'] ?? null,
                 'unit_price' => $item['unit_price'] ?? null,
                 'total_price' => $item['total_price'] ?? null,
                 'discount_amount' => $item['discount_amount'] ?? 0,

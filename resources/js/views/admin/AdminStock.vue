@@ -13,6 +13,12 @@
             + Pranim i Ri i Mallit
           </button>
           <router-link
+            to="/admin/sales"
+            class="btn-secondary text-center"
+          >
+            💰 Shitjet
+          </router-link>
+          <router-link
             to="/admin/clients"
             class="btn-secondary text-center"
           >
@@ -59,17 +65,47 @@
         </div>
       </div>
 
-      <!-- Filters -->
-      <div class="bg-white rounded-lg shadow p-4 mb-6 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
-        <div>
-          <label class="block text-xs font-semibold text-gray-600 mb-1">Kërko Produkte</label>
-          <input 
-            v-model.trim="filters.search"
-            type="text"
-            placeholder="Emri i produktit..."
-            class="w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
-          >
+      <!-- Search Bar - Prominent -->
+      <div class="bg-white rounded-lg shadow-lg p-4 sm:p-6 mb-6">
+        <div class="flex flex-col sm:flex-row gap-3 items-center">
+          <div class="flex-1 w-full relative">
+            <label class="block text-sm font-bold text-gray-700 mb-2">🔍 Kërko Produkte</label>
+            <div class="relative">
+              <input 
+                v-model.trim="filters.search"
+                @input="handleSearchInput"
+                @keyup.enter="loadStock"
+                type="text"
+                placeholder="Shkruani emrin e produktit për të kërkuar..."
+                class="w-full px-4 py-3 pl-12 text-base border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-all"
+              >
+              <span class="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400 text-xl">🔍</span>
+              <button
+                v-if="filters.search"
+                @click="clearSearch"
+                class="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 text-xl"
+                title="Pastro kërkimin"
+              >
+                ✕
+              </button>
+            </div>
+            <p class="mt-2 text-xs text-gray-500">
+              <span v-if="filteredProducts.length > 0">
+                U gjetën <strong>{{ filteredProducts.length }}</strong> produkte
+              </span>
+              <span v-else-if="filters.search">
+                Nuk u gjet asnjë produkt me këtë emër
+              </span>
+              <span v-else>
+                Shkruani emrin e produktit për të kërkuar në bazën e të dhënave
+              </span>
+            </p>
+          </div>
         </div>
+      </div>
+
+      <!-- Filters -->
+      <div class="bg-white rounded-lg shadow p-4 mb-6 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
         <div>
           <label class="block text-xs font-semibold text-gray-600 mb-1">Prodhuesi</label>
           <select 
@@ -93,12 +129,19 @@
             <option value="out_of_stock">Pa Stok</option>
           </select>
         </div>
-        <div class="flex items-end">
+        <div class="flex items-end gap-2">
           <button 
             @click="loadStock"
-            class="w-full btn-primary text-sm py-2"
+            class="flex-1 btn-primary text-sm py-2"
           >
-            🔍 Kërko
+            🔄 Rifresko
+          </button>
+          <button 
+            v-if="filters.search || filters.supplier_id || filters.stockFilter"
+            @click="clearFilters"
+            class="flex-1 btn-secondary text-sm py-2"
+          >
+            🗑️ Pastro
           </button>
         </div>
       </div>
@@ -177,62 +220,31 @@
                           'bg-green-100 text-green-800'
                         ]"
                       >
-                        <template v-if="product && product.sold_by_package && product.pieces_per_package && product.stock_packages && product.stock_packages > 0">
-                          {{ product.stock_packages.toFixed(0) }} komplete = {{ (product.stock_quantity || 0) }}cp
+                        <template v-if="product && product.sold_by_package && product.pieces_per_package && product.stock_quantity && product.stock_quantity > 0">
+                          {{ formatStockQuantity(product) }}
                         </template>
                         <template v-else>
                           {{ (product && product.stock_quantity !== undefined && product.stock_quantity !== null) ? product.stock_quantity : 0 }}cp
                         </template>
                       </span>
-                      <button 
-                        @click.stop="product && openStockAdjustmentModal(product)"
-                        type="button"
-                        class="text-primary-600 hover:text-primary-800 hover:bg-primary-50 p-1 rounded transition-colors cursor-pointer"
-                        title="Rregullo Stokun"
-                      >
-                        ✏️
-                      </button>
                     </div>
                     
                     <!-- Porosit: Numri i porosive nga klientët -->
                     <div v-if="product && product.ordered_quantity_pieces && product.ordered_quantity_pieces > 0" class="flex items-center gap-2">
                       <span class="text-xs font-semibold text-blue-700">Porosit:</span>
-                      <span class="text-xs text-blue-600 font-medium">
-                        <template v-if="product.sold_by_package && product.pieces_per_package && product.ordered_quantity_packages">
-                          {{ product.ordered_quantity_packages.toFixed(0) }} komplete = {{ product.ordered_quantity_pieces }}cp
-                        </template>
-                        <template v-else>
-                          {{ product.ordered_quantity_pieces }}cp
-                        </template>
-                      </span>
-                    </div>
-                    
-                    <!-- Mbetja: Llogaritja e mbetjes (mungesë ose tepricë) -->
-                    <div v-if="product && product.ordered_quantity_pieces && product.ordered_quantity_pieces > 0 && product.remaining_stock_pieces !== undefined" class="flex items-center gap-2">
-                      <span class="text-xs font-semibold" :class="(product.remaining_stock_pieces || 0) < 0 ? 'text-red-700' : 'text-green-700'">
-                        Mbetja:
-                      </span>
                       <span 
-                        class="text-xs font-semibold"
-                        :class="(product.remaining_stock_pieces || 0) < 0 ? 'text-red-600' : 'text-green-600'"
+                        :class="[
+                          'px-2 py-1 text-xs font-semibold rounded-full',
+                          'bg-blue-100 text-blue-800'
+                        ]"
                       >
-                        <template v-if="(product.remaining_stock_pieces || 0) < 0">
-                          <!-- Mungesë -->
-                          <template v-if="product.sold_by_package && product.pieces_per_package && product.remaining_stock_packages">
-                            Mungesa {{ Math.abs(product.remaining_stock_packages).toFixed(0) }} Komplete = {{ Math.abs(product.remaining_stock_pieces) }}cp
-                          </template>
-                          <template v-else>
-                            Mungesa {{ Math.abs(product.remaining_stock_pieces) }}cp
-                          </template>
+                        <template v-if="product.sold_by_package && product.pieces_per_package && product.ordered_quantity_packages && product.ordered_quantity_packages >= 1 && (Number.isInteger(product.ordered_quantity_packages) || Math.abs(product.ordered_quantity_packages % 1) < 0.001)">
+                          <!-- Porosia është bërë në paketa (ordered_quantity_packages >= 1 dhe është numër i plotë) -->
+                          {{ formatOrderedQuantity(product) }}
                         </template>
                         <template v-else>
-                          <!-- Tepricë -->
-                          <template v-if="product.sold_by_package && product.pieces_per_package && product.remaining_stock_packages">
-                            {{ product.remaining_stock_packages.toFixed(0) }} Komplete = {{ product.remaining_stock_pieces }}cp
-                          </template>
-                          <template v-else>
-                            {{ product.remaining_stock_pieces }}cp
-                          </template>
+                          <!-- Porosia është bërë në copa, shfaq vetëm si "Xcp" -->
+                          {{ product.ordered_quantity_pieces }}cp
                         </template>
                       </span>
                     </div>
@@ -241,7 +253,7 @@
                     <div class="text-xs text-gray-500 mt-1" v-if="product && product.min_stock_level !== undefined && product.min_stock_level !== null">
                       Min: {{ product.min_stock_level }}cp
                       <span v-if="product.sold_by_package && product.pieces_per_package">
-                        ({{ Math.floor(product.min_stock_level / product.pieces_per_package) }} komplete)
+                        ({{ Math.floor(product.min_stock_level / product.pieces_per_package) }} pako)
                       </span>
                     </div>
                   </div>
@@ -349,19 +361,11 @@
           :key="product && product.id ? product.id : `product-mobile-${index}`"
           class="bg-white rounded-lg shadow-lg p-4 border border-gray-200"
         >
-          <div class="flex justify-between items-start mb-3">
+            <div class="flex justify-between items-start mb-3">
             <div class="flex-1">
               <h3 class="text-base font-semibold text-gray-900">{{ product && product.name ? product.name : '' }}</h3>
               <p class="text-xs text-gray-500 mt-1">{{ product && product.category ? product.category.name : '' }}</p>
             </div>
-            <button 
-              @click.stop="product && openStockAdjustmentModal(product)"
-              type="button"
-              class="text-primary-600 hover:text-primary-800 hover:bg-primary-50 p-2 rounded transition-colors cursor-pointer"
-              title="Rregullo Stokun"
-            >
-              ✏️
-            </button>
           </div>
 
           <div class="grid grid-cols-2 gap-3 mb-3">
@@ -399,8 +403,8 @@
                     'bg-green-100 text-green-800'
                   ]"
                 >
-                  <template v-if="product && product.sold_by_package && product.pieces_per_package && product.stock_packages && product.stock_packages > 0">
-                    {{ product.stock_packages.toFixed(0) }} komplete = {{ (product.stock_quantity || 0) }}cp
+                  <template v-if="product && product.sold_by_package && product.pieces_per_package && product.stock_quantity && product.stock_quantity > 0">
+                    {{ formatStockQuantity(product) }}
                   </template>
                   <template v-else>
                     {{ (product && product.stock_quantity !== undefined && product.stock_quantity !== null) ? product.stock_quantity : 0 }}cp
@@ -412,42 +416,19 @@
             <!-- Porosit: Numri i porosive nga klientët -->
             <div v-if="product && product.ordered_quantity_pieces && product.ordered_quantity_pieces > 0" class="flex items-center justify-between">
               <span class="text-xs font-semibold text-blue-700">Porosit:</span>
-              <span class="text-xs text-blue-600 font-medium">
-                <template v-if="product.sold_by_package && product.pieces_per_package && product.ordered_quantity_packages">
-                  {{ product.ordered_quantity_packages.toFixed(0) }} komplete = {{ product.ordered_quantity_pieces }}cp
-                </template>
-                <template v-else>
-                  {{ product.ordered_quantity_pieces }}cp
-                </template>
-              </span>
-            </div>
-            
-            <!-- Mbetja: Llogaritja e mbetjes (mungesë ose tepricë) -->
-            <div v-if="product && product.ordered_quantity_pieces && product.ordered_quantity_pieces > 0 && product.remaining_stock_pieces !== undefined" class="flex items-center justify-between">
-              <span class="text-xs font-semibold" :class="(product.remaining_stock_pieces || 0) < 0 ? 'text-red-700' : 'text-green-700'">
-                Mbetja:
-              </span>
               <span 
-                class="text-xs font-semibold"
-                :class="(product.remaining_stock_pieces || 0) < 0 ? 'text-red-600' : 'text-green-600'"
+                :class="[
+                  'px-2 py-1 text-xs font-semibold rounded-full',
+                  'bg-blue-100 text-blue-800'
+                ]"
               >
-                <template v-if="(product.remaining_stock_pieces || 0) < 0">
-                  <!-- Mungesë -->
-                  <template v-if="product.sold_by_package && product.pieces_per_package && product.remaining_stock_packages">
-                    Mungesa {{ Math.abs(product.remaining_stock_packages).toFixed(0) }} Komplete = {{ Math.abs(product.remaining_stock_pieces) }}cp
-                  </template>
-                  <template v-else>
-                    Mungesa {{ Math.abs(product.remaining_stock_pieces) }}cp
-                  </template>
+                <template v-if="product.sold_by_package && product.pieces_per_package && product.ordered_quantity_packages && product.ordered_quantity_packages >= 1 && (Number.isInteger(product.ordered_quantity_packages) || Math.abs(product.ordered_quantity_packages % 1) < 0.001)">
+                  <!-- Porosia është bërë në paketa (ordered_quantity_packages >= 1 dhe është numër i plotë) -->
+                  {{ formatOrderedQuantity(product) }}
                 </template>
                 <template v-else>
-                  <!-- Tepricë -->
-                  <template v-if="product.sold_by_package && product.pieces_per_package && product.remaining_stock_packages">
-                    {{ product.remaining_stock_packages.toFixed(0) }} Komplete = {{ product.remaining_stock_pieces }}cp
-                  </template>
-                  <template v-else>
-                    {{ product.remaining_stock_pieces }}cp
-                  </template>
+                  <!-- Porosia është bërë në copa, shfaq vetëm si "Xcp" -->
+                  {{ product.ordered_quantity_pieces }}cp
                 </template>
               </span>
             </div>
@@ -857,7 +838,7 @@
                               @change="onUnitTypeChange($event, item, index)"
                               class="w-full px-3 py-2.5 border border-gray-300 rounded-md text-sm focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
                             >
-                            <option value="package">Paketim (20cp/kompleti)</option>
+                            <option value="package">Paketim (20cp/pako)</option>
                             <option value="kg">Kilogram (kg)</option>
                           </select>
                         </div>
@@ -870,7 +851,7 @@
                           <label class="block text-sm font-medium text-gray-700 mb-2">
                             Sasia *
                             <span v-if="item.product && item.product.sold_by_package && item.product.pieces_per_package && (!isKeseMbeturinash(item.product) || (isKeseMbeturinash(item.product) && item.unit_type === 'package'))" class="text-gray-500 font-normal text-xs">
-                              (në kompleti)
+                              (në pako)
                             </span>
                             <span v-else-if="isKeseMbeturinash(item.product) && item.unit_type === 'kg'" class="text-gray-500 font-normal text-xs">
                               (në kg)
@@ -886,7 +867,7 @@
                             class="w-full px-3 py-2.5 border border-gray-300 rounded-md text-sm focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
                           >
                           <p v-if="item.product && item.product.sold_by_package && item.product.pieces_per_package && (!isKeseMbeturinash(item.product) || (isKeseMbeturinash(item.product) && item.unit_type === 'package'))" class="text-xs text-gray-500 mt-1.5">
-                            {{ item.quantity || 0 }} kompleti × {{ item.product.pieces_per_package }}cp = <span class="text-primary-600 font-semibold">{{ (item.quantity || 0) * item.product.pieces_per_package }}cp</span>
+                            {{ item.quantity || 0 }} pako × {{ item.product.pieces_per_package }}cp = <span class="text-primary-600 font-semibold">{{ (item.quantity || 0) * item.product.pieces_per_package }}cp</span>
                           </p>
                           <p v-else-if="isKeseMbeturinash(item.product) && item.unit_type === 'kg'" class="text-xs text-gray-500 mt-1.5">
                             Sasia: <span class="text-primary-600 font-semibold">{{ (item.quantity || 0).toFixed(2) }} kg</span>
@@ -1103,101 +1084,6 @@
         </div>
       </div>
 
-      <!-- Stock Adjustment Modal -->
-      <div v-if="showStockAdjustmentModal" class="fixed inset-0 bg-gray-900 bg-opacity-50 overflow-y-auto h-full w-full z-50">
-        <div class="relative top-0 sm:top-4 mx-auto p-4 sm:p-5 border w-full sm:w-[500px] max-w-[95vw] shadow-lg rounded-md bg-white m-2 sm:m-4">
-          <div class="flex justify-between items-center mb-4">
-            <h3 class="text-lg font-bold text-gray-900">Rregullo Stokun</h3>
-            <button @click="closeStockAdjustmentModal" class="text-gray-500 hover:text-gray-700 text-2xl leading-none">
-              &times;
-            </button>
-          </div>
-          <div v-if="adjustingProduct" class="mb-4">
-            <p class="text-sm text-gray-600 mb-2"><strong>Produkti:</strong> {{ adjustingProduct.name }}</p>
-            <p class="text-sm text-gray-600"><strong>Stoku Aktual:</strong> {{ adjustingProduct.stock_quantity }}</p>
-          </div>
-          <form @submit.prevent="saveStockAdjustment">
-            <div class="space-y-4">
-              <div>
-                <label class="block text-sm font-medium text-gray-700 mb-2">Lloji i Rregullimit</label>
-                <select 
-                  v-model="stockAdjustmentForm.adjustment_type"
-                  required
-                  class="w-full px-3 py-2 border border-gray-300 rounded-md"
-                >
-                  <option value="increase">Rritje</option>
-                  <option value="decrease">Ulje</option>
-                  <option value="set">Vendos Vlerë</option>
-                </select>
-              </div>
-              <div>
-                <label class="block text-sm font-medium text-gray-700 mb-2">
-                  {{ stockAdjustmentForm.adjustment_type === 'set' ? 'Vlera e Re' : 'Sasia' }}
-                </label>
-                <div class="space-y-2">
-                  <div class="flex flex-col sm:flex-row gap-2">
-                    <input 
-                      v-model.number="stockAdjustmentForm.quantity"
-                      type="number"
-                      :min="getMinValueForUnit(stockAdjustmentForm.unit || 'cp')"
-                      :step="getStepForUnit(stockAdjustmentForm.unit || 'cp')"
-                      required
-                      class="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
-                      :placeholder="getPlaceholderForUnit(stockAdjustmentForm.unit || 'cp')"
-                    >
-                    <select 
-                      v-model="stockAdjustmentForm.unit"
-                      @change="onUnitChange"
-                      class="w-full sm:w-48 px-3 py-2.5 border border-gray-300 rounded-md text-sm focus:ring-2 focus:ring-primary-500 focus:border-primary-500 bg-white appearance-none cursor-pointer"
-                      style="background-image: url('data:image/svg+xml;charset=UTF-8,%3csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 24 24%27 fill=%27none%27 stroke=%27currentColor%27 stroke-width=%272%27 stroke-linecap=%27round%27 stroke-linejoin=%27round%27%3e%3cpolyline points=%276 9 12 15 18 9%27%3e%3c/polyline%3e%3c/svg%3e'); background-repeat: no-repeat; background-position: right 0.5rem center; background-size: 1.5em 1.5em; padding-right: 2.5rem;"
-                    >
-                      <option value="cp">Copa (Cp)</option>
-                      <option value="kg">Kilogram (kg)</option>
-                      <option value="g">Gram (g)</option>
-                      <option value="L">Liter (L)</option>
-                      <option value="ml">Mililitër (ml)</option>
-                      <option value="m">Metër (m)</option>
-                      <option value="cm">Centimetër (cm)</option>
-                      <option value="pcs">Pjesë (pcs)</option>
-                    </select>
-                  </div>
-                  <p class="text-xs text-gray-400">
-                    Njësia e zgjedhur: <strong>{{ getUnitLabel(stockAdjustmentForm.unit || 'cp') }}</strong>
-                  </p>
-                </div>
-                <p v-if="adjustingProduct" class="text-xs text-gray-500 mt-2">
-                  <span v-if="stockAdjustmentForm.adjustment_type === 'set'">
-                    Stoku do të bëhet: {{ formatQuantityWithUnit(convertToBaseUnit(stockAdjustmentForm.quantity, stockAdjustmentForm.unit, adjustingProduct), adjustingProduct) }}
-                  </span>
-                  <span v-else-if="stockAdjustmentForm.adjustment_type === 'increase'">
-                    Stoku aktual: {{ formatQuantityWithUnit(adjustingProduct.stock_quantity, adjustingProduct) }} → 
-                    Stoku i ri: {{ formatQuantityWithUnit(calculateNewStock('increase'), adjustingProduct) }}
-                  </span>
-                  <span v-else-if="stockAdjustmentForm.adjustment_type === 'decrease'">
-                    Stoku aktual: {{ formatQuantityWithUnit(adjustingProduct.stock_quantity, adjustingProduct) }} → 
-                    Stoku i ri: {{ formatQuantityWithUnit(calculateNewStock('decrease'), adjustingProduct) }}
-                  </span>
-                </p>
-              </div>
-              <div>
-                <label class="block text-sm font-medium text-gray-700 mb-2">Shënime</label>
-                <textarea 
-                  v-model="stockAdjustmentForm.notes"
-                  rows="3"
-                  class="w-full px-3 py-2 border border-gray-300 rounded-md"
-                ></textarea>
-              </div>
-            </div>
-            <div class="mt-6 flex flex-col sm:flex-row justify-end gap-3">
-              <button type="button" @click="closeStockAdjustmentModal" class="btn-secondary w-full sm:w-auto">Anulo</button>
-              <button type="submit" :disabled="adjustingStock" class="btn-primary w-full sm:w-auto">
-                {{ adjustingStock ? 'Duke rregulluar...' : 'Rregullo' }}
-              </button>
-            </div>
-          </form>
-        </div>
-      </div>
-
       <!-- Invoice View Modal -->
       <div v-if="showInvoiceViewModal && selectedInvoice" class="fixed inset-0 bg-gray-900 bg-opacity-50 overflow-y-auto h-full w-full z-50">
         <div class="relative top-0 sm:top-4 mx-auto max-w-5xl w-full p-3 sm:p-6">
@@ -1276,12 +1162,12 @@
                               </span>
                               <!-- Otherwise, show packaging info -->
                               <span v-else-if="getItemProductForInvoice(item) && getItemProductForInvoice(item).pieces_per_package" class="text-xs text-gray-500 mt-1 block">
-                                ({{ getItemProductForInvoice(item).pieces_per_package }}cp/kompleti)
+                                ({{ getItemProductForInvoice(item).pieces_per_package }}cp/pako)
                               </span>
                             </template>
                             <!-- For other products sold by package - only show if not in cp -->
                             <span v-else-if="!isItemQuantityInPieces(item) && getItemProductForInvoice(item) && getItemProductForInvoice(item).sold_by_package && getItemProductForInvoice(item).pieces_per_package" class="text-xs text-gray-500 mt-1 block">
-                              ({{ getItemProductForInvoice(item).pieces_per_package }}cp/kompleti)
+                              ({{ getItemProductForInvoice(item).pieces_per_package }}cp/pako)
                             </span>
                             <!-- If item is in cp, show (në copa) -->
                             <span v-else-if="isItemQuantityInPieces(item)" class="text-xs text-gray-500 mt-1 block">
@@ -1314,7 +1200,7 @@
                               </div>
                               <!-- If quantity is in packages -->
                               <div class="font-medium" v-else-if="getItemProductForInvoice(item) && getItemProductForInvoice(item).sold_by_package && getItemProductForInvoice(item).pieces_per_package">
-                                {{ parseFloat(item.quantity).toFixed(0) }} kompleti
+                                {{ parseFloat(item.quantity).toFixed(0) }} pako
                               </div>
                               <div class="font-medium" v-else>
                                 {{ item.quantity }}
@@ -1511,7 +1397,7 @@
                               (në kg)
                             </span>
                             <span v-else-if="item.product && item.product.sold_by_package && item.product.pieces_per_package" class="text-gray-500 font-normal">
-                              (në kompleti)
+                              (në pako)
                             </span>
                           </label>
                           <input 
@@ -1527,7 +1413,7 @@
                             Sasia: <span class="text-primary-600 font-semibold">{{ parseFloat(item.quantity || 0).toFixed(2) }} kg</span>
                           </p>
                           <p v-else-if="item.product && item.product.sold_by_package && item.product.pieces_per_package" class="text-xs text-gray-500 mt-1">
-                            {{ item.quantity }} kompleti × {{ item.product.pieces_per_package }}cp = {{ item.quantity * item.product.pieces_per_package }} copa
+                            {{ item.quantity }} pako × {{ item.product.pieces_per_package }}cp = {{ item.quantity * item.product.pieces_per_package }} copa
                           </p>
                         </div>
                         <div class="md:col-span-2">
@@ -1537,7 +1423,7 @@
                               (për kg)
                             </span>
                             <span v-else-if="item.product && item.product.sold_by_package && item.product.pieces_per_package" class="text-gray-500 font-normal text-xs">
-                              (për kompleti)
+                              (për pako)
                             </span>
                           </label>
                           <input 
@@ -1653,24 +1539,16 @@ export default {
       },
       showReceiptModal: false,
       showSupplierModal: false,
-      showStockAdjustmentModal: false,
       showInvoiceViewModal: false,
       showInvoiceEditModal: false,
       editingInvoice: null,
       savingInvoice: false,
       savingReceipt: false,
-      adjustingStock: false,
-      adjustingProduct: null,
       selectedInvoice: null,
       editingProductId: null,
       editingField: null,
       editingProduct: {},
-      stockAdjustmentForm: {
-        adjustment_type: 'increase',
-        quantity: 0,
-        unit: 'cp', // Default unit: Copa
-        notes: ''
-      },
+      searchTimeout: null,
       receiptForm: {
         supplier_id: '',
         receipt_date: new Date().toISOString().split('T')[0],
@@ -1761,6 +1639,10 @@ export default {
   beforeUnmount() {
     // Clean up event listener
     window.removeEventListener('order-restored', this.handleOrderRestored)
+    // Clean up search timeout
+    if (this.searchTimeout) {
+      clearTimeout(this.searchTimeout)
+    }
   },
   // Refresh data when component is activated (e.g., when navigating back from clients page)
   async activated() {
@@ -1861,6 +1743,25 @@ export default {
         console.error('Error loading stock:', error)
         alert('Gabim në ngarkimin e stokut')
       }
+    },
+    handleSearchInput() {
+      // Debounce search - wait 500ms after user stops typing before searching
+      if (this.searchTimeout) {
+        clearTimeout(this.searchTimeout)
+      }
+      this.searchTimeout = setTimeout(() => {
+        this.loadStock()
+      }, 500)
+    },
+    clearSearch() {
+      this.filters.search = ''
+      this.loadStock()
+    },
+    clearFilters() {
+      this.filters.search = ''
+      this.filters.supplier_id = ''
+      this.filters.stockFilter = ''
+      this.loadStock()
     },
     async loadSuppliers() {
       try {
@@ -2302,218 +2203,79 @@ export default {
         notes: ''
       }
     },
-    openStockAdjustmentModal(product) {
-      this.adjustingProduct = product
-      // Determine default unit based on product type
-      const defaultUnit = this.getDefaultUnitForProduct(product)
-      this.stockAdjustmentForm = {
-        adjustment_type: 'increase',
-        quantity: 0,
-        unit: defaultUnit,
-        notes: ''
-      }
-      this.showStockAdjustmentModal = true
-    },
-    closeStockAdjustmentModal() {
-      this.showStockAdjustmentModal = false
-      this.adjustingProduct = null
-      this.stockAdjustmentForm = {
-        adjustment_type: 'increase',
-        quantity: 0,
-        unit: 'cp',
-        notes: ''
-      }
-    },
-    // Get default unit for a product based on its characteristics
-    getDefaultUnitForProduct(product) {
-      if (!product) return 'cp'
-      
-      const name = (product.name || '').toLowerCase()
-      
-      // Kese Mbeturinash - use kg
-      if (name.includes('kese mbeturinash')) {
-        return 'kg'
+    // Format stock quantity as "X pako(Ycp) + Zcp" for products sold by package
+    formatStockQuantity(product) {
+      if (!product || !product.sold_by_package || !product.pieces_per_package || !product.stock_quantity || product.stock_quantity <= 0) {
+        return `${product.stock_quantity || 0}cp`
       }
       
-      // Liquid products - use L or ml
-      if (name.includes('ujë') || name.includes('lëng') || name.includes('vaj') || name.includes('qumësht')) {
-        return 'L'
-      }
+      const stockPieces = product.stock_quantity
+      const piecesPerPackage = product.pieces_per_package
       
-      // Weight-based products - use kg or g
-      if (name.includes('sheqer') || name.includes('miell') || name.includes('oriz') || name.includes('fasule')) {
-        return 'kg'
-      }
+      // Calculate full packages and remaining pieces
+      const fullPackages = Math.floor(stockPieces / piecesPerPackage)
+      const piecesInPackages = fullPackages * piecesPerPackage
+      const extraPieces = stockPieces % piecesPerPackage
       
-      // Default to copa
-      return 'cp'
-    },
-    calculateNewStock(type) {
-      if (!this.adjustingProduct) return 0
-      
-      const currentStock = this.adjustingProduct.stock_quantity || 0
-      const inputQuantity = this.stockAdjustmentForm.quantity || 0
-      const inputUnit = this.stockAdjustmentForm.unit || 'cp'
-      
-      // Convert input quantity to base unit (copa)
-      const quantityInBaseUnit = this.convertToBaseUnit(inputQuantity, inputUnit, this.adjustingProduct)
-      
-      if (type === 'increase') {
-        return currentStock + quantityInBaseUnit
-      } else if (type === 'decrease') {
-        return Math.max(0, currentStock - quantityInBaseUnit)
+      if (fullPackages > 0 && extraPieces > 0) {
+        // Format: "X pako(Ycp) + Zcp"
+        return `${fullPackages} pako(${piecesPerPackage}cp) + ${extraPieces}cp`
+      } else if (fullPackages > 0) {
+        // Only full packages, no extra pieces
+        return `${fullPackages} pako(${piecesPerPackage}cp) = ${piecesInPackages}cp`
       } else {
-        return quantityInBaseUnit
+        // Only pieces, no full packages
+        return `${extraPieces}cp`
       }
     },
-    // Convert quantity from input unit to base unit (copa)
-    convertToBaseUnit(quantity, unit, product) {
-      if (!quantity || !unit || !product) return 0
-      
-      const qty = parseFloat(quantity) || 0
-      
-      // Base unit is always "copa" (pieces)
-      // For now, we'll use simple conversions
-      // This can be enhanced with product-specific conversion factors
-      
-      switch (unit) {
-        case 'cp':
-        case 'pcs':
-          return qty
-        case 'kg':
-          // For Kese Mbeturinash and weight-based products, assume 1 kg = 1 piece for now
-          // This should be configurable per product
-          return qty
-        case 'g':
-          return qty / 1000 // 1000g = 1kg, then convert to pieces
-        case 'L':
-          return qty // 1L = 1 piece (for liquids)
-        case 'ml':
-          return qty / 1000 // 1000ml = 1L, then convert to pieces
-        case 'm':
-          return qty * 100 // 1m = 100cm, then convert to pieces
-        case 'cm':
-          return qty / 100 // 100cm = 1m, then convert to pieces
-        default:
-          return qty
-      }
-    },
-    // Get minimum value for input based on unit
-    getMinValueForUnit(unit) {
-      switch (unit) {
-        case 'kg':
-        case 'L':
-        case 'm':
-          return 0.01
-        case 'g':
-        case 'ml':
-        case 'cm':
-          return 0.1
-        default:
-          return 0
-      }
-    },
-    // Get step value for input based on unit
-    getStepForUnit(unit) {
-      switch (unit) {
-        case 'kg':
-        case 'L':
-        case 'm':
-          return 0.01
-        case 'g':
-        case 'ml':
-        case 'cm':
-          return 0.1
-        default:
-          return 1
-      }
-    },
-    // Get placeholder for input based on unit
-    getPlaceholderForUnit(unit) {
-      return `Sasia në ${this.getUnitLabel(unit)}`
-    },
-    // Get label for unit
-    getUnitLabel(unit) {
-      const labels = {
-        'cp': 'Copa',
-        'kg': 'Kilogram',
-        'g': 'Gram',
-        'L': 'Liter',
-        'ml': 'Mililitër',
-        'm': 'Metër',
-        'cm': 'Centimetër',
-        'pcs': 'Pjesë'
-      }
-      return labels[unit] || unit
-    },
-    // Format quantity with unit for display
-    formatQuantityWithUnit(quantity, product) {
-      if (!product) return quantity
-      
-      const qty = parseFloat(quantity) || 0
-      const name = (product.name || '').toLowerCase()
-      
-      // For Kese Mbeturinash, show in kg if quantity is small
-      if (name.includes('kese mbeturinash')) {
-        if (qty < 100 && qty > 0) {
-          return `${qty.toFixed(2)} kg`
-        }
-        return `${qty} copa`
+    // Format ordered quantity as "X pako(Ycp) + Zcp" for products sold by package
+    formatOrderedQuantity(product) {
+      if (!product || !product.sold_by_package || !product.pieces_per_package || !product.ordered_quantity_pieces || product.ordered_quantity_pieces <= 0) {
+        return `${product.ordered_quantity_pieces || 0}cp`
       }
       
-      // For products sold by package, show in packages and pieces
-      if (product.sold_by_package && product.pieces_per_package) {
-        const packages = Math.floor(qty / product.pieces_per_package)
-        const pieces = qty % product.pieces_per_package
-        if (packages > 0 && pieces > 0) {
-          return `${packages} kompleti + ${pieces} copa`
-        } else if (packages > 0) {
-          return `${packages} kompleti`
-        } else {
-          return `${pieces} copa`
-        }
+      const orderedPieces = product.ordered_quantity_pieces
+      const piecesPerPackage = product.pieces_per_package
+      
+      // Calculate full packages and remaining pieces
+      const fullPackages = Math.floor(orderedPieces / piecesPerPackage)
+      const piecesInPackages = fullPackages * piecesPerPackage
+      const extraPieces = orderedPieces % piecesPerPackage
+      
+      if (fullPackages > 0 && extraPieces > 0) {
+        // Format: "X pako(Ycp) + Zcp"
+        return `${fullPackages} pako(${piecesPerPackage}cp) + ${extraPieces}cp`
+      } else if (fullPackages > 0) {
+        // Only full packages, no extra pieces
+        return `${fullPackages} pako(${piecesPerPackage}cp) = ${piecesInPackages}cp`
+      } else {
+        // Only pieces, no full packages
+        return `${extraPieces}cp`
+      }
+    },
+    // Format remaining stock as "X Pako(Ycp) + Zcp" for products sold by package
+    formatRemainingStock(product) {
+      if (!product || !product.sold_by_package || !product.pieces_per_package || !product.remaining_stock_pieces || product.remaining_stock_pieces <= 0) {
+        return `${product.remaining_stock_pieces || 0}cp`
       }
       
-      // Default: show in copa
-      return `${qty} copa`
-    },
-    // Handle unit change
-    onUnitChange() {
-      // Reset quantity when unit changes to avoid confusion
-      this.stockAdjustmentForm.quantity = 0
-    },
-    async saveStockAdjustment() {
-      if (!this.adjustingProduct) return
+      const remainingPieces = product.remaining_stock_pieces
+      const piecesPerPackage = product.pieces_per_package
       
-      this.adjustingStock = true
-      try {
-        // Convert quantity to base unit before sending to API
-        const quantityInBaseUnit = this.convertToBaseUnit(
-          this.stockAdjustmentForm.quantity,
-          this.stockAdjustmentForm.unit,
-          this.adjustingProduct
-        )
-        
-        const payload = {
-          adjustment_type: this.stockAdjustmentForm.adjustment_type,
-          quantity: quantityInBaseUnit, // Send converted quantity
-          original_quantity: this.stockAdjustmentForm.quantity, // Keep original for reference
-          original_unit: this.stockAdjustmentForm.unit, // Keep original unit for reference
-          notes: this.stockAdjustmentForm.notes
-        }
-        
-        await axios.post(`/api/stock/adjust/${this.adjustingProduct.id}`, payload)
-        alert('Stoku u rregullua me sukses!')
-        this.closeStockAdjustmentModal()
-        await Promise.all([
-          this.loadStock(),
-          this.loadStockReport()
-        ])
-      } catch (error) {
-        console.error('Error adjusting stock:', error)
-        alert('Gabim në rregullimin e stokut')
-      } finally {
-        this.adjustingStock = false
+      // Calculate full packages and remaining pieces
+      const fullPackages = Math.floor(remainingPieces / piecesPerPackage)
+      const piecesInPackages = fullPackages * piecesPerPackage
+      const extraPieces = remainingPieces % piecesPerPackage
+      
+      if (fullPackages > 0 && extraPieces > 0) {
+        // Format: "X Pako(Ycp) + Zcp"
+        return `${fullPackages} Pako(${piecesPerPackage}cp) + ${extraPieces}cp`
+      } else if (fullPackages > 0) {
+        // Only full packages, no extra pieces
+        return `${fullPackages} Pako(${piecesPerPackage}cp) = ${piecesInPackages}cp`
+      } else {
+        // Only pieces, no full packages
+        return `${extraPieces}cp`
       }
     },
     async loadInvoices() {
@@ -2980,7 +2742,7 @@ export default {
             quantitySuffix = ' kg'
           } else if (product && product.sold_by_package && product.pieces_per_package) {
             // For products sold by package (including "Kese Mbeturinash" with package unit)
-            packagingInfo = ` (${item.quantity} kompleti × ${product.pieces_per_package}cp = ${item.quantity * product.pieces_per_package} copa)`
+            packagingInfo = ` (${item.quantity} pako × ${product.pieces_per_package}cp = ${item.quantity * product.pieces_per_package} copa)`
             quantitySuffix = `<br><span style="font-size: 11px; color: #6b7280;">= ${item.quantity * (product.pieces_per_package || 1)} copa</span>`
           }
           

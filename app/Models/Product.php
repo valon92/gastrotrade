@@ -77,33 +77,16 @@ class Product extends Model
      * 
      * @return int Real stock quantity in pieces
      */
+    /**
+     * Calculate real stock using the StockCalculationService
+     * This method delegates to the service for better separation of concerns
+     * 
+     * @return int Real stock quantity in pieces
+     */
     public function calculateRealStock(): int
     {
-        // Count all receipts (pranimet e mallit)
-        // Stock should reflect all physical receipts, not just invoiced ones
-        $totalReceipts = $this->stockMovements()
-            ->where('movement_type', 'receipt')
-            ->whereNotNull('stock_receipt_id')
-            ->join('stock_receipts', 'stock_movements.stock_receipt_id', '=', 'stock_receipts.id')
-            ->whereNull('stock_receipts.deleted_at')
-            ->sum('stock_movements.quantity');
-        
-        // Subtract sales (negative movements)
-        $totalSales = $this->stockMovements()
-            ->where('movement_type', 'sale')
-            ->sum('quantity'); // Already negative
-        
-        // Subtract adjustments (can be positive or negative)
-        $totalAdjustments = $this->stockMovements()
-            ->where('movement_type', 'adjustment')
-            ->sum('quantity');
-        
-        // Real stock = Receipts - Sales - Adjustments
-        // Note: sales are already negative, so we add them (subtract)
-        $realStock = $totalReceipts + $totalSales + $totalAdjustments;
-        
-        // Ensure stock is never negative
-        return max(0, (int) $realStock);
+        $service = app(\App\Services\StockCalculationService::class);
+        return $service->calculateStockForProduct($this);
     }
 
     /**
@@ -118,19 +101,13 @@ class Product extends Model
 
     /**
      * Sync stock_quantity with real stock from movements
+     * Uses StockCalculationService for consistency
      * 
      * @return bool Success status
      */
     public function syncStockFromMovements(): bool
     {
-        $realStock = $this->calculateRealStock();
-        
-        // Only update if different to avoid unnecessary database writes
-        if ($this->stock_quantity !== $realStock) {
-            $this->stock_quantity = $realStock;
-            return $this->save();
-        }
-        
-        return true;
+        $service = app(\App\Services\StockCalculationService::class);
+        return $service->syncStockForProduct($this);
     }
 }

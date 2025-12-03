@@ -51,9 +51,15 @@ class StockController extends Controller
         // Calculate total ordered quantity (in pieces) per product from order items
         // Count orders that are: "ruajtur", "konfirmuar", "dërguar", "kompletuar"
         // Do NOT count: "anuluar", deleted orders (deleted_at IS NOT NULL), or orders without client_id
+        // IMPORTANT: 
+        // - If unit_type = 'package' or sold_by_package = 1, quantity is in packages (needs to be multiplied by pieces_per_package)
+        // - If unit_type = 'cp' or sold_by_package = 0, quantity is already in pieces (customer bought by pieces)
+        // - If unit_type is NULL (old orders), use sold_by_package as fallback
+        // Cart.vue now sends actual_pieces as quantity, sets sold_by_package = false, and unit_type = 'cp' when customer buys by pieces
         $totalOrdered = \App\Models\OrderItem::select('order_items.product_id', DB::raw('SUM(
             CASE 
-                WHEN order_items.sold_by_package = 1 AND order_items.pieces_per_package IS NOT NULL 
+                WHEN (order_items.unit_type = \'package\' OR (order_items.unit_type IS NULL AND order_items.sold_by_package = 1)) 
+                     AND order_items.pieces_per_package IS NOT NULL 
                 THEN order_items.quantity * order_items.pieces_per_package 
                 ELSE order_items.quantity 
             END
@@ -98,10 +104,19 @@ class StockController extends Controller
             $product->ordered_quantity_pieces = $totalOrderedPieces;
             
             // Store ordered quantity in packages if product is sold by package
+            // IMPORTANT: This is just for display purposes - the actual calculation is always in pieces
             if ($product->sold_by_package && $product->pieces_per_package && $totalOrderedPieces > 0) {
                 $product->ordered_quantity_packages = $totalOrderedPieces / $product->pieces_per_package;
             } else {
                 $product->ordered_quantity_packages = 0;
+            }
+            
+            // Debug: Log if ordered_quantity_packages is being calculated incorrectly
+            // This helps identify if there are old orders stored incorrectly
+            if ($product->sold_by_package && $product->pieces_per_package && $totalOrderedPieces > 0) {
+                $calculatedPackages = $totalOrderedPieces / $product->pieces_per_package;
+                // If calculated packages is >= 1 and is a whole number, it might be from an old order stored as packages
+                // But we can't know for sure, so we rely on the frontend logic to display correctly
             }
             
             // Store remaining stock in pieces (can be negative, always set)

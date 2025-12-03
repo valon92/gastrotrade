@@ -10,6 +10,7 @@ use App\Http\Controllers\Api\StockReceiptController;
 use App\Http\Controllers\Api\StockController;
 use App\Http\Controllers\Api\StockAdjustmentController;
 use App\Http\Controllers\Api\SupplierInvoiceController;
+use App\Http\Controllers\Api\SalesController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
@@ -64,6 +65,9 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/orders/stats/payments', [OrderController::class, 'paymentStats']);
     Route::put('/orders/{order}', [OrderController::class, 'update']);
     Route::delete('/orders/{order}', [OrderController::class, 'destroy']);
+    
+    // Sales routes
+    Route::get('/sales', [SalesController::class, 'index']);
 
     // Admin supplier routes
     Route::apiResource('suppliers', SupplierController::class);

@@ -13,6 +13,7 @@ import AdminProducts from '../views/admin/AdminProducts.vue'
 import AdminStock from '../views/admin/AdminStock.vue'
 import AdminSupplierInvoices from '../views/admin/AdminSupplierInvoices.vue'
 import AdminTrash from '../views/admin/AdminTrash.vue'
+import AdminSales from '../views/admin/AdminSales.vue'
 
 const routes = [
   {
@@ -91,6 +92,12 @@ const routes = [
     path: '/admin/trash',
     name: 'AdminTrash',
     component: AdminTrash,
+    meta: { requiresAuth: true }
+  },
+  {
+    path: '/admin/sales',
+    name: 'AdminSales',
+    component: AdminSales,
     meta: { requiresAuth: true }
   }
 ]

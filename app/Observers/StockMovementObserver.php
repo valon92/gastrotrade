@@ -3,9 +3,17 @@
 namespace App\Observers;
 
 use App\Models\StockMovement;
+use App\Services\StockCalculationService;
 
 class StockMovementObserver
 {
+    protected $stockService;
+
+    public function __construct(StockCalculationService $stockService)
+    {
+        $this->stockService = $stockService;
+    }
+
     /**
      * Handle the StockMovement "created" event.
      */
@@ -13,7 +21,7 @@ class StockMovementObserver
     {
         // Sync product stock after movement is created
         if ($stockMovement->product) {
-            $stockMovement->product->syncStockFromMovements();
+            $this->stockService->syncStockForProduct($stockMovement->product);
         }
     }
 
@@ -24,7 +32,7 @@ class StockMovementObserver
     {
         // Sync product stock after movement is updated
         if ($stockMovement->product) {
-            $stockMovement->product->syncStockFromMovements();
+            $this->stockService->syncStockForProduct($stockMovement->product);
         }
     }
 
@@ -35,7 +43,7 @@ class StockMovementObserver
     {
         // Sync product stock after movement is deleted
         if ($stockMovement->product) {
-            $stockMovement->product->syncStockFromMovements();
+            $this->stockService->syncStockForProduct($stockMovement->product);
         }
     }
 }

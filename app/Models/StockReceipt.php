@@ -43,6 +43,11 @@ class StockReceipt extends Model
 
     public function supplierInvoice(): HasMany
     {
+        return $this->hasMany(SupplierInvoice::class)->whereNull('deleted_at');
+    }
+    
+    public function supplierInvoices(): HasMany
+    {
         return $this->hasMany(SupplierInvoice::class);
     }
 

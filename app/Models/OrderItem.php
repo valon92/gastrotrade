@@ -17,6 +17,7 @@ class OrderItem extends Model
         'quantity',
         'sold_by_package',
         'pieces_per_package',
+        'unit_type',
         'unit_price',
         'total_price',
         'discount_amount',

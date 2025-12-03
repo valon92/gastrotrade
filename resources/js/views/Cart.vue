@@ -842,18 +842,39 @@ export default {
             phone: this.customerData.phone || null,
             viber: this.customerData.phone || null
           },
-          items: this.cartStore.items.map(item => ({
-            product_id: item.id,
-            name: item.name,
-            quantity: item.quantity,
-            sold_by_package: !!item.sold_by_package,
-            pieces_per_package: item.pieces_per_package,
-            unit_price: item.price,
-            total_price: item.price ? this.getItemTotal(item) : null,
-            discount_amount: item.discount_amount || 0,
-            discount_type: item.discount_type || null,
-            discount_value: item.discount_value || 0
-          })),
+          items: this.cartStore.items.map(item => {
+            // If customer bought by pieces (has actual_pieces), send actual_pieces as quantity
+            // and set sold_by_package to false so backend knows quantity is already in pieces
+            const canBuyByPieces = this.canBuyByPieces(item) && item.actual_pieces
+            const quantity = canBuyByPieces ? item.actual_pieces : item.quantity
+            const soldByPackage = canBuyByPieces ? false : !!item.sold_by_package
+            
+            // Determine unit_type based on how the item was bought
+            // If bought by pieces, unit_type is 'cp' (copa)
+            // If bought by package, unit_type is 'package' (kompleti)
+            let unitType = null
+            if (canBuyByPieces) {
+              unitType = 'cp' // Bought by pieces
+            } else if (item.sold_by_package && item.pieces_per_package) {
+              unitType = 'package' // Bought by package
+            } else {
+              unitType = 'cp' // Default to pieces
+            }
+            
+            return {
+              product_id: item.id,
+              name: item.name,
+              quantity: quantity,
+              sold_by_package: soldByPackage,
+              pieces_per_package: item.pieces_per_package,
+              unit_type: unitType,
+              unit_price: item.price,
+              total_price: item.price ? this.getItemTotal(item) : null,
+              discount_amount: item.discount_amount || 0,
+              discount_type: item.discount_type || null,
+              discount_value: item.discount_value || 0
+            }
+          }),
           totals: {
             total_items: this.cartStore.totalItems,
             subtotal: this.cartStore.subtotal,
