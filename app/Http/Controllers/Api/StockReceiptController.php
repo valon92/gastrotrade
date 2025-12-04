@@ -55,7 +55,7 @@ class StockReceiptController extends Controller
             'items.*.product_id' => ['required', 'exists:products,id'],
             'items.*.quantity' => ['required', 'numeric', 'min:0'],
             'items.*.unit_cost' => ['required', 'numeric', 'min:0'],
-            'items.*.unit_type' => ['nullable', 'string', 'in:package,kg'],
+            'items.*.unit_type' => ['nullable', 'string', 'in:package,kg,cp'],
             'items.*.notes' => ['nullable', 'string'],
             'create_invoice' => ['nullable', 'boolean'],
             'invoice_date' => ['nullable', 'date'],
@@ -96,13 +96,14 @@ class StockReceiptController extends Controller
                     'unit_type' => $item['unit_type'] ?? null,
                 ]);
 
-                // Update product stock
+                // Get product and prepare for stock movement
                 $product = Product::find($item['product_id']);
                 if (!$product) {
                     continue; // Skip if product not found
                 }
                 
-                $stockBefore = $product->stock_quantity ?? 0;
+                // Get current stock before adding (for movement tracking)
+                $stockBefore = $product->calculateRealStock();
                 
                 // Determine quantity to add to stock (always in pieces/cp)
                 // Use UnitConverter to properly convert from any unit to pieces
@@ -118,11 +119,11 @@ class StockReceiptController extends Controller
                     'cp',
                     $product
                 );
-                
-                $product->stock_quantity = ($product->stock_quantity ?? 0) + (int)round($quantityToAdd);
+                $quantityToAdd = (int)round($quantityToAdd);
                 
                 // Update cost price if not set or if new cost is different
                 // Cost price should always be per piece (cp) in the database
+                $costPriceUpdated = false;
                 if (!$product->cost_price || abs($product->cost_price - $item['unit_cost']) > 0.0001) {
                     // If unit_cost is per kg, convert to per piece
                     if ($unitType === 'kg') {
@@ -147,34 +148,50 @@ class StockReceiptController extends Controller
                         // If unit_cost is per piece (cp), use directly
                         $product->cost_price = $item['unit_cost'];
                     }
+                    $costPriceUpdated = true;
                 }
                 
-                $product->save();
+                // Save product only if cost_price was updated
+                if ($costPriceUpdated) {
+                    $product->save();
+                }
 
-                // Create stock movement
+                // Create stock movement FIRST
+                // The StockMovementObserver will automatically sync stock after movement is created
                 // Store original quantity and unit in notes for tracking
                 $movementNotes = 'Pranim malli - ' . $receipt->receipt_number;
                 
                 // Format notes based on unit type
                 if ($unitType === 'kg') {
-                    $movementNotes .= ' (Pranuar: ' . number_format($item['quantity'], 2) . ' kg = ' . round($quantityToAdd) . ' copa)';
+                    $movementNotes .= ' (Pranuar: ' . number_format($item['quantity'], 2) . ' kg = ' . $quantityToAdd . ' copa)';
                 } elseif ($unitType === 'package' && $product->sold_by_package && $product->pieces_per_package) {
-                    $movementNotes .= ' (Pranuar: ' . number_format($item['quantity'], 2) . ' kompleti = ' . round($quantityToAdd) . ' copa)';
+                    $movementNotes .= ' (Pranuar: ' . number_format($item['quantity'], 2) . ' kompleti = ' . $quantityToAdd . ' copa)';
                 } else {
                     $movementNotes .= ' (Pranuar: ' . number_format($item['quantity'], 2) . ' copa)';
                 }
+                
+                // Calculate stock_after (will be synced by observer, but we calculate it for tracking)
+                $stockAfter = $stockBefore + $quantityToAdd;
                 
                 StockMovement::create([
                     'product_id' => $item['product_id'],
                     'movement_type' => 'receipt',
                     'stock_receipt_id' => $receipt->id,
-                    'quantity' => (int)round($quantityToAdd), // Store in pieces
+                    'quantity' => $quantityToAdd, // Store in pieces
                     'unit_cost' => $product->cost_price, // Store per piece cost
                     'total_cost' => $totalCost,
                     'stock_before' => $stockBefore,
-                    'stock_after' => $product->stock_quantity,
+                    'stock_after' => $stockAfter,
                     'notes' => $movementNotes,
                 ]);
+                
+                // Stock will be automatically synced by StockMovementObserver
+                // But we also sync it here to ensure it's up to date immediately
+                $product->syncStockFromMovements();
+                
+                // Clear cache for this product to ensure fresh data on next request
+                $cacheKey = "product_real_stock:{$product->id}";
+                \Illuminate\Support\Facades\Cache::forget($cacheKey);
             }
 
             // Create supplier invoice if requested
@@ -249,6 +266,18 @@ class StockReceiptController extends Controller
                 }
             }
 
+            // Clear cache for all affected products to ensure fresh data on next request
+            foreach ($receipt->items as $receiptItem) {
+                if ($receiptItem->product) {
+                    $cacheKey = "product_real_stock:{$receiptItem->product->id}";
+                    \Illuminate\Support\Facades\Cache::forget($cacheKey);
+                }
+            }
+            
+            // Clear general cache
+            \Illuminate\Support\Facades\Cache::forget('valid_receipt_ids');
+            \Illuminate\Support\Facades\Cache::forget('valid_order_ids');
+            
             // Load only active (non-deleted) supplier invoices
             $receipt->load(['supplier', 'items.product', 'supplierInvoice' => function($query) {
                 $query->whereNull('deleted_at');

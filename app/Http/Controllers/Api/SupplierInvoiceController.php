@@ -119,6 +119,7 @@ class SupplierInvoiceController extends Controller
     public function update(Request $request, SupplierInvoice $supplierInvoice)
     {
         $validated = $request->validate([
+            'stock_receipt_id' => ['nullable', 'exists:stock_receipts,id'],
             'invoice_date' => ['sometimes', 'date'],
             'due_date' => ['nullable', 'date'],
             'has_vat' => ['nullable', 'boolean'],
@@ -210,6 +211,24 @@ class SupplierInvoiceController extends Controller
             }
 
             $supplierInvoice->update($validated);
+            
+            // If stock_receipt_id was updated, clear stock cache and sync stock
+            if (isset($validated['stock_receipt_id'])) {
+                \Illuminate\Support\Facades\Cache::forget('valid_receipt_ids');
+                // Sync stock for all products related to this receipt
+                if ($validated['stock_receipt_id']) {
+                    $receipt = \App\Models\StockReceipt::find($validated['stock_receipt_id']);
+                    if ($receipt) {
+                        $productIds = $receipt->movements()->distinct()->pluck('product_id')->toArray();
+                        foreach ($productIds as $productId) {
+                            $product = \App\Models\Product::find($productId);
+                            if ($product) {
+                                $product->syncStockFromMovements();
+                            }
+                        }
+                    }
+                }
+            }
 
             return response()->json([
                 'success' => true,

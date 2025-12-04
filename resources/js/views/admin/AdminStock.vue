@@ -238,13 +238,48 @@
                           'bg-blue-100 text-blue-800'
                         ]"
                       >
-                        <template v-if="product.sold_by_package && product.pieces_per_package && product.ordered_quantity_packages && product.ordered_quantity_packages >= 1 && (Number.isInteger(product.ordered_quantity_packages) || Math.abs(product.ordered_quantity_packages % 1) < 0.001)">
-                          <!-- Porosia është bërë në paketa (ordered_quantity_packages >= 1 dhe është numër i plotë) -->
+                        <template v-if="product.sold_by_package && product.pieces_per_package && product.ordered_quantity_pieces && product.ordered_quantity_pieces > 0">
+                          <!-- Produkti shitet me paketa, shfaq në formatin e paketave -->
                           {{ formatOrderedQuantity(product) }}
                         </template>
                         <template v-else>
-                          <!-- Porosia është bërë në copa, shfaq vetëm si "Xcp" -->
+                          <!-- Produkti nuk shitet me paketa ose nuk ka porosi, shfaq vetëm si "Xcp" -->
                           {{ product.ordered_quantity_pieces }}cp
+                        </template>
+                      </span>
+                    </div>
+                    
+                    <!-- Mbetja: Stoku - Porositë (negative = mungesë) -->
+                    <div v-if="product && product.remaining_stock_pieces !== undefined && product.remaining_stock_pieces !== null" class="flex items-center gap-2">
+                      <span class="text-xs font-semibold" :class="product.remaining_stock_pieces < 0 ? 'text-red-700' : 'text-gray-700'">Mbetja:</span>
+                      <span 
+                        :class="[
+                          'px-2 py-1 text-xs font-semibold rounded-full',
+                          product.remaining_stock_pieces < 0 ? 'bg-red-100 text-red-800' :
+                          product.remaining_stock_pieces === 0 ? 'bg-yellow-100 text-yellow-800' :
+                          'bg-green-100 text-green-800'
+                        ]"
+                      >
+                        <template v-if="product.remaining_stock_pieces < 0">
+                          <!-- Mungesë -->
+                          <template v-if="product.sold_by_package && product.pieces_per_package && product.shortage_quantity && product.shortage_quantity > 0">
+                            {{ formatShortage(product) }}
+                          </template>
+                          <template v-else>
+                            Mungesë: {{ Math.abs(product.remaining_stock_pieces) }}cp
+                          </template>
+                        </template>
+                        <template v-else-if="product.remaining_stock_pieces > 0">
+                          <!-- Mbetje pozitive -->
+                          <template v-if="product.sold_by_package && product.pieces_per_package">
+                            {{ formatRemainingStock(product) }}
+                          </template>
+                          <template v-else>
+                            {{ product.remaining_stock_pieces }}cp
+                          </template>
+                        </template>
+                        <template v-else>
+                          0cp
                         </template>
                       </span>
                     </div>
@@ -422,13 +457,48 @@
                   'bg-blue-100 text-blue-800'
                 ]"
               >
-                <template v-if="product.sold_by_package && product.pieces_per_package && product.ordered_quantity_packages && product.ordered_quantity_packages >= 1 && (Number.isInteger(product.ordered_quantity_packages) || Math.abs(product.ordered_quantity_packages % 1) < 0.001)">
-                  <!-- Porosia është bërë në paketa (ordered_quantity_packages >= 1 dhe është numër i plotë) -->
+                <template v-if="product.sold_by_package && product.pieces_per_package && product.ordered_quantity_pieces && product.ordered_quantity_pieces > 0">
+                  <!-- Produkti shitet me paketa, shfaq në formatin e paketave -->
                   {{ formatOrderedQuantity(product) }}
                 </template>
                 <template v-else>
-                  <!-- Porosia është bërë në copa, shfaq vetëm si "Xcp" -->
+                  <!-- Produkti nuk shitet me paketa ose nuk ka porosi, shfaq vetëm si "Xcp" -->
                   {{ product.ordered_quantity_pieces }}cp
+                </template>
+              </span>
+            </div>
+            
+            <!-- Mbetja: Stoku - Porositë (negative = mungesë) -->
+            <div v-if="product && product.remaining_stock_pieces !== undefined && product.remaining_stock_pieces !== null" class="flex items-center justify-between">
+              <span class="text-xs font-semibold" :class="product.remaining_stock_pieces < 0 ? 'text-red-700' : 'text-gray-700'">Mbetja:</span>
+              <span 
+                :class="[
+                  'px-2 py-1 text-xs font-semibold rounded-full',
+                  product.remaining_stock_pieces < 0 ? 'bg-red-100 text-red-800' :
+                  product.remaining_stock_pieces === 0 ? 'bg-yellow-100 text-yellow-800' :
+                  'bg-green-100 text-green-800'
+                ]"
+              >
+                <template v-if="product.remaining_stock_pieces < 0">
+                  <!-- Mungesë -->
+                  <template v-if="product.sold_by_package && product.pieces_per_package && product.shortage_quantity && product.shortage_quantity > 0">
+                    {{ formatShortage(product) }}
+                  </template>
+                  <template v-else>
+                    Mungesë: {{ Math.abs(product.remaining_stock_pieces) }}cp
+                  </template>
+                </template>
+                <template v-else-if="product.remaining_stock_pieces > 0">
+                  <!-- Mbetje pozitive -->
+                  <template v-if="product.sold_by_package && product.pieces_per_package">
+                    {{ formatRemainingStock(product) }}
+                  </template>
+                  <template v-else>
+                    {{ product.remaining_stock_pieces }}cp
+                  </template>
+                </template>
+                <template v-else>
+                  0cp
                 </template>
               </span>
             </div>
@@ -1713,32 +1783,6 @@ export default {
                  p.id !== null &&
                  p.id !== ''
         })
-        // Debug: Check if shortage data is present
-        console.log('Loaded products:', this.products.length)
-        const foliNajlloni = this.products.find(p => p.name && p.name.includes('Foli Najlloni'))
-        if (foliNajlloni) {
-          console.log('🔍 Foli Najlloni data:', {
-            id: foliNajlloni.id,
-            name: foliNajlloni.name,
-            stock_quantity: foliNajlloni.stock_quantity,
-            shortage_quantity: foliNajlloni.shortage_quantity,
-            shortage_packages: foliNajlloni.shortage_packages,
-            sold_by_package: foliNajlloni.sold_by_package,
-            pieces_per_package: foliNajlloni.pieces_per_package,
-            hasShortage: foliNajlloni.shortage_quantity && foliNajlloni.shortage_quantity > 0
-          })
-        }
-        const productWithShortage = this.products.find(p => p.shortage_quantity && p.shortage_quantity > 0)
-        if (productWithShortage) {
-          console.log('✅ Product with shortage found:', productWithShortage.name, {
-            shortage_quantity: productWithShortage.shortage_quantity,
-            shortage_packages: productWithShortage.shortage_packages,
-            sold_by_package: productWithShortage.sold_by_package,
-            pieces_per_package: productWithShortage.pieces_per_package
-          })
-        } else {
-          console.log('❌ No products with shortage found')
-        }
       } catch (error) {
         console.error('Error loading stock:', error)
         alert('Gabim në ngarkimin e stokut')
@@ -2082,59 +2126,49 @@ export default {
         // Prepare items: if product is sold by package, convert quantity to pieces
         const itemsToSend = this.receiptForm.items.map(item => {
           const product = this.allProducts.find(p => p.id == item.product_id)
-          let quantity = item.quantity || 0
-          let unitCost = item.unit_cost || 0
+          let quantity = parseFloat(item.quantity || 0)
+          let unitCost = parseFloat(item.unit_cost || 0)
+          const originalUnitType = item.unit_type
           
-          // For Kese Mbeturinash with package unit, convert quantity to pieces
-          // unit_cost is already per piece, so no conversion needed
+          // Determine final unit_type and quantity
+          let finalUnitType = originalUnitType
+          
+          // For Kese Mbeturinash
           if (this.isKeseMbeturinash(product)) {
-            if (item.unit_type === 'package' && product.sold_by_package && product.pieces_per_package) {
+            if (originalUnitType === 'package' && product.sold_by_package && product.pieces_per_package) {
               // Convert quantity from packages to pieces
               quantity = quantity * product.pieces_per_package
-              // unit_cost is already per piece, no conversion needed
+              // After conversion, quantity is in pieces, so unit_type should be 'cp'
+              finalUnitType = 'cp'
+            } else if (originalUnitType === 'kg') {
+              // Keep quantity as kg, unit_type stays 'kg'
+              // Backend will convert using UnitConverter
+            } else if (!originalUnitType) {
+              // If unit_type is not set, default to 'cp' (pieces)
+              finalUnitType = 'cp'
             }
-            // If unit_type is 'kg', quantity stays as kg and unit_cost stays as per kg (no conversion)
           } else if (product && product.sold_by_package && product.pieces_per_package) {
-            // For other products sold by package, convert quantity to pieces
-            // unit_cost is already per piece, so no conversion needed
-            quantity = quantity * product.pieces_per_package
-          }
-          
-          // Determine unit_type: use item.unit_type if set, otherwise infer from product
-          let finalUnitType = item.unit_type
-          
-          // If unit_type is not set and this is Kese Mbeturinash, try to infer it
-          if (!finalUnitType && this.isKeseMbeturinash(product)) {
-            // Check the original quantity (before conversion) to infer unit type
-            const originalQty = parseFloat(item.quantity || 0)
-            
-            // If quantity has decimal places (e.g., 200.00, 12.50), it's likely kg
-            // If quantity is a whole number and relatively small (e.g., 10, 20, 50), it's likely packages
-            if (originalQty > 0) {
-              // If quantity has decimal places OR is very large (> 100), assume kg
-              if (originalQty % 1 !== 0 || originalQty > 100) {
-                finalUnitType = 'kg'
-              } else {
-                // Otherwise, assume package
-                finalUnitType = 'package'
-              }
-            } else {
-              // Default to package if quantity is 0
-              finalUnitType = 'package'
+            // For other products sold by package
+            if (originalUnitType === 'package') {
+              // Convert quantity from packages to pieces
+              quantity = quantity * product.pieces_per_package
+              // After conversion, quantity is in pieces, so unit_type should be 'cp'
+              finalUnitType = 'cp'
+            } else if (!originalUnitType) {
+              // If unit_type is not set, assume 'cp' (pieces)
+              finalUnitType = 'cp'
             }
-          }
-          
-          // Ensure unit_type is set for Kese Mbeturinash
-          if (this.isKeseMbeturinash(product) && !finalUnitType) {
-            finalUnitType = 'package' // Default fallback
+          } else {
+            // For products not sold by package, always use 'cp'
+            finalUnitType = 'cp'
           }
           
           return {
             product_id: item.product_id,
-            quantity: quantity, // Send quantity in pieces (or kg for Kese Mbeturinash)
-            unit_cost: unitCost, // Send unit_cost per piece (or per kg for Kese Mbeturinash)
+            quantity: quantity, // Send quantity in pieces (or kg for Kese Mbeturinash with kg unit)
+            unit_cost: unitCost, // Send unit_cost per piece (or per kg for Kese Mbeturinash with kg unit)
             notes: item.notes || null,
-            unit_type: finalUnitType // Include unit_type for reference
+            unit_type: finalUnitType // Send the correct unit_type after conversion
           }
         })
         
@@ -2160,6 +2194,11 @@ export default {
         const response = await axios.post('/api/stock-receipts', receiptData)
         alert('Pranimi u ruajt me sukses!')
         this.closeReceiptModal()
+        
+        // Wait a brief moment to ensure backend has finished processing
+        await new Promise(resolve => setTimeout(resolve, 100))
+        
+        // Refresh all data to show updated stock immediately
         await Promise.all([
           this.loadStock(),
           this.loadStockReport(),
@@ -2205,8 +2244,13 @@ export default {
     },
     // Format stock quantity as "X pako(Ycp) + Zcp" for products sold by package
     formatStockQuantity(product) {
-      if (!product || !product.sold_by_package || !product.pieces_per_package || !product.stock_quantity || product.stock_quantity <= 0) {
+      if (!product || !product.stock_quantity || product.stock_quantity <= 0) {
         return `${product.stock_quantity || 0}cp`
+      }
+      
+      // If product is not sold by package, just show pieces
+      if (!product.sold_by_package || !product.pieces_per_package) {
+        return `${product.stock_quantity}cp`
       }
       
       const stockPieces = product.stock_quantity
@@ -2217,11 +2261,14 @@ export default {
       const piecesInPackages = fullPackages * piecesPerPackage
       const extraPieces = stockPieces % piecesPerPackage
       
+      // If stock is exactly divisible by pieces_per_package, it was likely received as packages
+      // Otherwise, show as packages + pieces
       if (fullPackages > 0 && extraPieces > 0) {
         // Format: "X pako(Ycp) + Zcp"
         return `${fullPackages} pako(${piecesPerPackage}cp) + ${extraPieces}cp`
       } else if (fullPackages > 0) {
         // Only full packages, no extra pieces
+        // This is likely how it was received (as packages)
         return `${fullPackages} pako(${piecesPerPackage}cp) = ${piecesInPackages}cp`
       } else {
         // Only pieces, no full packages
@@ -2253,10 +2300,14 @@ export default {
         return `${extraPieces}cp`
       }
     },
-    // Format remaining stock as "X Pako(Ycp) + Zcp" for products sold by package
+    // Format remaining stock as "X pako(Ycp) + Zcp" for products sold by package
     formatRemainingStock(product) {
-      if (!product || !product.sold_by_package || !product.pieces_per_package || !product.remaining_stock_pieces || product.remaining_stock_pieces <= 0) {
+      if (!product || !product.remaining_stock_pieces || product.remaining_stock_pieces <= 0) {
         return `${product.remaining_stock_pieces || 0}cp`
+      }
+      
+      if (!product.sold_by_package || !product.pieces_per_package) {
+        return `${product.remaining_stock_pieces}cp`
       }
       
       const remainingPieces = product.remaining_stock_pieces
@@ -2268,14 +2319,43 @@ export default {
       const extraPieces = remainingPieces % piecesPerPackage
       
       if (fullPackages > 0 && extraPieces > 0) {
-        // Format: "X Pako(Ycp) + Zcp"
-        return `${fullPackages} Pako(${piecesPerPackage}cp) + ${extraPieces}cp`
+        // Format: "X pako(Ycp) + Zcp"
+        return `${fullPackages} pako(${piecesPerPackage}cp) + ${extraPieces}cp`
       } else if (fullPackages > 0) {
         // Only full packages, no extra pieces
-        return `${fullPackages} Pako(${piecesPerPackage}cp) = ${piecesInPackages}cp`
+        return `${fullPackages} pako(${piecesPerPackage}cp) = ${piecesInPackages}cp`
       } else {
         // Only pieces, no full packages
         return `${extraPieces}cp`
+      }
+    },
+    // Format shortage as "Mungesë: X pako(Ycp) + Zcp" for products sold by package
+    formatShortage(product) {
+      if (!product || !product.shortage_quantity || product.shortage_quantity <= 0) {
+        return `Mungesë: 0cp`
+      }
+      
+      if (!product.sold_by_package || !product.pieces_per_package) {
+        return `Mungesë: ${product.shortage_quantity}cp`
+      }
+      
+      const shortagePieces = product.shortage_quantity
+      const piecesPerPackage = product.pieces_per_package
+      
+      // Calculate full packages and remaining pieces
+      const fullPackages = Math.floor(shortagePieces / piecesPerPackage)
+      const piecesInPackages = fullPackages * piecesPerPackage
+      const extraPieces = shortagePieces % piecesPerPackage
+      
+      if (fullPackages > 0 && extraPieces > 0) {
+        // Format: "Mungesë: X pako(Ycp) + Zcp"
+        return `Mungesë: ${fullPackages} pako(${piecesPerPackage}cp) + ${extraPieces}cp`
+      } else if (fullPackages > 0) {
+        // Only full packages, no extra pieces
+        return `Mungesë: ${fullPackages} pako(${piecesPerPackage}cp) = ${piecesInPackages}cp`
+      } else {
+        // Only pieces, no full packages
+        return `Mungesë: ${extraPieces}cp`
       }
     },
     async loadInvoices() {
