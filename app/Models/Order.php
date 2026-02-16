@@ -14,6 +14,12 @@ class Order extends Model
 
     protected $fillable = [
         'client_id',
+        'client_location_id',
+        'location_unit_name',
+        'location_street_number',
+        'location_phone',
+        'location_viber',
+        'location_city',
         'order_number',
         'customer_name',
         'business_name',
@@ -52,6 +58,11 @@ class Order extends Model
     public function client(): BelongsTo
     {
         return $this->belongsTo(Client::class);
+    }
+
+    public function clientLocation(): BelongsTo
+    {
+        return $this->belongsTo(ClientLocation::class, 'client_location_id');
     }
 
     public function items(): HasMany

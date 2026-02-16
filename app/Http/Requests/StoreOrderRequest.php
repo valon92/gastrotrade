@@ -23,6 +23,8 @@ class StoreOrderRequest extends FormRequest
     {
         return [
             'client_id' => ['nullable', 'exists:clients,id'],
+            'client_location_id' => ['nullable', 'exists:client_locations,id'],
+            'order_number' => ['nullable', 'string', 'max:255', 'unique:orders,order_number'],
             'customer.name' => ['required', 'string', 'max:255'],
             'customer.business_name' => ['required', 'string', 'max:255'],
             'customer.fiscal_number' => ['required', 'string', 'max:255'],

@@ -13,28 +13,39 @@
         </div>
         <div class="flex flex-col sm:flex-row gap-3 w-full sm:w-auto">
           <router-link
+            v-if="canViewSales"
             to="/admin/sales"
             class="btn-secondary text-center"
           >
             💰 Shitjet
           </router-link>
           <router-link
+            v-if="canManageProducts"
             to="/admin/products"
             class="btn-secondary text-center"
           >
             📦 Produktet
           </router-link>
           <router-link
+            v-if="canManageStock"
             to="/admin/stock"
             class="btn-secondary text-center"
           >
             📊 Stoku
           </router-link>
           <router-link
+            v-if="canViewTrash"
             to="/admin/trash"
             class="btn-secondary text-center"
           >
             🗑️ Historia e Fshirjeve
+          </router-link>
+          <router-link
+            v-if="canManage"
+            to="/admin/users"
+            class="btn-secondary text-center"
+          >
+            👤 Adminat
           </router-link>
           <button 
             @click="logout"
@@ -131,6 +142,8 @@
                 <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Emri i Biznisit</th>
                 <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Nr. Fiskal</th>
                 <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Qyteti</th>
+                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Nr. Rrugës</th>
+                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Njësia</th>
                 <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Telefon</th>
                 <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Viber</th>
                 <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Statusi</th>
@@ -143,6 +156,8 @@
                 <td class="px-4 py-4 whitespace-nowrap text-sm text-gray-500">{{ client.store_name || '-' }}</td>
                 <td class="px-4 py-4 whitespace-nowrap text-sm text-gray-500">{{ client.fiscal_number || '-' }}</td>
                 <td class="px-4 py-4 whitespace-nowrap text-sm text-gray-500">{{ client.city || '-' }}</td>
+                <td class="px-4 py-4 whitespace-nowrap text-sm text-gray-500">{{ client.street_number || '-' }}</td>
+                <td class="px-4 py-4 whitespace-nowrap text-sm text-gray-500">{{ client.unit || '-' }}</td>
                 <td class="px-4 py-4 whitespace-nowrap text-sm text-gray-500">{{ client.phone || '-' }}</td>
                 <td class="px-4 py-4 whitespace-nowrap text-sm text-gray-500">{{ client.viber || '-' }}</td>
                 <td class="px-4 py-4 whitespace-nowrap">
@@ -184,6 +199,8 @@
           <div class="space-y-2 text-sm text-gray-600 mb-4">
             <p v-if="client.fiscal_number"><strong>Nr. Fiskal:</strong> {{ client.fiscal_number }}</p>
             <p v-if="client.city"><strong>Qyteti:</strong> {{ client.city }}</p>
+            <p v-if="client.street_number"><strong>Nr. e Rrugës:</strong> {{ client.street_number }}</p>
+            <p v-if="client.unit"><strong>Njësia:</strong> {{ client.unit }}</p>
             <p v-if="client.phone"><strong>Telefon:</strong> {{ client.phone }}</p>
             <p v-if="client.viber"><strong>Viber:</strong> {{ client.viber }}</p>
           </div>
@@ -207,7 +224,7 @@
 
       <!-- Add/Edit Modal -->
       <div v-if="showAddModal || editingClient" class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
-        <div class="relative top-4 sm:top-20 mx-auto p-4 sm:p-5 border w-full sm:w-96 max-w-md shadow-lg rounded-md bg-white m-4">
+        <div class="relative top-4 sm:top-20 mx-auto p-4 sm:p-5 border w-full sm:w-96 max-w-2xl shadow-lg rounded-md bg-white m-4 max-h-[90vh] overflow-y-auto">
           <h3 class="text-lg font-bold text-gray-900 mb-4">
             {{ editingClient ? 'Edit Klient' : 'Shto Klient të Ri' }}
           </h3>
@@ -226,17 +243,122 @@
               <div>
                 <label class="block text-sm font-medium text-gray-700">Qyteti</label>
                 <input v-model="clientForm.city" type="text" 
+                       placeholder="p.sh. Ferizaj"
                        class="mt-1 block w-full border-gray-300 rounded-md shadow-sm">
               </div>
+              <!-- Lokacionet/Njësitë -->
               <div>
-                <label class="block text-sm font-medium text-gray-700">Telefon</label>
+                <div class="flex justify-between items-center mb-2">
+                  <label class="block text-sm font-medium text-gray-700">Pikat/Njësitë</label>
+                  <button 
+                    type="button"
+                    @click="addLocation"
+                    class="text-sm text-primary-600 hover:text-primary-800 font-medium"
+                  >
+                    + Shto Pikë/Njësi
+                  </button>
+                </div>
+                <div v-if="clientForm.locations && clientForm.locations.length > 0" class="space-y-3 mb-3">
+                  <div 
+                    v-for="(location, index) in clientForm.locations" 
+                    :key="index"
+                    class="border border-gray-200 rounded-lg p-3 bg-gray-50"
+                  >
+                    <div class="flex justify-between items-start mb-2">
+                      <span class="text-xs font-semibold text-gray-600">Pika/Njësia {{ index + 1 }}</span>
+                      <button 
+                        type="button"
+                        @click="removeLocation(index)"
+                        class="text-red-600 hover:text-red-800 text-xs"
+                      >
+                        ✕ Fshi
+                      </button>
+                    </div>
+                    <div class="space-y-2">
+                      <div>
+                        <label class="block text-xs font-medium text-gray-600">Emri i Pikës/Njësisë *</label>
+                        <input 
+                          v-model="location.unit_name" 
+                          type="text" 
+                          required
+                          placeholder="p.sh. Pika 1, Pika 2, Degë A"
+                          class="mt-1 block w-full px-2 py-1.5 text-sm border-gray-300 rounded-md shadow-sm"
+                        >
+                      </div>
+                      <div>
+                        <label class="block text-xs font-medium text-gray-600">Nr. e Rrugës</label>
+                        <input 
+                          v-model="location.street_number" 
+                          type="text" 
+                          placeholder="p.sh. Rruga Lidhja E Prizerent, Nr. 15"
+                          class="mt-1 block w-full px-2 py-1.5 text-sm border-gray-300 rounded-md shadow-sm"
+                        >
+                      </div>
+                      <div class="grid grid-cols-2 gap-2">
+                        <div>
+                          <label class="block text-xs font-medium text-gray-600">Telefon</label>
+                          <input 
+                            v-model="location.phone" 
+                            type="text" 
+                            placeholder="p.sh. 048 75 66 46"
+                            class="mt-1 block w-full px-2 py-1.5 text-sm border-gray-300 rounded-md shadow-sm"
+                          >
+                        </div>
+                        <div>
+                          <label class="block text-xs font-medium text-gray-600">Viber</label>
+                          <input 
+                            v-model="location.viber" 
+                            type="text" 
+                            placeholder="p.sh. 044 82 43 14"
+                            class="mt-1 block w-full px-2 py-1.5 text-sm border-gray-300 rounded-md shadow-sm"
+                          >
+                        </div>
+                      </div>
+                      <div>
+                        <label class="block text-xs font-medium text-gray-600">Vendi/Qyteti</label>
+                        <input 
+                          v-model="location.notes" 
+                          type="text"
+                          placeholder="p.sh. Ferizaj, Prishtinë, etj."
+                          class="mt-1 block w-full px-2 py-1.5 text-sm border-gray-300 rounded-md shadow-sm"
+                        >
+                      </div>
+                      <div>
+                        <label class="flex items-center">
+                          <input 
+                            v-model="location.is_active" 
+                            type="checkbox" 
+                            class="rounded border-gray-300 text-primary-600"
+                          >
+                          <span class="ml-2 text-xs text-gray-700">Aktiv</span>
+                        </label>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                <p v-else class="text-xs text-gray-500 mb-2">
+                  Nuk ka pika/njësi të shtuara. Klikoni "+ Shto Pikë/Njësi" për të shtuar.
+                </p>
+              </div>
+              
+              <!-- Telefon dhe Viber bazë (për klientin kryesor) -->
+              <div>
+                <label class="block text-sm font-medium text-gray-700">Telefon Kryesor</label>
                 <input v-model="clientForm.phone" type="text" 
+                       placeholder="p.sh. 048 75 66 46"
                        class="mt-1 block w-full border-gray-300 rounded-md shadow-sm">
+                <p class="mt-1 text-xs text-gray-500">
+                  Telefoni kryesor i biznesit (opsional nëse ka pika me telefona të veçantë)
+                </p>
               </div>
               <div>
-                <label class="block text-sm font-medium text-gray-700">Viber</label>
+                <label class="block text-sm font-medium text-gray-700">Viber Kryesor</label>
                 <input v-model="clientForm.viber" type="text" 
+                       placeholder="p.sh. 044 82 43 14"
                        class="mt-1 block w-full border-gray-300 rounded-md shadow-sm">
+                <p class="mt-1 text-xs text-gray-500">
+                  Viber kryesor i biznesit (opsional nëse ka pika me viber të veçantë)
+                </p>
               </div>
               <div>
                 <label class="block text-sm font-medium text-gray-700">Numri Fiskal i Biznesit *</label>
@@ -343,6 +465,36 @@
                   ⚠️ Të Papaguara ({{ paymentStats.unpaidCount }})
                 </button>
               </div>
+              
+              <!-- Location Filter -->
+              <div v-if="!ordersLoading && !ordersError && selectedClientOrders.length > 0 && availableLocations.length > 0" class="mb-4">
+                <div class="flex flex-wrap gap-2 items-center">
+                  <span class="text-sm font-medium text-gray-700">Filtro sipas Njësisë:</span>
+                  <button 
+                    @click="locationFilter = 'all'"
+                    :class="locationFilter === 'all' ? 'bg-blue-600 text-white' : 'bg-gray-200 text-gray-700 hover:bg-gray-300'"
+                    class="px-3 py-1.5 text-xs font-medium rounded-lg transition-colors duration-200"
+                  >
+                    Të Gjitha
+                  </button>
+                  <button 
+                    @click="locationFilter = 'no_location'"
+                    :class="locationFilter === 'no_location' ? 'bg-blue-600 text-white' : 'bg-gray-200 text-gray-700 hover:bg-gray-300'"
+                    class="px-3 py-1.5 text-xs font-medium rounded-lg transition-colors duration-200"
+                  >
+                    Pa Njësi
+                  </button>
+                  <button 
+                    v-for="location in availableLocations"
+                    :key="location"
+                    @click="locationFilter = location"
+                    :class="locationFilter === location ? 'bg-blue-600 text-white' : 'bg-gray-200 text-gray-700 hover:bg-gray-300'"
+                    class="px-3 py-1.5 text-xs font-medium rounded-lg transition-colors duration-200"
+                  >
+                    📍 {{ location }}
+                  </button>
+                </div>
+              </div>
 
               <div v-if="ordersLoading" class="flex items-center gap-3 text-gray-600">
                 <span class="inline-block h-5 w-5 border-2 border-primary-600 border-t-transparent rounded-full animate-spin"></span>
@@ -378,6 +530,12 @@
                     <div>
                       <p class="text-sm text-gray-500">#{{ order.order_number }}</p>
                       <p class="text-gray-900 font-semibold">{{ formatDate(order.created_at) }}</p>
+                      <div v-if="order.location_unit_name" class="mt-1 text-xs text-gray-600">
+                        <p><strong>Pika/Njësia:</strong> {{ order.location_unit_name }}</p>
+                        <p v-if="order.location_street_number"><strong>Adresa:</strong> {{ order.location_street_number }}</p>
+                        <p v-if="order.location_city"><strong>Vendi/Qyteti:</strong> {{ order.location_city }}</p>
+                        <p v-if="order.location_phone"><strong>Telefon i Pikës:</strong> {{ order.location_phone }}</p>
+                      </div>
                     </div>
                     <div class="text-sm text-gray-600">
                       <p><strong>Produkte:</strong> {{ order.total_items }}</p>
@@ -785,6 +943,7 @@
 
 <script>
 import axios from 'axios'
+import { adminStore } from '../../stores/adminStore'
 
 export default {
   name: 'AdminClients',
@@ -807,7 +966,8 @@ export default {
         phone: '',
         viber: '',
         notes: '',
-        is_active: true
+        is_active: true,
+        locations: [] // Array për shumë pika/njësi
       },
       showOrdersModal: false,
       ordersLoading: false,
@@ -823,7 +983,9 @@ export default {
       savingOrder: false,
       tempItemIdCounter: 0,
       paymentFilter: 'all',
-      paymentStatsData: null
+      locationFilter: 'all',
+      paymentStatsData: null,
+      showGroupedByLocation: false
     }
   },
   async mounted() {
@@ -832,6 +994,21 @@ export default {
     await this.loadAllOrders()
   },
   computed: {
+    canManage() {
+      return adminStore.canManage()
+    },
+    canViewSales() {
+      return adminStore.canViewSales()
+    },
+    canManageProducts() {
+      return adminStore.canManageProducts()
+    },
+    canManageStock() {
+      return adminStore.canManageStock()
+    },
+    canViewTrash() {
+      return adminStore.canViewTrash()
+    },
     filteredClients() {
       const name = this.searchFilters.name.trim().toLowerCase()
       const business = this.searchFilters.business.trim().toLowerCase()
@@ -861,19 +1038,46 @@ export default {
         return []
       }
 
-      if (this.paymentFilter === 'all') {
-        return this.selectedClientOrders
+      let orders = this.selectedClientOrders
+
+      // Apply payment filter
+      if (this.paymentFilter !== 'all') {
+        orders = orders.filter(order => {
+          if (this.paymentFilter === 'paid') {
+            return order.is_paid === true || order.is_paid === 1
+          }
+          if (this.paymentFilter === 'unpaid') {
+            return !order.is_paid || order.is_paid === 0 || order.is_paid === false
+          }
+          return true
+        })
       }
 
-      return this.selectedClientOrders.filter(order => {
-        if (this.paymentFilter === 'paid') {
-          return order.is_paid === true || order.is_paid === 1
+      // Apply location filter
+      if (this.locationFilter && this.locationFilter !== 'all') {
+        orders = orders.filter(order => {
+          if (this.locationFilter === 'no_location') {
+            return !order.location_unit_name
+          }
+          return order.location_unit_name === this.locationFilter
+        })
+      }
+
+      return orders
+    },
+    availableLocations() {
+      if (!this.selectedClientOrders || this.selectedClientOrders.length === 0) {
+        return []
+      }
+      
+      const locations = new Set()
+      this.selectedClientOrders.forEach(order => {
+        if (order.location_unit_name) {
+          locations.add(order.location_unit_name)
         }
-        if (this.paymentFilter === 'unpaid') {
-          return !order.is_paid || order.is_paid === 0 || order.is_paid === false
-        }
-        return true
       })
+      
+      return Array.from(locations).sort()
     },
     paymentStats() {
       if (!this.selectedClientOrders || this.selectedClientOrders.length === 0) {
@@ -947,6 +1151,7 @@ export default {
       } catch (error) {
         // Continue with logout even if API call fails
       }
+      adminStore.clearUser()
       localStorage.removeItem('admin_token')
       delete axios.defaults.headers.common['Authorization']
       this.$router.push('/admin/login')
@@ -976,22 +1181,124 @@ export default {
     },
     editClient(client) {
       this.editingClient = client
-      this.clientForm = { ...client }
-      this.showAddModal = true
+      // Load client with locations
+      this.loadClientWithLocations(client.id)
+    },
+    async loadClientWithLocations(clientId) {
+      try {
+        const response = await axios.get(`/api/clients/${clientId}`)
+        const client = response.data.data
+        this.clientForm = {
+          name: client.name || '',
+          store_name: client.store_name || '',
+          fiscal_number: client.fiscal_number || '',
+          city: client.city || '',
+          phone: client.phone || '',
+          viber: client.viber || '',
+          notes: client.notes || '',
+          is_active: client.is_active !== undefined ? client.is_active : true,
+          locations: client.locations && client.locations.length > 0 
+            ? client.locations.map(loc => ({
+                id: loc.id,
+                unit_name: loc.unit_name || '',
+                street_number: loc.street_number || '',
+                phone: loc.phone || '',
+                viber: loc.viber || '',
+                notes: loc.notes || '',
+                is_active: loc.is_active !== undefined ? loc.is_active : true
+              }))
+            : []
+        }
+        this.showAddModal = true
+      } catch (error) {
+        console.error('Error loading client:', error)
+        // Fallback to basic client data
+        const client = this.clients.find(c => c.id === clientId)
+        if (client) {
+          this.clientForm = { ...client, locations: [] }
+          this.showAddModal = true
+        }
+      }
+    },
+    addLocation() {
+      if (!this.clientForm.locations) {
+        this.clientForm.locations = []
+      }
+      this.clientForm.locations.push({
+        unit_name: '',
+        street_number: '',
+        phone: '',
+        viber: '',
+        notes: '',
+        is_active: true
+      })
+    },
+    removeLocation(index) {
+      if (this.clientForm.locations && this.clientForm.locations.length > index) {
+        this.clientForm.locations.splice(index, 1)
+      }
     },
     async saveClient() {
       try {
+        // Validate required fields
+        if (!this.clientForm.name || !this.clientForm.name.trim()) {
+          alert('Ju lutem plotësoni emrin e klientit!')
+          return
+        }
+        
+        if (!this.clientForm.store_name || !this.clientForm.store_name.trim()) {
+          alert('Ju lutem plotësoni emrin e biznisit!')
+          return
+        }
+        
+        if (!this.clientForm.fiscal_number || !this.clientForm.fiscal_number.trim()) {
+          alert('Ju lutem plotësoni numrin fiskal!')
+          return
+        }
+        
+        // Validate locations if provided
+        if (this.clientForm.locations && this.clientForm.locations.length > 0) {
+          for (let i = 0; i < this.clientForm.locations.length; i++) {
+            const loc = this.clientForm.locations[i]
+            if (!loc.unit_name || !loc.unit_name.trim()) {
+              alert(`Ju lutem plotësoni emrin e pikës/njësisë ${i + 1}!`)
+              return
+            }
+          }
+        }
+        
+        // Prepare data with locations
+        const dataToSend = {
+          ...this.clientForm,
+          locations: (this.clientForm.locations || []).map(loc => ({
+            ...loc,
+            is_active: loc.is_active !== undefined ? loc.is_active : true
+          }))
+        }
+        
         if (this.editingClient) {
-          await axios.put(`/api/clients/${this.editingClient.id}`, this.clientForm)
+          await axios.put(`/api/clients/${this.editingClient.id}`, dataToSend)
         } else {
-          await axios.post('/api/clients', this.clientForm)
+          await axios.post('/api/clients', dataToSend)
         }
         await this.loadClients()
         this.closeModal()
-        alert('Klienti u ruajt me sukses!')
+        alert('✅ Klienti u ruajt me sukses!')
       } catch (error) {
         console.error('Error saving client:', error)
-        alert('Gabim në ruajtjen e klientit')
+        let errorMessage = 'Gabim në ruajtjen e klientit'
+        
+        if (error.response?.data?.errors) {
+          const errors = error.response.data.errors
+          const errorList = Object.entries(errors)
+            .map(([field, messages]) => `${field}: ${Array.isArray(messages) ? messages.join(', ') : messages}`)
+            .join('\n')
+          errorMessage = `Gabime në validim:\n${errorList}`
+        } else if (error.response?.data?.message) {
+          errorMessage = error.response.data.message
+        }
+        
+        alert(errorMessage)
       }
     },
     async deleteClient(id) {
@@ -1021,7 +1328,8 @@ export default {
         phone: '',
         viber: '',
         notes: '',
-        is_active: true
+        is_active: true,
+        locations: []
       }
     },
     viewOrders(client) {
@@ -1058,6 +1366,7 @@ export default {
       this.selectedClientFiscal = ''
       this.selectedClientId = null
       this.paymentFilter = 'all'
+      this.locationFilter = 'all'
     },
     formatPrice(price) {
       if (price === null || price === undefined) {
@@ -1137,6 +1446,10 @@ export default {
         fiscal_number: order.fiscal_number || 'N/A',
         city: order.city || 'N/A',
         phone: order.phone || 'N/A',
+        location_unit_name: order.location_unit_name || null,
+        location_street_number: order.location_street_number || null,
+        location_city: order.location_city || null,
+        location_phone: order.location_phone || null,
         total_amount: order.total_amount
       })
 
@@ -1169,10 +1482,24 @@ export default {
         '<h1>Faturë ' + (order.order_number || 'N/A') + '</h1>' +
         '<div class="meta">' +
         '<p><strong>Data e Porosisë:</strong> ' + createdAt + '</p>' +
+        // Always show client data
+        '<div style="margin-bottom: 12px;">' +
         '<p><strong>Klienti:</strong> ' + (order.customer_name || 'N/A') + ' — ' + (order.business_name || 'N/A') + '</p>' +
         '<p><strong>Nr. Fiskal:</strong> ' + (order.fiscal_number || 'N/A') + '</p>' +
         '<p><strong>Qyteti:</strong> ' + (order.city || 'N/A') + '</p>' +
         '<p><strong>Telefon/Viber:</strong> ' + (order.phone || 'N/A') + '</p>' +
+        '</div>' +
+        // If location data exists, show it as well
+        (order.location_unit_name || order.location_street_number || order.location_city || order.location_phone || order.location_viber ? (
+          '<div style="background-color: #f0f9ff; padding: 12px; border-radius: 6px; margin-bottom: 12px; border-left: 4px solid #3b82f6;">' +
+          '<p style="margin: 0 0 8px 0; font-weight: bold; color: #1e40af; font-size: 14px;">📍 Të Dhënat e Njësisë</p>' +
+          (order.location_unit_name ? '<p style="margin: 4px 0;"><strong>Pika/Njësia:</strong> ' + order.location_unit_name + '</p>' : '') +
+          (order.location_street_number ? '<p style="margin: 4px 0;"><strong>Adresa:</strong> ' + order.location_street_number + '</p>' : '') +
+          (order.location_city ? '<p style="margin: 4px 0;"><strong>Vendi/Qyteti:</strong> ' + order.location_city + '</p>' : '') +
+          (order.location_phone ? '<p style="margin: 4px 0;"><strong>Telefon:</strong> ' + order.location_phone + '</p>' : '') +
+          (order.location_viber ? '<p style="margin: 4px 0;"><strong>Viber:</strong> ' + order.location_viber + '</p>' : '') +
+          '</div>'
+        ) : '') +
         (isPaid ? '<div class="payment-status paid">' +
         '<strong>Statusi i Pagesës:</strong> ' + paymentStatus +
         (paidAt ? '<br><span style="font-size: 12px;">E paguar më: ' + paidAt + '</span>' : '') +
@@ -1188,7 +1515,7 @@ export default {
         '</table>' +
         '<div class="totals">' +
         '<div style="margin-bottom: 8px;">' +
-        '<p><strong>Totali i produkteve:</strong> ' + order.total_items + '</p>' +
+        '<p><strong>Totali i produkteve:</strong> ' + (order.items ? order.items.length : order.total_items || 0) + '</p>' +
         (order.subtotal ? '<p><strong>Nëntotali (para zbritjeve):</strong> ' + this.formatPrice(order.subtotal) + '</p>' : '') +
         (totalItemDiscounts > 0 ? '<p style="color: #dc2626;"><strong>Totali i zbritjeve të produkteve:</strong> -' + this.formatPrice(totalItemDiscounts) + '</p>' : '') +
         (order.discount_amount && order.discount_amount > 0 ? '<p style="color: #dc2626;"><strong>Zbritje e përgjithshme ' + (order.discount_type === 'percentage' ? order.discount_value + '%' : 'fikse') + ':</strong> -' + this.formatPrice(order.discount_amount) + '</p>' : '') +
@@ -1255,13 +1582,24 @@ export default {
         '}' +
         '}' +
         'function shareToWhatsApp() {' +
-        'const orderText = "📦 Faturë " + orderData.order_number + "\\n\\nKlienti: " + orderData.customer_name + " — " + orderData.business_name + "\\nQyteti: " + orderData.city + "\\nTelefon: " + orderData.phone + "\\n\\nTotal: " + (orderData.total_amount ? orderData.total_amount.toFixed(2) + " €" : "Sipas kërkesës");' +
+        'let orderText = "📦 Faturë " + orderData.order_number + "\\n\\nKlienti: " + orderData.customer_name + " — " + orderData.business_name + "\\nQyteti: " + orderData.city + "\\nTelefon: " + orderData.phone;' +
+        (order.location_unit_name ? 'orderText += "\\nPika/Njësia: " + orderData.location_unit_name;' : '') +
+        (order.location_street_number ? 'orderText += "\\nAdresa: " + orderData.location_street_number;' : '') +
+        (order.location_city ? 'orderText += "\\nVendi/Qyteti: " + orderData.location_city;' : '') +
+        (order.location_phone ? 'orderText += "\\nTelefon i Pikës: " + orderData.location_phone;' : '') +
+        'orderText += "\\n\\nTotal: " + (orderData.total_amount ? orderData.total_amount.toFixed(2) + " €" : "Sipas kërkesës");' +
         'const whatsappUrl = "https://wa.me/?text=" + encodeURIComponent(orderText);' +
         'window.open(whatsappUrl, "_blank");' +
         '}' +
         'function shareToGmail() {' +
         'const subject = encodeURIComponent("Faturë " + orderData.order_number);' +
-        'const body = encodeURIComponent("Faturë: " + orderData.order_number + "\\n\\nKlienti: " + orderData.customer_name + " — " + orderData.business_name + "\\nQyteti: " + orderData.city + "\\nTelefon: " + orderData.phone + "\\n\\nTotal: " + (orderData.total_amount ? orderData.total_amount.toFixed(2) + " €" : "Sipas kërkesës"));' +
+        'let bodyText = "Faturë: " + orderData.order_number + "\\n\\nKlienti: " + orderData.customer_name + " — " + orderData.business_name + "\\nQyteti: " + orderData.city + "\\nTelefon: " + orderData.phone;' +
+        (order.location_unit_name ? 'bodyText += "\\nPika/Njësia: " + orderData.location_unit_name;' : '') +
+        (order.location_street_number ? 'bodyText += "\\nAdresa: " + orderData.location_street_number;' : '') +
+        (order.location_city ? 'bodyText += "\\nVendi/Qyteti: " + orderData.location_city;' : '') +
+        (order.location_phone ? 'bodyText += "\\nTelefon i Pikës: " + orderData.location_phone;' : '') +
+        'bodyText += "\\n\\nTotal: " + (orderData.total_amount ? orderData.total_amount.toFixed(2) + " €" : "Sipas kërkesës");' +
+        'const body = encodeURIComponent(bodyText);' +
         'const gmailUrl = "mailto:svalon95@gmail.com?subject=" + subject + "&body=" + body;' +
         'window.location.href = gmailUrl;' +
         '}' +

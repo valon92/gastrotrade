@@ -24,6 +24,13 @@
           >
             👥 Klientët
           </router-link>
+          <router-link
+            v-if="canManage"
+            to="/admin/users"
+            class="btn-secondary text-center"
+          >
+            👤 Adminat
+          </router-link>
           <button 
             @click="logout"
             class="btn-secondary w-full sm:w-auto"
@@ -792,6 +799,7 @@
 
 <script>
 import axios from 'axios'
+import { adminStore } from '../../stores/adminStore'
 
 export default {
   name: 'AdminSupplierInvoices',
@@ -837,6 +845,9 @@ export default {
     }
   },
   computed: {
+    canManage() {
+      return adminStore.canManage()
+    },
     calculateSubtotal() {
       return this.newInvoiceForm.items.reduce((sum, item) => {
         return sum + (parseFloat(item.total_price || 0))

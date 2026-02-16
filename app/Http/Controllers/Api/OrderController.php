@@ -129,9 +129,46 @@ class OrderController extends Controller
                 ->first();
         }
 
-        $order = Order::create([
+        // Validate client_location_id if provided and get location data
+        $clientLocationId = null;
+        $locationData = [
+            'location_unit_name' => null,
+            'location_street_number' => null,
+            'location_phone' => null,
+            'location_viber' => null,
+            'location_city' => null,
+        ];
+        
+        if (!empty($validated['client_location_id'])) {
+            // Verify that the location belongs to the client
+            if ($client && \Illuminate\Support\Facades\Schema::hasTable('client_locations')) {
+                $location = \App\Models\ClientLocation::where('id', $validated['client_location_id'])
+                    ->where('client_id', $client->id)
+                    ->whereNull('deleted_at')
+                    ->first();
+                if ($location) {
+                    $clientLocationId = $location->id;
+                    // Store location data in order
+                    $locationData = [
+                        'location_unit_name' => $location->unit_name,
+                        'location_street_number' => $location->street_number,
+                        'location_phone' => $location->phone,
+                        'location_viber' => $location->viber,
+                        'location_city' => $location->notes, // notes field stores city/location
+                    ];
+                }
+            }
+        }
+
+        // Use provided order_number or generate new one
+        $orderNumber = !empty($validated['order_number']) 
+            ? $validated['order_number'] 
+            : $this->generateOrderNumber();
+        
+        $orderData = [
             'client_id' => $client?->id,
-            'order_number' => $this->generateOrderNumber(),
+            'client_location_id' => $clientLocationId,
+            'order_number' => $orderNumber,
             'customer_name' => $customer['name'],
             'business_name' => $businessName,
             'fiscal_number' => $fiscalNumber,
@@ -154,7 +191,18 @@ class OrderController extends Controller
             'status' => 'ruajtur',
             'is_paid' => $validated['is_paid'] ?? false,
             'paid_at' => !empty($validated['paid_at']) ? $validated['paid_at'] : null,
-        ]);
+        ];
+        
+        // Only add location fields if columns exist
+        if (\Illuminate\Support\Facades\Schema::hasColumn('orders', 'location_unit_name')) {
+            $orderData['location_unit_name'] = $locationData['location_unit_name'];
+            $orderData['location_street_number'] = $locationData['location_street_number'];
+            $orderData['location_phone'] = $locationData['location_phone'];
+            $orderData['location_viber'] = $locationData['location_viber'];
+            $orderData['location_city'] = $locationData['location_city'];
+        }
+        
+        $order = Order::create($orderData);
 
         foreach ($items as $item) {
             $orderItem = $order->items()->create([
@@ -255,7 +303,7 @@ class OrderController extends Controller
 
         return response()->json([
             'success' => true,
-            'data' => $order->load('items'),
+            'data' => $order->load(['items', 'clientLocation']),
         ], 201);
     }
 
@@ -283,8 +331,19 @@ class OrderController extends Controller
             $query->where('phone', $request->phone);
         }
 
-        // Use distinct to prevent duplicates
-        $orders = $query->distinct()->limit(10)->get();
+        // Get orders and remove duplicates by ID
+        $orders = $query->limit(20)->get()->unique('id')->take(10)->values();
+        
+        // Only load clientLocation if the column exists and table exists
+        if (\Illuminate\Support\Facades\Schema::hasTable('client_locations') && 
+            \Illuminate\Support\Facades\Schema::hasColumn('orders', 'client_location_id')) {
+            try {
+                $orders->load('clientLocation');
+            } catch (\Exception $e) {
+                // If clientLocation relation fails, continue without it
+                \Log::warning('Failed to load clientLocation relation: ' . $e->getMessage());
+            }
+        }
 
         return response()->json([
             'success' => true,
@@ -307,7 +366,7 @@ class OrderController extends Controller
 
         return response()->json([
             'success' => true,
-            'data' => $order->load('items'),
+            'data' => $order->load(['items', 'clientLocation']),
         ]);
     }
 
@@ -390,6 +449,11 @@ class OrderController extends Controller
             'amount_before_vat',
             'is_paid',
         ]);
+        
+        // NEVER allow order_number to be changed - it must remain the same from creation
+        if (isset($updateData['order_number'])) {
+            unset($updateData['order_number']);
+        }
 
         // If marking as paid, set paid_at timestamp
         if ($request->has('is_paid')) {
@@ -514,7 +578,7 @@ class OrderController extends Controller
 
         return response()->json([
             'success' => true,
-            'data' => $order->load('items'),
+            'data' => $order->load(['items', 'clientLocation']),
         ]);
     }
 

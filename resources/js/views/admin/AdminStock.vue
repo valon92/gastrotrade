@@ -24,6 +24,13 @@
           >
             👥 Klientët
           </router-link>
+          <router-link
+            v-if="canManage"
+            to="/admin/users"
+            class="btn-secondary text-center"
+          >
+            👤 Adminat
+          </router-link>
           <button 
             @click="logout"
             class="btn-secondary w-full sm:w-auto"
@@ -1641,6 +1648,9 @@ export default {
     }
   },
   computed: {
+    canManage() {
+      return adminStore.canManage()
+    },
     filteredProducts() {
       // Ensure products is an array and filter out any undefined/null/invalid products
       if (!Array.isArray(this.products)) {
@@ -2826,11 +2836,18 @@ export default {
             quantitySuffix = `<br><span style="font-size: 11px; color: #6b7280;">= ${item.quantity * (product.pieces_per_package || 1)} copa</span>`
           }
           
+          // Calculate price per piece if product is sold by package
+          let unitPriceDisplay = this.formatPrice(item.unit_price)
+          if (product && product.sold_by_package && product.pieces_per_package && item.unit_price) {
+            const pricePerPiece = parseFloat(item.unit_price) / parseFloat(product.pieces_per_package)
+            unitPriceDisplay = `${this.formatPrice(item.unit_price)}<br><span style="font-size: 11px; color: #6b7280;">(${this.formatPrice(pricePerPiece)}/copë)</span>`
+          }
+          
           return `
           <tr>
             <td>${item.product_name || '-'}${packagingInfo ? '<br><span style="font-size: 11px; color: #6b7280;">' + packagingInfo + '</span>' : ''}</td>
             <td style="text-align: center;">${quantityDisplay}${quantitySuffix}</td>
-            <td style="text-align: right;">${this.formatPrice(item.unit_price)}</td>
+            <td style="text-align: right;">${unitPriceDisplay}</td>
             <td style="text-align: right; font-weight: bold;">${this.formatPrice(item.total_price)}</td>
           </tr>
         `

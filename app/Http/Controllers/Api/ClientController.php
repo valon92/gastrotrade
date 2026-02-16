@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Client;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
+use Illuminate\Support\Facades\Schema;
 
 class ClientController extends Controller
 {
@@ -14,7 +15,14 @@ class ClientController extends Controller
      */
     public function index()
     {
-        $clients = Client::with('prices.product')->orderBy('created_at', 'desc')->get();
+        $withRelations = ['prices.product'];
+        
+        // Only include locations if table exists
+        if (Schema::hasTable('client_locations')) {
+            $withRelations[] = 'locations';
+        }
+        
+        $clients = Client::with($withRelations)->orderBy('created_at', 'desc')->get();
 
         return response()->json([
             'success' => true,
@@ -41,6 +49,13 @@ class ClientController extends Controller
             'viber' => 'nullable|string',
             'notes' => 'nullable|string',
             'allow_piece_sales' => 'nullable|boolean',
+            'locations' => 'nullable|array',
+            'locations.*.unit_name' => 'required_with:locations|string|max:255',
+            'locations.*.street_number' => 'nullable|string|max:255',
+            'locations.*.phone' => 'nullable|string|max:255',
+            'locations.*.viber' => 'nullable|string|max:255',
+            'locations.*.notes' => 'nullable|string',
+            'locations.*.is_active' => 'nullable|boolean',
         ]);
 
         if ($validator->fails()) {
@@ -50,11 +65,24 @@ class ClientController extends Controller
             ], 422);
         }
 
-        $client = Client::create($request->all());
+        $clientData = $request->except(['locations']);
+        $client = Client::create($clientData);
 
+        // Create locations if provided (only if table exists)
+        if ($request->has('locations') && is_array($request->locations) && Schema::hasTable('client_locations')) {
+            foreach ($request->locations as $locationData) {
+                $client->locations()->create($locationData);
+            }
+        }
+
+        $withRelations = ['prices.product'];
+        if (Schema::hasTable('client_locations')) {
+            $withRelations[] = 'locations';
+        }
+        
         return response()->json([
             'success' => true,
-            'data' => $client->load('prices.product')
+            'data' => $client->load($withRelations)
         ], 201);
     }
 
@@ -63,7 +91,14 @@ class ClientController extends Controller
      */
     public function show(string $id)
     {
-        $client = Client::with('prices.product')->find($id);
+        $withRelations = ['prices.product'];
+        
+        // Only include locations if table exists
+        if (Schema::hasTable('client_locations')) {
+            $withRelations[] = 'locations';
+        }
+        
+        $client = Client::with($withRelations)->find($id);
 
         if (!$client) {
             return response()->json([
@@ -114,6 +149,14 @@ class ClientController extends Controller
             'notes' => 'nullable|string',
             'is_active' => 'sometimes|boolean',
             'allow_piece_sales' => 'nullable|boolean',
+            'locations' => 'nullable|array',
+            'locations.*.id' => 'nullable|exists:client_locations,id',
+            'locations.*.unit_name' => 'required_with:locations|string|max:255',
+            'locations.*.street_number' => 'nullable|string|max:255',
+            'locations.*.phone' => 'nullable|string|max:255',
+            'locations.*.viber' => 'nullable|string|max:255',
+            'locations.*.notes' => 'nullable|string',
+            'locations.*.is_active' => 'nullable|boolean',
         ]);
 
         if ($validator->fails()) {
@@ -123,11 +166,38 @@ class ClientController extends Controller
             ], 422);
         }
 
-        $client->update($request->all());
+        $clientData = $request->except(['locations']);
+        $client->update($clientData);
 
+        // Sync locations (only if table exists)
+        if ($request->has('locations') && Schema::hasTable('client_locations')) {
+            $locationIds = [];
+            foreach ($request->locations as $locationData) {
+                if (isset($locationData['id'])) {
+                    // Update existing location
+                    $location = $client->locations()->find($locationData['id']);
+                    if ($location) {
+                        $location->update(collect($locationData)->except('id')->toArray());
+                        $locationIds[] = $location->id;
+                    }
+                } else {
+                    // Create new location
+                    $newLocation = $client->locations()->create(collect($locationData)->except('id')->toArray());
+                    $locationIds[] = $newLocation->id;
+                }
+            }
+            // Delete locations that are not in the request
+            $client->locations()->whereNotIn('id', $locationIds)->delete();
+        }
+
+        $withRelations = ['prices.product'];
+        if (Schema::hasTable('client_locations')) {
+            $withRelations[] = 'locations';
+        }
+        
         return response()->json([
             'success' => true,
-            'data' => $client->load('prices.product')
+            'data' => $client->load($withRelations)
         ]);
     }
 
@@ -173,6 +243,11 @@ class ClientController extends Controller
         // Clean phone number (remove spaces, +, etc.)
         $cleanPhone = preg_replace('/[^0-9]/', '', $phone);
 
+        $withRelations = ['prices.product'];
+        if (Schema::hasTable('client_locations')) {
+            $withRelations[] = 'locations';
+        }
+
         $client = Client::where('is_active', true)
             ->where(function($query) use ($phone, $cleanPhone) {
                 $query->where('phone', $phone)
@@ -182,7 +257,7 @@ class ClientController extends Controller
                       ->orWhereRaw('REPLACE(REPLACE(phone, " ", ""), "+", "") = ?', [$cleanPhone])
                       ->orWhereRaw('REPLACE(REPLACE(viber, " ", ""), "+", "") = ?', [$cleanPhone]);
             })
-            ->with('prices.product')
+            ->with($withRelations)
             ->first();
 
         if (!$client) {
@@ -218,10 +293,15 @@ class ClientController extends Controller
         $businessName = strtolower(trim($request->business_name));
         $fiscalNumber = strtoupper(preg_replace('/\s+/', '', trim($request->fiscal_number)));
 
+        $withRelations = ['prices.product'];
+        if (Schema::hasTable('client_locations')) {
+            $withRelations[] = 'locations';
+        }
+        
         $client = Client::where('is_active', true)
             ->whereRaw('LOWER(store_name) = ?', [$businessName])
             ->where('fiscal_number', $fiscalNumber)
-            ->with('prices.product')
+            ->with($withRelations)
             ->first();
 
         if (!$client) {

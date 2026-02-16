@@ -40,6 +40,22 @@
               <label class="block text-sm font-medium text-gray-500 mb-1">Telefon/Viber</label>
               <p class="text-lg font-semibold text-primary-600">{{ customerData.phone }}</p>
             </div>
+            <div v-if="customerData.locationUnitName">
+              <label class="block text-sm font-medium text-gray-500 mb-1">Pika/Njësia</label>
+              <p class="text-lg font-semibold text-gray-900">{{ customerData.locationUnitName }}</p>
+            </div>
+            <div v-if="customerData.locationStreetNumber">
+              <label class="block text-sm font-medium text-gray-500 mb-1">Adresa</label>
+              <p class="text-lg font-semibold text-gray-900">{{ customerData.locationStreetNumber }}</p>
+            </div>
+            <div v-if="customerData.locationCity">
+              <label class="block text-sm font-medium text-gray-500 mb-1">Vendi/Qyteti i Pikës</label>
+              <p class="text-lg font-semibold text-gray-900">{{ customerData.locationCity }}</p>
+            </div>
+            <div v-if="customerData.locationPhone">
+              <label class="block text-sm font-medium text-gray-500 mb-1">Telefon i Pikës</label>
+              <p class="text-lg font-semibold text-primary-600">{{ customerData.locationPhone }}</p>
+            </div>
           </div>
         </div>
 
@@ -183,7 +199,12 @@ export default {
         storeName: '',
         fiscalNumber: '',
         city: '',
-        phone: ''
+        phone: '',
+        locationUnitName: '',
+        locationStreetNumber: '',
+        locationPhone: '',
+        locationViber: '',
+        locationCity: ''
       },
       cartItems: [],
       totalItems: 0,

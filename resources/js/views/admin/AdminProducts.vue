@@ -373,6 +373,7 @@
 
 <script>
 import axios from 'axios'
+import { adminStore } from '../../stores/adminStore'
 
 export default {
   name: 'AdminProducts',
@@ -393,6 +394,9 @@ export default {
     }
   },
   computed: {
+    canManage() {
+      return adminStore.canManage()
+    },
     filteredProducts() {
       return this.products.filter(product => {
         const matchesSearch = !this.filters.search ||

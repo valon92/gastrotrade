@@ -13,6 +13,13 @@
           >
             ← Kthehu
           </router-link>
+          <router-link
+            v-if="canManage"
+            to="/admin/users"
+            class="btn-secondary text-center"
+          >
+            👤 Adminat
+          </router-link>
           <button 
             @click="logout"
             class="btn-secondary w-full sm:w-auto"
@@ -361,6 +368,7 @@
 
 <script>
 import axios from 'axios'
+import { adminStore } from '../../stores/adminStore'
 
 export default {
   name: 'AdminTrash',
@@ -375,6 +383,9 @@ export default {
     }
   },
   computed: {
+    canManage() {
+      return adminStore.canManage()
+    },
     filteredTrash() {
       if (this.filterType === 'all') {
         return this.trash

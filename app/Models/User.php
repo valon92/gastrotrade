@@ -23,6 +23,7 @@ class User extends Authenticatable
         'email',
         'password',
         'is_admin',
+        'role',
     ];
 
     /**
@@ -47,5 +48,29 @@ class User extends Authenticatable
             'password' => 'hashed',
             'is_admin' => 'boolean',
         ];
+    }
+
+    /**
+     * Check if user has admin role (full management access)
+     */
+    public function isFullAdmin(): bool
+    {
+        return $this->is_admin && $this->role === 'admin';
+    }
+
+    /**
+     * Check if user is order manager (can only create orders)
+     */
+    public function isOrderManager(): bool
+    {
+        return $this->is_admin && $this->role === 'order_manager';
+    }
+
+    /**
+     * Check if user can access management features
+     */
+    public function canManage(): bool
+    {
+        return $this->isFullAdmin();
     }
 }

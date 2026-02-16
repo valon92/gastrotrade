@@ -11,6 +11,7 @@ use App\Http\Controllers\Api\StockController;
 use App\Http\Controllers\Api\StockAdjustmentController;
 use App\Http\Controllers\Api\SupplierInvoiceController;
 use App\Http\Controllers\Api\SalesController;
+use App\Http\Controllers\Api\AdminUserController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
@@ -91,6 +92,15 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/trash', [\App\Http\Controllers\Api\TrashController::class, 'index']);
     Route::post('/trash/{type}/{id}/restore', [\App\Http\Controllers\Api\TrashController::class, 'restore']);
     Route::delete('/trash/{type}/{id}/force', [\App\Http\Controllers\Api\TrashController::class, 'forceDelete']);
+    
+    // Admin users management routes (only for full admins)
+    Route::middleware([\App\Http\Middleware\CheckAdminRole::class . ':admin'])->group(function () {
+        Route::get('/admin/users', [AdminUserController::class, 'index']);
+        Route::get('/admin/users/{id}', [AdminUserController::class, 'show']);
+        Route::post('/admin/users', [AdminUserController::class, 'store']);
+        Route::put('/admin/users/{id}', [AdminUserController::class, 'update']);
+        Route::delete('/admin/users/{id}', [AdminUserController::class, 'destroy']);
+    });
 });
 
 // Public client find by phone (for cart identification - legacy)

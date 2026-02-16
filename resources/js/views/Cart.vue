@@ -21,8 +21,35 @@
       <div v-else class="grid grid-cols-1 lg:grid-cols-3 gap-8">
         <!-- Cart Items -->
         <div class="lg:col-span-2 space-y-4">
+          <!-- Search Bar -->
+          <div class="bg-white rounded-lg shadow-lg p-4">
+            <div class="relative">
+              <input 
+                type="text"
+                v-model="searchQuery"
+                placeholder="Kërko produkte në shportë..."
+                class="w-full px-4 py-3 pl-12 pr-4 text-base border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-all"
+              />
+              <span class="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400 text-xl">🔍</span>
+              <button
+                v-if="searchQuery"
+                @click="clearSearch"
+                class="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 text-xl"
+                title="Pastro kërkimin"
+              >
+                ✕
+              </button>
+            </div>
+            <p v-if="searchQuery && filteredCartItems.length === 0" class="mt-2 text-sm text-gray-500">
+              Nuk u gjet asnjë produkt me këtë kërkim.
+            </p>
+            <p v-else-if="searchQuery" class="mt-2 text-sm text-gray-500">
+              U gjetën {{ filteredCartItems.length }} produkt(e)
+            </p>
+          </div>
+          
           <div 
-            v-for="item in cartStore.items" 
+            v-for="item in filteredCartItems" 
             :key="item.id"
             class="bg-white rounded-lg shadow-lg p-6 flex flex-col sm:flex-row gap-4"
           >
@@ -112,6 +139,17 @@
               </div>
             </div>
           </div>
+          
+          <!-- Add More Products Button -->
+          <div class="mt-6">
+            <router-link 
+              to="/produktet"
+              class="flex items-center justify-center gap-2 w-full bg-primary-600 hover:bg-primary-700 text-white font-semibold py-3 px-6 rounded-lg shadow-lg transition-colors duration-200"
+            >
+              <span class="text-xl">➕</span>
+              <span>Shto Produkte Tjera</span>
+            </router-link>
+          </div>
         </div>
 
         <!-- Order Summary -->
@@ -128,6 +166,7 @@
                 Çmimet e personalizuara janë të aplikuara
               </p>
             </div>
+            
             <div v-else-if="identifyingClient" class="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
               <p class="text-sm text-blue-800">
                 🔍 Duke identifikuar klientin...
@@ -150,6 +189,14 @@
                     >
                       🖨 Printo Porosinë
                     </button>
+                    <a 
+                      v-if="isAdmin"
+                      :href="`/admin/sales?order=${savedOrder.order_number}`"
+                      target="_blank"
+                      class="inline-flex items-center justify-center gap-2 px-4 py-2 text-sm font-medium text-blue-900 bg-white border border-blue-300 rounded-md hover:bg-blue-100 transition-colors duration-200"
+                    >
+                      🔗 Shiko në Admin
+                    </a>
                   </div>
                 </div>
               </div>
@@ -280,6 +327,51 @@
                     Numri fiskal duhet të përputhet me të dhënat e regjistruara nga administratori për të shfaqur çmimet e personalizuara.
                   </p>
                 </div>
+                
+                <!-- Location Selection - Only show if client has multiple locations -->
+                <div v-if="cartStore.client && clientLocations.length > 1">
+                  <label for="locationSelect" class="block text-sm font-medium text-gray-700 mb-1">
+                    Zgjidhni Pikën/Njësinë <span class="text-red-500">*</span>
+                  </label>
+                  <select
+                    id="locationSelect"
+                    v-model="selectedLocationId"
+                    @change="updateLocationData"
+                    required
+                    class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 bg-white"
+                  >
+                    <option value="">-- Zgjidhni Pikën/Njësinë --</option>
+                    <option 
+                      v-for="location in clientLocations" 
+                      :key="location.id" 
+                      :value="location.id"
+                    >
+                      {{ location.unit_name }}
+                      <template v-if="location.street_number">
+                        - {{ location.street_number }}
+                      </template>
+                      <template v-if="location.notes">
+                        ({{ location.notes }})
+                      </template>
+                    </option>
+                  </select>
+                  <p class="mt-1 text-xs text-gray-500">
+                    Kompania ka {{ clientLocations.length }} pika/njësi. Ju lutem zgjidhni pikën/njësinë për këtë porosi.
+                  </p>
+                </div>
+                <!-- Show single location info if only one location exists -->
+                <div v-else-if="cartStore.client && clientLocations.length === 1" class="mt-2 p-2 bg-gray-50 border border-gray-200 rounded-lg">
+                  <p class="text-xs text-gray-600">
+                    📍 Pika/Njësia: <strong>{{ clientLocations[0].unit_name }}</strong>
+                    <template v-if="clientLocations[0].street_number">
+                      - {{ clientLocations[0].street_number }}
+                    </template>
+                    <template v-if="clientLocations[0].notes">
+                      ({{ clientLocations[0].notes }})
+                    </template>
+                  </p>
+                </div>
+                
                 <div>
                   <label for="city" class="block text-sm font-medium text-gray-700 mb-1">
                     Qyteti <span class="text-red-500">*</span>
@@ -455,6 +547,8 @@ export default {
         city: '',
         phone: ''
       },
+      selectedLocationId: null,
+      clientLocations: [],
       identifyingClient: false,
       savingOrder: false,
       saveSuccess: false,
@@ -464,10 +558,15 @@ export default {
       historyLoading: false,
       historyError: null,
       phoneDebounce: null,
-      orderHistoryLoaded: false
+      orderHistoryLoaded: false,
+      searchQuery: '',
+      pendingOrderNumber: null // Store order number before saving
     }
   },
   computed: {
+    isAdmin() {
+      return !!localStorage.getItem('admin_token')
+    },
     isFormValid() {
       return this.customerData.name.trim() !== '' && 
              this.customerData.storeName.trim() !== '' && 
@@ -508,6 +607,16 @@ export default {
         }
         seen.add(order.id)
         return true
+      })
+    },
+    filteredCartItems() {
+      if (!this.searchQuery || this.searchQuery.trim() === '') {
+        return this.cartStore.items
+      }
+      
+      const query = this.searchQuery.toLowerCase().trim()
+      return this.cartStore.items.filter(item => {
+        return item.name && item.name.toLowerCase().includes(query)
       })
     }
   },
@@ -683,6 +792,8 @@ export default {
           city: '',
           phone: ''
         }
+        this.clientLocations = []
+        this.selectedLocationId = null
         localStorage.removeItem('gastrotrade_customer_data')
         localStorage.removeItem('gastrotrade_order_data')
       }
@@ -736,6 +847,18 @@ export default {
           if (!this.customerData.city) this.customerData.city = client.city || ''
           if (!this.customerData.phone && client.phone) this.customerData.phone = client.phone
           
+          // Load client locations
+          this.clientLocations = client.locations && Array.isArray(client.locations) && client.locations.length > 0 
+            ? client.locations.filter(loc => loc && (loc.is_active !== false && loc.is_active !== 0))
+            : []
+          
+          // Auto-select if only one location
+          if (this.clientLocations.length === 1) {
+            this.selectedLocationId = this.clientLocations[0].id
+          } else {
+            this.selectedLocationId = null
+          }
+          
           this.persistCustomerData()
           
           // Load order history only if not already loading
@@ -746,12 +869,16 @@ export default {
         }
 
         this.cartStore.clearClient()
+        this.clientLocations = []
+        this.selectedLocationId = null
         if (!this.historyLoading) {
           await this.loadOrderHistory(null, null)
         }
       } catch (error) {
         console.error('Error identifying client:', error)
         this.cartStore.clearClient()
+        this.clientLocations = []
+        this.selectedLocationId = null
         if (!this.historyLoading) {
           await this.loadOrderHistory(null, null)
         }
@@ -817,9 +944,57 @@ export default {
     persistCustomerData() {
       localStorage.setItem('gastrotrade_customer_data', JSON.stringify(this.customerData))
     },
+    updateLocationData() {
+      // Update customerData with location data when location is selected
+      if (this.selectedLocationId && this.clientLocations.length > 0) {
+        const selectedLocation = this.clientLocations.find(loc => loc.id === this.selectedLocationId)
+        if (selectedLocation) {
+          this.customerData.locationUnitName = selectedLocation.unit_name || ''
+          this.customerData.locationStreetNumber = selectedLocation.street_number || ''
+          this.customerData.locationPhone = selectedLocation.phone || ''
+          this.customerData.locationViber = selectedLocation.viber || ''
+          this.customerData.locationCity = selectedLocation.notes || ''
+          this.persistCustomerData()
+        }
+      } else {
+        // Clear location data if no location is selected
+        this.customerData.locationUnitName = ''
+        this.customerData.locationStreetNumber = ''
+        this.customerData.locationPhone = ''
+        this.customerData.locationViber = ''
+        this.customerData.locationCity = ''
+        this.persistCustomerData()
+      }
+    },
+    generateOrderNumber() {
+      // Generate order number in the same format as backend
+      const now = new Date()
+      const datePart = now.getFullYear().toString() + 
+        String(now.getMonth() + 1).padStart(2, '0') + 
+        String(now.getDate()).padStart(2, '0')
+      
+      // Generate random 4-character string
+      const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789'
+      let randomPart = ''
+      for (let i = 0; i < 4; i++) {
+        randomPart += chars.charAt(Math.floor(Math.random() * chars.length))
+      }
+      
+      // For count part, we'll use a timestamp-based approach since we don't have access to DB count
+      // This ensures uniqueness even if multiple orders are created in the same second
+      const countPart = String(Date.now() % 1000).padStart(3, '0')
+      
+      return `GT-${datePart}-${countPart}${randomPart}`
+    },
     async saveOrder() {
       if (!this.isFormValid) {
         alert('Ju lutem plotësoni të gjitha fushat e detyrueshme!')
+        return
+      }
+
+      // Check if client has multiple locations and location is not selected
+      if (this.cartStore.client && this.clientLocations.length > 1 && !this.selectedLocationId) {
+        alert('Ju lutem zgjidhni pikën/njësinë për këtë porosi!')
         return
       }
 
@@ -830,10 +1005,17 @@ export default {
 
       this.persistCustomerData()
 
+      // Generate order number if not already generated
+      if (!this.pendingOrderNumber) {
+        this.pendingOrderNumber = this.generateOrderNumber()
+      }
+
       this.savingOrder = true
       try {
         const payload = {
           client_id: this.cartStore.client ? this.cartStore.client.id : null,
+          client_location_id: this.selectedLocationId || null,
+          order_number: this.pendingOrderNumber, // Send order number to backend
           customer: {
             name: this.customerData.name,
             business_name: this.customerData.storeName.trim(),
@@ -894,8 +1076,42 @@ export default {
         this.savedOrder = response.data.data
         this.saveSuccess = true
         
-        // Show success notification
-        alert(`✅ Porosia #${response.data.data.order_number} u ruajt me sukses!`)
+        // Clear pending order number after successful save
+        this.pendingOrderNumber = null
+        
+        // Store location data in savedOrder and customerData
+        if (this.selectedLocationId && this.clientLocations.length > 0) {
+          const selectedLocation = this.clientLocations.find(loc => loc.id === this.selectedLocationId)
+          if (selectedLocation) {
+            // Add location data to savedOrder for printing
+            this.savedOrder.location_unit_name = selectedLocation.unit_name
+            this.savedOrder.location_street_number = selectedLocation.street_number
+            this.savedOrder.location_phone = selectedLocation.phone
+            this.savedOrder.location_viber = selectedLocation.viber
+            this.savedOrder.location_city = selectedLocation.notes
+            
+            // Store location data in customerData for OrderConfirmation page
+            this.customerData.locationUnitName = selectedLocation.unit_name
+            this.customerData.locationStreetNumber = selectedLocation.street_number
+            this.customerData.locationPhone = selectedLocation.phone
+            this.customerData.locationViber = selectedLocation.viber
+            this.customerData.locationCity = selectedLocation.notes
+            this.persistCustomerData()
+          }
+        }
+        
+        // Show success notification with link to admin sales
+        const orderNumber = response.data.data.order_number
+        const adminToken = localStorage.getItem('admin_token')
+        const viewInAdmin = adminToken ? 
+          `\n\n🔗 Shiko në Admin: ${window.location.origin}/admin/sales?order=${orderNumber}` : 
+          ''
+        alert(`✅ Porosia #${orderNumber} u ruajt me sukses!${viewInAdmin}`)
+        
+        // Store order number for potential navigation
+        if (adminToken) {
+          localStorage.setItem('last_saved_order', orderNumber)
+        }
         
         // Load order history only once after saving
         if (!this.historyLoading) {
@@ -906,6 +1122,7 @@ export default {
         }
       } catch (error) {
         console.error('Error saving order:', error)
+        console.error('Error details:', error.response?.data)
         let errorMessage = 'Gabim gjatë ruajtjes së porosisë. Ju lutem provoni përsëri.'
         if (error.response && error.response.data) {
           if (error.response.data.message) {
@@ -913,6 +1130,8 @@ export default {
           } else if (error.response.data.errors) {
             const errors = Object.values(error.response.data.errors).flat()
             errorMessage = errors.join('\n')
+          } else if (error.response.data.error) {
+            errorMessage = error.response.data.error
           }
         }
         alert(errorMessage)
@@ -922,6 +1141,37 @@ export default {
     },
     printOrder(order) {
       if (!order) return
+
+      // Debug: Log order location data
+      let hasLocationData = !!(order.location_unit_name || order.location_street_number || order.location_city || order.location_phone || order.location_viber)
+      console.log('Print order - Order location data:', {
+        location_unit_name: order.location_unit_name,
+        location_street_number: order.location_street_number,
+        location_city: order.location_city,
+        location_phone: order.location_phone,
+        location_viber: order.location_viber,
+        hasLocationData: hasLocationData,
+        selectedLocationId: this.selectedLocationId
+      })
+      
+      // If location data is missing but we have selectedLocationId, try to get it
+      if (!hasLocationData && this.selectedLocationId && this.clientLocations && this.clientLocations.length > 0) {
+        const selectedLocation = this.clientLocations.find(loc => loc.id === this.selectedLocationId)
+        if (selectedLocation) {
+          console.log('Adding missing location data from selectedLocationId:', selectedLocation)
+          order.location_unit_name = selectedLocation.unit_name || null
+          order.location_street_number = selectedLocation.street_number || null
+          order.location_city = selectedLocation.notes || null
+          order.location_phone = selectedLocation.phone || null
+          order.location_viber = selectedLocation.viber || null
+          hasLocationData = !!(order.location_unit_name || order.location_street_number || order.location_city || order.location_phone || order.location_viber)
+          console.log('Updated order with location data:', {
+            location_unit_name: order.location_unit_name,
+            location_street_number: order.location_street_number,
+            hasLocationData: hasLocationData
+          })
+        }
+      }
 
       const printWindow = window.open('', '_blank', 'width=900,height=650')
       if (!printWindow) {
@@ -981,6 +1231,11 @@ export default {
         fiscal_number: order.fiscal_number || 'N/A',
         city: order.city || 'N/A',
         phone: order.phone || 'N/A',
+        location_unit_name: order.location_unit_name || null,
+        location_street_number: order.location_street_number || null,
+        location_city: order.location_city || null,
+        location_phone: order.location_phone || null,
+        location_viber: order.location_viber || null,
         total_amount: order.total_amount
       })
 
@@ -1007,10 +1262,25 @@ export default {
         '<h1>Faturë ' + (order.order_number || 'N/A') + '</h1>' +
         '<div class="meta">' +
         '<p><strong>Data e Porosisë:</strong> ' + createdAt + '</p>' +
-        '<p><strong>Klienti:</strong> ' + (order.customer_name || 'N/A') + ' — ' + (order.business_name || 'N/A') + '</p>' +
-        '<p><strong>Nr. Fiskal:</strong> ' + (order.fiscal_number || 'N/A') + '</p>' +
-        '<p><strong>Qyteti:</strong> ' + (order.city || 'N/A') + '</p>' +
-        '<p><strong>Telefon/Viber:</strong> ' + (order.phone || 'N/A') + '</p>' +
+        // If location data exists, show ONLY location data, otherwise show client data
+        (order.location_unit_name || order.location_street_number || order.location_city || order.location_phone || order.location_viber ? (
+          '<div style="background-color: #f0f9ff; padding: 12px; border-radius: 6px; margin-bottom: 12px; border-left: 4px solid #3b82f6;">' +
+          '<p style="margin: 0 0 8px 0; font-weight: bold; color: #1e40af; font-size: 14px;">📍 Të Dhënat e Pikës/Njësisë</p>' +
+          (order.location_unit_name ? '<p style="margin: 4px 0;"><strong>Pika/Njësia:</strong> ' + order.location_unit_name + '</p>' : '') +
+          (order.location_street_number ? '<p style="margin: 4px 0;"><strong>Adresa:</strong> ' + order.location_street_number + '</p>' : '') +
+          (order.location_city ? '<p style="margin: 4px 0;"><strong>Vendi/Qyteti:</strong> ' + order.location_city + '</p>' : '') +
+          (order.location_phone ? '<p style="margin: 4px 0;"><strong>Telefon:</strong> ' + order.location_phone + '</p>' : '') +
+          (order.location_viber ? '<p style="margin: 4px 0;"><strong>Viber:</strong> ' + order.location_viber + '</p>' : '') +
+          '</div>'
+        ) : (
+          // If no location data, show only client data
+          '<div style="margin-bottom: 12px;">' +
+          '<p><strong>Klienti:</strong> ' + (order.customer_name || 'N/A') + ' — ' + (order.business_name || 'N/A') + '</p>' +
+          '<p><strong>Nr. Fiskal:</strong> ' + (order.fiscal_number || 'N/A') + '</p>' +
+          '<p><strong>Qyteti:</strong> ' + (order.city || 'N/A') + '</p>' +
+          '<p><strong>Telefon/Viber:</strong> ' + (order.phone || 'N/A') + '</p>' +
+          '</div>'
+        )) +
         (isPaid ? '<div class="payment-status paid">' +
         '<strong>Statusi i Pagesës:</strong> ' + paymentStatus +
         (paidAt ? '<br><span style="font-size: 12px;">E paguar më: ' + paidAt + '</span>' : '') +
@@ -1044,7 +1314,13 @@ export default {
         '<div style="display: flex; justify-content: space-between; margin-bottom: 60px;">' +
         '<div style="width: 45%; text-align: center;">' +
         '<p style="font-weight: bold; margin-bottom: 40px; border-top: 1px solid #111827; padding-top: 4px; display: inline-block; min-width: 200px;">Nënshkrimi i Blerësit</p>' +
-        '<p style="font-size: 12px; color: #6b7280; margin-top: 8px;">' + (order.business_name || order.customer_name || '') + '</p>' +
+        // If location data exists, show only location name, otherwise show business/customer name
+        (order.location_unit_name || order.location_street_number ? (
+          '<p style="font-size: 12px; color: #6b7280; margin-top: 8px;">' + (order.location_unit_name || '') + '</p>' +
+          (order.location_street_number ? '<p style="font-size: 12px; color: #6b7280; margin-top: 2px;">' + order.location_street_number + '</p>' : '')
+        ) : (
+          '<p style="font-size: 12px; color: #6b7280; margin-top: 8px;">' + (order.business_name || order.customer_name || '') + '</p>'
+        )) +
         '</div>' +
         '<div style="width: 45%; text-align: center;">' +
         '<p style="font-weight: bold; margin-bottom: 40px; border-top: 1px solid #111827; padding-top: 4px; display: inline-block; min-width: 200px;">Nënshkrimi i Shitësit</p>' +
@@ -1067,7 +1343,13 @@ export default {
         scriptTag +
         'const orderData = ' + orderDataJson + ';' +
         'function shareToViber() {' +
-        'const orderText = "📦 Faturë " + orderData.order_number + "\\n\\nKlienti: " + orderData.customer_name + " — " + orderData.business_name + "\\nQyteti: " + orderData.city + "\\nTelefon: " + orderData.phone + "\\n\\nTotal: " + (orderData.total_amount ? orderData.total_amount.toFixed(2) + " €" : "Sipas kërkesës");' +
+        'let orderText = "📦 Faturë " + orderData.order_number + "\\n\\nKlienti: " + orderData.customer_name + " — " + orderData.business_name + "\\nQyteti: " + orderData.city + "\\nTelefon: " + orderData.phone;' +
+        (order.location_unit_name ? 'orderText += "\\n📍 Pika/Njësia: " + orderData.location_unit_name;' : '') +
+        (order.location_street_number ? 'orderText += "\\nAdresa: " + orderData.location_street_number;' : '') +
+        (order.location_city ? 'orderText += "\\nVendi/Qyteti: " + orderData.location_city;' : '') +
+        (order.location_phone ? 'orderText += "\\nTelefon: " + orderData.location_phone;' : '') +
+        (order.location_viber ? 'orderText += "\\nViber: " + orderData.location_viber;' : '') +
+        'orderText += "\\n\\nTotal: " + (orderData.total_amount ? orderData.total_amount.toFixed(2) + " €" : "Sipas kërkesës");' +
         'if (navigator.share) {' +
         'navigator.share({' +
         'title: "Faturë " + orderData.order_number,' +
@@ -1093,13 +1375,26 @@ export default {
         '}' +
         '}' +
         'function shareToWhatsApp() {' +
-        'const orderText = "📦 Faturë " + orderData.order_number + "\\n\\nKlienti: " + orderData.customer_name + " — " + orderData.business_name + "\\nQyteti: " + orderData.city + "\\nTelefon: " + orderData.phone + "\\n\\nTotal: " + (orderData.total_amount ? orderData.total_amount.toFixed(2) + " €" : "Sipas kërkesës");' +
+        'let orderText = "📦 Faturë " + orderData.order_number + "\\n\\nKlienti: " + orderData.customer_name + " — " + orderData.business_name + "\\nQyteti: " + orderData.city + "\\nTelefon: " + orderData.phone;' +
+        (order.location_unit_name ? 'orderText += "\\n📍 Pika/Njësia: " + orderData.location_unit_name;' : '') +
+        (order.location_street_number ? 'orderText += "\\nAdresa: " + orderData.location_street_number;' : '') +
+        (order.location_city ? 'orderText += "\\nVendi/Qyteti: " + orderData.location_city;' : '') +
+        (order.location_phone ? 'orderText += "\\nTelefon: " + orderData.location_phone;' : '') +
+        (order.location_viber ? 'orderText += "\\nViber: " + orderData.location_viber;' : '') +
+        'orderText += "\\n\\nTotal: " + (orderData.total_amount ? orderData.total_amount.toFixed(2) + " €" : "Sipas kërkesës");' +
         'const whatsappUrl = "https://wa.me/?text=" + encodeURIComponent(orderText);' +
         'window.open(whatsappUrl, "_blank");' +
         '}' +
         'function shareToGmail() {' +
         'const subject = encodeURIComponent("Faturë " + orderData.order_number);' +
-        'const body = encodeURIComponent("Faturë: " + orderData.order_number + "\\n\\nKlienti: " + orderData.customer_name + " — " + orderData.business_name + "\\nQyteti: " + orderData.city + "\\nTelefon: " + orderData.phone + "\\n\\nTotal: " + (orderData.total_amount ? orderData.total_amount.toFixed(2) + " €" : "Sipas kërkesës"));' +
+        'let bodyText = "Faturë: " + orderData.order_number + "\\n\\nKlienti: " + orderData.customer_name + " — " + orderData.business_name + "\\nQyteti: " + orderData.city + "\\nTelefon: " + orderData.phone;' +
+        (order.location_unit_name ? 'bodyText += "\\n📍 Pika/Njësia: " + orderData.location_unit_name;' : '') +
+        (order.location_street_number ? 'bodyText += "\\nAdresa: " + orderData.location_street_number;' : '') +
+        (order.location_city ? 'bodyText += "\\nVendi/Qyteti: " + orderData.location_city;' : '') +
+        (order.location_phone ? 'bodyText += "\\nTelefon: " + orderData.location_phone;' : '') +
+        (order.location_viber ? 'bodyText += "\\nViber: " + orderData.location_viber;' : '') +
+        'bodyText += "\\n\\nTotal: " + (orderData.total_amount ? orderData.total_amount.toFixed(2) + " €" : "Sipas kërkesës");' +
+        'const body = encodeURIComponent(bodyText);' +
         'const gmailUrl = "mailto:svalon95@gmail.com?subject=" + subject + "&body=" + body;' +
         'window.location.href = gmailUrl;' +
         '}' +
@@ -1122,14 +1417,63 @@ export default {
         return
       }
 
+      // Get location data from selected location if available
+      let locationData = {
+        location_unit_name: null,
+        location_street_number: null,
+        location_city: null,
+        location_phone: null,
+        location_viber: null
+      }
+      
+      // If location is selected, get fresh data from clientLocations
+      if (this.selectedLocationId && this.clientLocations.length > 0) {
+        const selectedLocation = this.clientLocations.find(loc => loc.id === this.selectedLocationId)
+        if (selectedLocation) {
+          locationData = {
+            location_unit_name: selectedLocation.unit_name || null,
+            location_street_number: selectedLocation.street_number || null,
+            location_city: selectedLocation.notes || null,
+            location_phone: selectedLocation.phone || null,
+            location_viber: selectedLocation.viber || null
+          }
+          console.log('Location data for print:', locationData)
+        }
+      } else {
+        // Fallback to customerData if no location selected
+        locationData = {
+          location_unit_name: this.customerData.locationUnitName || null,
+          location_street_number: this.customerData.locationStreetNumber || null,
+          location_city: this.customerData.locationCity || null,
+          location_phone: this.customerData.locationPhone || null,
+          location_viber: this.customerData.locationViber || null
+        }
+      }
+
+      // Generate order number if not already generated
+      if (!this.pendingOrderNumber) {
+        this.pendingOrderNumber = this.generateOrderNumber()
+      }
+
+      // Debug: Log location data
+      console.log('Print current order - Location data:', locationData)
+      console.log('Print current order - Selected location ID:', this.selectedLocationId)
+      console.log('Print current order - Client locations:', this.clientLocations)
+      console.log('Print current order - Has location data:', !!(locationData.location_unit_name || locationData.location_street_number || locationData.location_city || locationData.location_phone || locationData.location_viber))
+      
       // Create a temporary order object from current cart
       const tempOrder = {
-        order_number: 'DRAFT-' + Date.now(),
+        order_number: this.pendingOrderNumber,
         customer_name: this.customerData.name,
         business_name: this.customerData.storeName,
         fiscal_number: this.customerData.fiscalNumber,
         city: this.customerData.city,
         phone: this.customerData.phone || null,
+        location_unit_name: locationData.location_unit_name || null,
+        location_street_number: locationData.location_street_number || null,
+        location_city: locationData.location_city || null,
+        location_phone: locationData.location_phone || null,
+        location_viber: locationData.location_viber || null,
         total_items: this.cartStore.totalItems,
         subtotal: this.cartStore.subtotal,
         discount_amount: this.cartStore.generalDiscountAmount || 0,
@@ -1263,6 +1607,9 @@ export default {
           customerData: encodeURIComponent(JSON.stringify(this.customerData))
         }
       })
+    },
+    clearSearch() {
+      this.searchQuery = ''
     }
   }
 }

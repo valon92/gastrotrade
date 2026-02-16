@@ -85,13 +85,24 @@ export default {
           axios.defaults.headers.common['Authorization'] = `Bearer ${token}`
           const response = await axios.get('/api/admin/check')
           if (response.data.success) {
-            this.$router.push('/admin/clients')
+            // Load user data with role
+            const { adminStore } = await import('../../stores/adminStore')
+            adminStore.setUser(response.data.data.user)
+            
+            // Redirect based on role
+            if (response.data.data.user.role === 'admin') {
+              this.$router.push('/admin/clients')
+            } else {
+              this.$router.push('/admin/sales')
+            }
           }
         }
       } catch (error) {
         // Not authenticated, stay on login page
         localStorage.removeItem('admin_token')
         delete axios.defaults.headers.common['Authorization']
+        const { adminStore } = await import('../../stores/adminStore')
+        adminStore.clearUser()
       }
     },
     async login() {
@@ -103,10 +114,21 @@ export default {
         
         if (response.data.success) {
           const token = response.data.data.token
+          const userData = response.data.data.user
           localStorage.setItem('admin_token', token)
           axios.defaults.headers.common['Authorization'] = `Bearer ${token}`
           
-          this.$router.push('/admin/clients')
+          // Store user data with role
+          const { adminStore } = await import('../../stores/adminStore')
+          adminStore.setUser(userData)
+          
+          // Redirect based on role
+          if (userData.role === 'admin') {
+            this.$router.push('/admin/clients')
+          } else {
+            // Order managers can only access sales/orders
+            this.$router.push('/admin/sales')
+          }
         }
       } catch (error) {
         this.error = error.response?.data?.message || 'Gabim në kyçje. Ju lutem provoni përsëri.'

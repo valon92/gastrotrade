@@ -53,6 +53,17 @@
       
       <div class="border-t border-gray-700 mt-8 pt-8 text-center text-gray-300">
         <p>&copy; {{ currentYear }} GastroTrade. Të gjitha të drejtat e rezervuara.</p>
+        <div class="mt-4">
+          <router-link 
+            to="/admin/login" 
+            class="inline-flex items-center px-4 py-2 text-sm font-medium text-gray-300 hover:text-white bg-gray-700 hover:bg-gray-600 rounded-md transition-colors duration-200"
+          >
+            <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+            </svg>
+            Admin Panel
+          </router-link>
+        </div>
       </div>
     </div>
   </footer>

@@ -54,6 +54,7 @@ class AuthController extends Controller
                     'name' => $user->name,
                     'email' => $user->email,
                     'is_admin' => $user->is_admin,
+                    'role' => $user->role ?? 'order_manager',
                 ],
                 'token' => $token
             ]
@@ -74,6 +75,7 @@ class AuthController extends Controller
                         'name' => $request->user()->name,
                         'email' => $request->user()->email,
                         'is_admin' => $request->user()->is_admin,
+                        'role' => $request->user()->role ?? 'order_manager',
                     ]
                 ]
             ]);
