@@ -7,14 +7,25 @@
           Zgjidhja Juaj për Furnizimet Profesionale
         </h1>
         <p class="text-xl md:text-2xl mb-8 text-primary-100">
-          Cilësi e lartë, shërbim i besueshëm dhe produkte të zgjedhura me kujdes për kuzhinën tuaj
+          Cilësi e lartë, shërbim i besueshëm dhe produkte të zgjedhura me kujdes për biznesin tuaj
         </p>
-        <router-link 
-          to="/produktet" 
-          class="inline-block bg-white text-primary-600 font-semibold py-3 px-8 rounded-lg hover:bg-gray-100 transition-colors duration-200 text-lg"
-        >
-          Shiko Produktet
-        </router-link>
+        <div class="flex flex-col sm:flex-row gap-4 justify-center items-center">
+          <router-link 
+            to="/produktet" 
+            class="inline-block bg-white text-primary-600 font-semibold py-3 px-8 rounded-lg hover:bg-gray-100 transition-colors duration-200 text-lg"
+          >
+            Shiko Produktet
+          </router-link>
+          <router-link 
+            to="/shporta" 
+            class="inline-block bg-primary-500/90 text-white font-semibold py-3 px-8 rounded-lg hover:bg-primary-400 border-2 border-white/50 transition-colors duration-200 text-lg"
+          >
+            Klientët e regjistruar → Plotësoni të dhënat
+          </router-link>
+        </div>
+        <p class="mt-4 text-primary-100 text-sm">
+          Keni çmime të caktuara? Shkoni te shporta dhe plotësoni të dhënat për të parë çmimet tuaja.
+        </p>
       </div>
     </section>
 

@@ -8,9 +8,11 @@ use App\Models\Client;
 use App\Models\Order;
 use App\Models\Product;
 use App\Models\StockMovement;
+use App\Mail\OrderConfirmationMail;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Mail;
 
 class OrderController extends Controller
 {
@@ -580,6 +582,50 @@ class OrderController extends Controller
             'success' => true,
             'data' => $order->load(['items', 'clientLocation']),
         ]);
+    }
+
+    public function sendOrderEmail(Request $request)
+    {
+        $request->validate([
+            'order_data' => ['required', 'array'],
+            'customer_data' => ['required', 'array'],
+            'cart_items' => ['required', 'array'],
+            'total_items' => ['required', 'integer', 'min:0'],
+            'total_price' => ['nullable', 'numeric', 'min:0'],
+        ]);
+
+        try {
+            $orderData = $request->order_data;
+            $customerData = $request->customer_data;
+            $cartItems = $request->cart_items;
+            $totalItems = $request->total_items;
+            $totalPrice = $request->total_price ?? 0;
+
+            // Email zyrtar i GastroTrade
+            $officialEmail = env('MAIL_FROM_ADDRESS', 'svalon95@gmail.com');
+
+            // Dërgo emailin
+            Mail::to($officialEmail)->send(
+                new OrderConfirmationMail(
+                    $orderData,
+                    $customerData,
+                    $cartItems,
+                    $totalItems,
+                    $totalPrice
+                )
+            );
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Porosia u dërgua me sukses në emailin zyrtar të GastroTrade.'
+            ]);
+        } catch (\Exception $e) {
+            \Log::error('Error sending order email: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'Gabim gjatë dërgimit të emailit: ' . $e->getMessage()
+            ], 500);
+        }
     }
 
     public function destroy(Order $order)

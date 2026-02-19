@@ -18,6 +18,9 @@ class DatabaseSeeder extends Seeder
         $this->call([
             CategorySeeder::class,
             ProductSeeder::class,
+            KeseMbeturinashSpecsSeeder::class,
+            GotaLetreSpecsSeeder::class,
+            AllProductsBarcodeSeeder::class,
         ]);
 
         // Create admin user

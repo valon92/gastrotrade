@@ -1,6 +1,6 @@
 <template>
-  <div class="min-h-screen bg-gray-50 py-8">
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+  <AdminLayout>
+    <div class="p-4 sm:p-6 lg:p-8">
       <div class="mb-8 flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
         <div class="flex-1">
           <h1 class="text-2xl sm:text-4xl font-bold text-gray-900 mb-4">Menaxhimi i Stokut</h1>
@@ -11,31 +11,6 @@
             class="btn-primary w-full sm:w-auto"
           >
             + Pranim i Ri i Mallit
-          </button>
-          <router-link
-            to="/admin/sales"
-            class="btn-secondary text-center"
-          >
-            💰 Shitjet
-          </router-link>
-          <router-link
-            to="/admin/clients"
-            class="btn-secondary text-center"
-          >
-            👥 Klientët
-          </router-link>
-          <router-link
-            v-if="canManage"
-            to="/admin/users"
-            class="btn-secondary text-center"
-          >
-            👤 Adminat
-          </router-link>
-          <button 
-            @click="logout"
-            class="btn-secondary w-full sm:w-auto"
-          >
-            🚪 Dil
           </button>
         </div>
       </div>
@@ -206,6 +181,23 @@
               </tr>
             </thead>
             <tbody class="bg-white divide-y divide-gray-200">
+              <tr v-if="filteredProducts.length === 0">
+                <td colspan="8" class="px-4 py-12 text-center">
+                  <div class="flex flex-col items-center justify-center">
+                    <svg class="w-16 h-16 text-gray-400 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
+                    </svg>
+                    <p class="text-lg font-semibold text-gray-900 mb-2">Nuk ka produkte në stok</p>
+                    <p class="text-sm text-gray-600 mb-4">Shtoni produkte ose pranoni mall për të shfaqur stokun</p>
+                    <button 
+                      @click="showReceiptModal = true"
+                      class="btn-primary"
+                    >
+                      + Pranim i Ri i Mallit
+                    </button>
+                  </div>
+                </td>
+              </tr>
               <tr v-for="(product, index) in filteredProducts" :key="product && product.id ? product.id : `product-${index}`">
                 <td class="px-4 py-4 whitespace-nowrap">
                   <div class="text-sm font-medium text-gray-900">{{ product && product.name ? product.name : '' }}</div>
@@ -398,6 +390,19 @@
 
       <!-- Stock Cards - Mobile -->
       <div class="md:hidden space-y-4">
+        <div v-if="filteredProducts.length === 0" class="bg-white rounded-lg shadow-lg p-8 border border-gray-200 text-center">
+          <svg class="w-16 h-16 text-gray-400 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
+          </svg>
+          <p class="text-lg font-semibold text-gray-900 mb-2">Nuk ka produkte në stok</p>
+          <p class="text-sm text-gray-600 mb-4">Shtoni produkte ose pranoni mall për të shfaqur stokun</p>
+          <button 
+            @click="showReceiptModal = true"
+            class="btn-primary"
+          >
+            + Pranim i Ri i Mallit
+          </button>
+        </div>
         <div 
           v-for="(product, index) in filteredProducts" 
           :key="product && product.id ? product.id : `product-mobile-${index}`"
@@ -1567,11 +1572,13 @@
         </div>
       </div>
     </div>
-  </div>
+  </AdminLayout>
 </template>
 
 <script>
 import axios from 'axios'
+import AdminLayout from '../../components/admin/AdminLayout.vue'
+import { adminStore } from '../../stores/adminStore'
 
 // Ensure token is set from localStorage on import
 const adminToken = localStorage.getItem('admin_token')
@@ -1595,6 +1602,9 @@ axios.interceptors.request.use(
 
 export default {
   name: 'AdminStock',
+  components: {
+    AdminLayout
+  },
   data() {
     return {
       products: [],
@@ -1704,6 +1714,9 @@ export default {
     }
   },
   async mounted() {
+    // Scroll to top when component mounts
+    window.scrollTo({ top: 0, behavior: 'smooth' })
+    
     await this.checkAuth()
     await Promise.all([
       this.loadStock(),
@@ -1793,9 +1806,24 @@ export default {
                  p.id !== null &&
                  p.id !== ''
         })
+        
+        // Log for debugging
+        console.log('Stock loaded:', {
+          totalProducts: this.products.length,
+          filteredProducts: this.filteredProducts.length,
+          hasData: response.data.data ? response.data.data.length : 0
+        })
       } catch (error) {
         console.error('Error loading stock:', error)
-        alert('Gabim në ngarkimin e stokut')
+        this.products = []
+        // Show user-friendly error message
+        if (error.response && error.response.status === 401) {
+          alert('Ju nuk jeni i autorizuar. Ju lutem kyçuni përsëri.')
+        } else if (error.response && error.response.status === 403) {
+          alert('Ju nuk keni akses për të parë stokun.')
+        } else {
+          alert('Gabim në ngarkimin e stokut: ' + (error.response?.data?.message || error.message))
+        }
       }
     },
     handleSearchInput() {

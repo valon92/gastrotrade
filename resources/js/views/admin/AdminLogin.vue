@@ -91,8 +91,9 @@ export default {
             
             // Redirect based on role
             if (response.data.data.user.role === 'admin') {
-              this.$router.push('/admin/clients')
+              this.$router.push('/admin/dashboard')
             } else {
+              // Order managers go directly to sales
               this.$router.push('/admin/sales')
             }
           }
@@ -124,9 +125,9 @@ export default {
           
           // Redirect based on role
           if (userData.role === 'admin') {
-            this.$router.push('/admin/clients')
+            this.$router.push('/admin/dashboard')
           } else {
-            // Order managers can only access sales/orders
+            // Order managers go directly to sales
             this.$router.push('/admin/sales')
           }
         }

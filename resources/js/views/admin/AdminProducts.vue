@@ -1,24 +1,10 @@
 <template>
-  <div class="min-h-screen bg-gray-50 py-8">
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+  <AdminLayout>
+    <div class="p-4 sm:p-6 lg:p-8">
       <div class="mb-8 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 class="text-2xl sm:text-4xl font-bold text-gray-900 mb-2">Menaxhimi i Produkteve</h1>
           <p class="text-gray-600 text-sm">Shto, përditëso ose fshi produktet tuaja.</p>
-          <div class="mt-3 flex flex-wrap gap-3">
-            <router-link
-              to="/admin/clients"
-              class="btn-secondary text-center"
-            >
-              👥 Klientët
-            </router-link>
-            <router-link
-              to="/admin/clients/1/prices"
-              class="btn-secondary text-center"
-            >
-              💰 Çmimet e Klientëve
-            </router-link>
-          </div>
         </div>
         <button
           @click="openCreateModal"
@@ -253,8 +239,30 @@
                 </div>
               </div>
 
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label class="block text-sm font-medium text-gray-700 mb-1">Size (për specifikat te produkti)</label>
+                  <input
+                    v-model="productForm.size"
+                    type="text"
+                    class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+                    placeholder="p.sh. 70x115 ose 4oz"
+                  >
+                </div>
+                <div>
+                  <label class="block text-sm font-medium text-gray-700 mb-1">Litra (për specifikat te produkti)</label>
+                  <input
+                    v-model="productForm.liters"
+                    type="text"
+                    class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+                    placeholder="p.sh. 150L ose 170L"
+                  >
+                </div>
+              </div>
+              <p class="text-xs text-gray-500 mb-3">Nëse plotësoni Size dhe/ose Litra, te produkti do të shfaqen këto specifikat në vend të përshkrimit të gjatë.</p>
+
               <div>
-                <label class="block text-sm font-medium text-gray-700 mb-1">Përshkrimi</label>
+                <label class="block text-sm font-medium text-gray-700 mb-1">Përshkrimi (opsional)</label>
                 <textarea
                   v-model="productForm.description"
                   rows="3"
@@ -275,6 +283,28 @@
                     placeholder="p.sh. 1.50"
                   >
                 </div>
+                <div>
+                  <label class="block text-sm font-medium text-gray-700 mb-1">Barkod (shfaqet te produkti kur nuk ka çmim)</label>
+                  <div class="flex gap-2">
+                    <input
+                      v-model="productForm.barcode"
+                      type="text"
+                      inputmode="numeric"
+                      maxlength="20"
+                      class="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+                      placeholder="p.sh. 3904481760132"
+                    >
+                    <button
+                      type="button"
+                      @click="generateBarcode"
+                      class="btn-secondary whitespace-nowrap"
+                    >
+                      Gjenero
+                    </button>
+                  </div>
+                </div>
+              </div>
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <label class="block text-sm font-medium text-gray-700 mb-1">Pozicioni në listë</label>
                   <input
@@ -368,15 +398,19 @@
         </div>
       </div>
     </div>
-  </div>
+  </AdminLayout>
 </template>
 
 <script>
 import axios from 'axios'
 import { adminStore } from '../../stores/adminStore'
+import AdminLayout from '../../components/admin/AdminLayout.vue'
 
 export default {
   name: 'AdminProducts',
+  components: {
+    AdminLayout
+  },
   data() {
     return {
       products: [],
@@ -418,6 +452,8 @@ export default {
     }
   },
   async mounted() {
+    // Scroll to top when component mounts
+    window.scrollTo({ top: 0, behavior: 'smooth' })
     await this.checkAuth()
     await Promise.all([this.loadCategories(), this.loadProducts()])
   },
@@ -427,6 +463,9 @@ export default {
         name: '',
         category_id: '',
         description: '',
+        size: '',
+        liters: '',
+        barcode: '',
         price: '',
         sort_order: '',
         is_featured: false,
@@ -480,6 +519,9 @@ export default {
         name: product.name,
         category_id: product.category_id,
         description: product.description,
+        size: product.size || '',
+        liters: product.liters || '',
+        barcode: product.barcode || '',
         price: product.price,
         sort_order: product.sort_order,
         is_featured: Boolean(product.is_featured),
@@ -489,6 +531,24 @@ export default {
         preview: product.image_path
       }
       this.showModal = true
+    },
+    generateBarcode() {
+      // EAN-13: 13 shifra, shifra e 13-të është checksum (format standard p.sh. 3904481760132)
+      const ean13Checksum = (digits12) => {
+        const str = String(digits12).replace(/\D/g, '').slice(0, 12).padStart(12, '0')
+        if (str.length !== 12) return ''
+        const s = str.split('').map(Number)
+        const sum = s.reduce((acc, d, i) => acc + (i % 2 === 0 ? d : d * 3), 0)
+        const check = (10 - (sum % 10)) % 10
+        return str + check
+      }
+      if (this.editingProduct && this.editingProduct.id) {
+        const base = ('390' + String(this.editingProduct.id).padStart(9, '0')).slice(0, 12)
+        this.productForm.barcode = ean13Checksum(base)
+      } else {
+        const random9 = String(Math.floor(100000000 + Math.random() * 900000000))
+        this.productForm.barcode = ean13Checksum(('390' + random9).slice(0, 12))
+      }
     },
     closeModal() {
       this.showModal = false
@@ -523,9 +583,13 @@ export default {
         formData.append('name', this.productForm.name)
         formData.append('category_id', this.productForm.category_id)
         if (this.productForm.description) formData.append('description', this.productForm.description)
-        if (this.productForm.price !== '' && this.productForm.price !== null && this.productForm.price !== undefined) {
-          formData.append('price', this.productForm.price)
-        }
+        formData.append('size', this.productForm.size || '')
+        formData.append('liters', this.productForm.liters || '')
+        formData.append('barcode', this.productForm.barcode || '')
+        // Gjithmonë dërgo çmimin kur përditësohet produkti, që backend ta ruajë (edhe kur bosh = null)
+        const priceVal = this.productForm.price
+        const hasPrice = priceVal !== '' && priceVal !== null && priceVal !== undefined && !Number.isNaN(Number(priceVal))
+        formData.append('price', hasPrice ? String(priceVal) : '')
         if (this.productForm.sort_order !== '' && this.productForm.sort_order !== null && this.productForm.sort_order !== undefined) {
           formData.append('sort_order', this.productForm.sort_order)
         }

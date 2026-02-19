@@ -5,17 +5,97 @@
         Shporta e Blerjeve
       </h1>
 
-      <div v-if="cartStore.items.length === 0" class="text-center py-16">
-        <div class="text-6xl mb-4">🛒</div>
-        <h2 class="text-2xl font-semibold text-gray-700 mb-4">
-          Shporta juaj është e zbrazët
-        </h2>
-        <p class="text-gray-600 mb-8">
-          Shtoni produkte në shportë për të vazhduar me porosinë
-        </p>
-        <router-link to="/produktet" class="btn-primary text-lg">
-          Shiko Produktet
-        </router-link>
+      <div v-if="cartStore.items.length === 0" class="max-w-2xl mx-auto">
+        <div class="text-center py-8">
+          <div class="text-6xl mb-4">🛒</div>
+          <h2 class="text-2xl font-semibold text-gray-700 mb-4">
+            Shporta juaj është e zbrazët
+          </h2>
+          <p class="text-gray-600 mb-6">
+            Shtoni produkte në shportë për të vazhduar me porosinë
+          </p>
+          <router-link to="/produktet" class="btn-primary text-lg inline-block">
+            Shiko Produktet
+          </router-link>
+        </div>
+
+        <!-- Të dhënat e biznesit për klientët e regjistruar (edhe kur shporta është e zbrazët) -->
+        <div class="mt-10 bg-white rounded-xl shadow-lg p-6 border border-gray-200">
+          <h3 class="text-xl font-semibold text-gray-900 mb-2">
+            Të dhënat e biznesit
+          </h3>
+          <p class="text-sm text-gray-600 mb-6">
+            Klientët e regjistruar me çmime të caktuara: plotësoni më poshtë që të identifikoheni. Kur shtoni produkte, do të shfaqen çmimet tuaja.
+          </p>
+
+          <div v-if="hasClientPrices" class="mb-6 p-4 bg-green-50 border border-green-200 rounded-lg">
+            <p class="text-sm text-green-800">
+              ✅ Klienti i identifikuar: <strong>{{ cartStore.client.name }}</strong>. Kur shtoni produkte në shportë, do të aplikohen çmimet tuaja.
+            </p>
+          </div>
+          <div v-else-if="identifyingClient" class="mb-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+            <p class="text-sm text-blue-800">🔍 Duke identifikuar klientin...</p>
+          </div>
+
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div class="sm:col-span-2">
+              <label for="emptyCustomerName" class="block text-sm font-medium text-gray-700 mb-1">Emri i porositësit</label>
+              <input
+                id="emptyCustomerName"
+                type="text"
+                v-model="customerData.name"
+                @input="persistCustomerData"
+                placeholder="Emri juaj"
+                class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+              />
+            </div>
+            <div>
+              <label for="emptyStoreName" class="block text-sm font-medium text-gray-700 mb-1">Emri i biznisit <span class="text-red-500">*</span></label>
+              <input
+                id="emptyStoreName"
+                type="text"
+                v-model="customerData.storeName"
+                placeholder="Emri i biznesit"
+                class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+              />
+            </div>
+            <div>
+              <label for="emptyFiscalNumber" class="block text-sm font-medium text-gray-700 mb-1">Numri fiskal <span class="text-red-500">*</span></label>
+              <input
+                id="emptyFiscalNumber"
+                type="text"
+                v-model="customerData.fiscalNumber"
+                placeholder="Nr. fiskal"
+                class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 uppercase tracking-wide"
+              />
+            </div>
+            <div>
+              <label for="emptyCity" class="block text-sm font-medium text-gray-700 mb-1">Qyteti <span class="text-red-500">*</span></label>
+              <input
+                id="emptyCity"
+                type="text"
+                v-model="customerData.city"
+                @input="persistCustomerData"
+                placeholder="Qyteti"
+                class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+              />
+            </div>
+            <div>
+              <label for="emptyPhone" class="block text-sm font-medium text-gray-700 mb-1">Telefon / Viber</label>
+              <input
+                id="emptyPhone"
+                type="tel"
+                v-model="customerData.phone"
+                @input="persistCustomerData"
+                placeholder="+383 XX XXX XXX"
+                class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+              />
+            </div>
+          </div>
+          <p class="mt-4 text-xs text-gray-500">
+            Pas plotësimit të emrit të biznisit dhe numrit fiskal, identifikimi bëhet automatikisht nëse jeni klient i regjistruar.
+          </p>
+        </div>
       </div>
 
       <div v-else class="grid grid-cols-1 lg:grid-cols-3 gap-8">
@@ -158,6 +238,13 @@
             <h2 class="text-2xl font-bold text-gray-900 mb-6">
               Përmbledhje e Porosisë
             </h2>
+
+            <!-- Info: fill data first to get prices -->
+            <div class="mb-4 p-3 bg-amber-50 border border-amber-200 rounded-lg">
+              <p class="text-sm text-amber-900">
+                <strong>Para se të ruani ose dërgoni porosinë</strong>, plotësoni të dhënat e porositësit më poshtë. Nëse jeni klient i regjistruar (me çmime të caktuara), pas plotësimit të <strong>Emrit të Biznisit</strong> dhe <strong>Numrit Fiskal</strong> do të shfaqen automatikisht çmimet tuaja për këtë porosi.
+              </p>
+            </div>
             
             <!-- Client Identification Notice -->
             <div v-if="hasClientPrices" class="mb-4 p-3 bg-green-50 border border-green-200 rounded-lg">
@@ -201,84 +288,8 @@
                 </div>
               </div>
             </transition>
-            
-            <div class="space-y-4 mb-6">
-              <div class="flex justify-between text-gray-700">
-                <span>Total Produkte:</span>
-                <span class="font-semibold">{{ cartStore.totalItems }}</span>
-              </div>
-              
-              <!-- Show total price if available -->
-              <div v-if="cartStore.totalPrice > 0" class="space-y-2">
-                <div class="flex justify-between text-gray-700">
-                  <span>Nëntotali:</span>
-                  <span class="font-semibold">
-                    {{ formatPrice(hasVat ? amountBeforeVat : cartStore.totalPrice) }}
-                  </span>
-                </div>
-                
-                <div v-if="cartStore.generalDiscountAmount > 0" class="pt-2 border-t border-gray-200">
-                  <div class="flex justify-between text-red-600 text-sm">
-                    <span>Zbritje e përgjithshme (aplikuar nga administratori):</span>
-                    <span class="font-semibold">-{{ formatPrice(cartStore.generalDiscountAmount) }}</span>
-                  </div>
-                </div>
-                
-                <div v-if="hasVat && cartStore.totalPrice > 0" class="pt-2 border-t border-gray-200">
-                  <div class="flex justify-between text-gray-700 text-sm">
-                    <span>TVSH (18%):</span>
-                    <span class="font-semibold">{{ formatPrice(vatAmount) }}</span>
-                  </div>
-                </div>
-                
-                <div class="flex justify-between text-gray-700 pt-2 border-t border-gray-200">
-                  <span>Vlera Totale{{ hasVat ? ' me TVSH' : '' }}:</span>
-                  <span class="font-bold text-primary-600 text-xl">
-                    {{ formatPrice(hasVat ? totalWithVat : cartStore.totalPrice) }}
-                  </span>
-                </div>
-                <!-- Show calculation breakdown for all products with prices -->
-                <div class="text-xs text-gray-500 pt-2 border-t border-gray-200">
-                  <p class="mb-1"><strong>Si llogaritet:</strong></p>
-                  <div 
-                    v-for="item in cartStore.items.filter(i => i.price)" 
-                    :key="item.id" 
-                    class="text-xs mb-1"
-                  >
-                    <div>
-                      <span v-if="item.sold_by_package && item.pieces_per_package && canBuyByPieces(item)">
-                        • {{ item.name }}: {{ formatPrice(item.price) }} × {{ getPiecesQuantity(item) }}copa = {{ formatPrice(getItemBaseTotal(item)) }}
-                      </span>
-                      <span v-else-if="item.sold_by_package && item.pieces_per_package">
-                        • {{ item.name }}: {{ formatPrice(item.price) }} × {{ item.quantity }}(komplete) × {{ item.pieces_per_package }}cp = {{ formatPrice(getItemBaseTotal(item)) }}
-                      </span>
-                      <span v-else>
-                        • {{ item.name }}: {{ formatPrice(item.price) }} × {{ item.quantity }} = {{ formatPrice(getItemBaseTotal(item)) }}
-                      </span>
-                    </div>
-                    <div v-if="item.discount_amount > 0" class="pl-4 text-red-600">
-                      − Zbritje: {{ formatPrice(item.discount_amount) }}
-                    </div>
-                    <div class="pl-4 font-semibold text-gray-700">
-                      = {{ formatPrice(getItemTotal(item)) }}
-                    </div>
-                  </div>
-                  <div v-if="cartStore.generalDiscountAmount > 0" class="mt-1 text-red-600">
-                    Zbritje e përgjithshme: -{{ formatPrice(cartStore.generalDiscountAmount) }}
-                  </div>
-                </div>
-              </div>
-              
-              <!-- Show message if no prices available -->
-              <div v-else class="text-gray-600 text-sm">
-                <p>Çmimi sipas kërkesës për të gjitha produktet</p>
-                <p class="text-xs mt-2 text-gray-500">
-                  Ju lutem plotësoni të dhënat e mëposhtme për të marrë çmimin e saktë.
-                </p>
-              </div>
-            </div>
 
-            <!-- Customer Information Form -->
+            <!-- Customer Information Form - fill first so order is informed with correct prices -->
             <div class="mb-6 pb-6 border-b border-gray-200">
               <h3 class="text-lg font-semibold text-gray-900 mb-4">
                 Të Dhënat e Porositësit
@@ -404,6 +415,82 @@
                 </div>
               </div>
             </div>
+            
+            <div class="space-y-4 mb-6">
+              <div class="flex justify-between text-gray-700">
+                <span>Total Produkte:</span>
+                <span class="font-semibold">{{ cartStore.totalItems }}</span>
+              </div>
+              
+              <!-- Show total price if available -->
+              <div v-if="cartStore.totalPrice > 0" class="space-y-2">
+                <div class="flex justify-between text-gray-700">
+                  <span>Nëntotali:</span>
+                  <span class="font-semibold">
+                    {{ formatPrice(hasVat ? amountBeforeVat : cartStore.totalPrice) }}
+                  </span>
+                </div>
+                
+                <div v-if="cartStore.generalDiscountAmount > 0" class="pt-2 border-t border-gray-200">
+                  <div class="flex justify-between text-red-600 text-sm">
+                    <span>Zbritje e përgjithshme (aplikuar nga administratori):</span>
+                    <span class="font-semibold">-{{ formatPrice(cartStore.generalDiscountAmount) }}</span>
+                  </div>
+                </div>
+                
+                <div v-if="hasVat && cartStore.totalPrice > 0" class="pt-2 border-t border-gray-200">
+                  <div class="flex justify-between text-gray-700 text-sm">
+                    <span>TVSH (18%):</span>
+                    <span class="font-semibold">{{ formatPrice(vatAmount) }}</span>
+                  </div>
+                </div>
+                
+                <div class="flex justify-between text-gray-700 pt-2 border-t border-gray-200">
+                  <span>Vlera Totale{{ hasVat ? ' me TVSH' : '' }}:</span>
+                  <span class="font-bold text-primary-600 text-xl">
+                    {{ formatPrice(hasVat ? totalWithVat : cartStore.totalPrice) }}
+                  </span>
+                </div>
+                <!-- Show calculation breakdown for all products with prices -->
+                <div class="text-xs text-gray-500 pt-2 border-t border-gray-200">
+                  <p class="mb-1"><strong>Si llogaritet:</strong></p>
+                  <div 
+                    v-for="item in cartStore.items.filter(i => i.price)" 
+                    :key="item.id" 
+                    class="text-xs mb-1"
+                  >
+                    <div>
+                      <span v-if="item.sold_by_package && item.pieces_per_package && canBuyByPieces(item)">
+                        • {{ item.name }}: {{ formatPrice(item.price) }} × {{ getPiecesQuantity(item) }}copa = {{ formatPrice(getItemBaseTotal(item)) }}
+                      </span>
+                      <span v-else-if="item.sold_by_package && item.pieces_per_package">
+                        • {{ item.name }}: {{ formatPrice(item.price) }} × {{ item.quantity }}(komplete) × {{ item.pieces_per_package }}cp = {{ formatPrice(getItemBaseTotal(item)) }}
+                      </span>
+                      <span v-else>
+                        • {{ item.name }}: {{ formatPrice(item.price) }} × {{ item.quantity }} = {{ formatPrice(getItemBaseTotal(item)) }}
+                      </span>
+                    </div>
+                    <div v-if="item.discount_amount > 0" class="pl-4 text-red-600">
+                      − Zbritje: {{ formatPrice(item.discount_amount) }}
+                    </div>
+                    <div class="pl-4 font-semibold text-gray-700">
+                      = {{ formatPrice(getItemTotal(item)) }}
+                    </div>
+                  </div>
+                  <div v-if="cartStore.generalDiscountAmount > 0" class="mt-1 text-red-600">
+                    Zbritje e përgjithshme: -{{ formatPrice(cartStore.generalDiscountAmount) }}
+                  </div>
+                </div>
+              </div>
+              
+              <!-- Show message if no prices available -->
+              <div v-else class="text-gray-600 text-sm">
+                <p>Çmimi sipas kërkesës për të gjitha produktet</p>
+                <p class="text-xs mt-2 text-gray-500">
+                  Plotësoni <strong>Emrin e Biznisit</strong> dhe <strong>Numrin Fiskal</strong> më sipër. Nëse jeni klient i regjistruar, çmimet e personalizuara do të aplikohen automatikisht dhe vlera totale do të përditësohet.
+                </p>
+              </div>
+            </div>
 
             <div class="space-y-3">
               <!-- VAT Toggle -->
@@ -441,11 +528,24 @@
                 🖨 Printo Faturën
               </button>
               <button 
-                @click="saveOrder"
-                :disabled="!isFormValid || savingOrder || cartStore.items.length === 0"
+                @click="submitOrder"
+                :disabled="!isFormValid || savingOrder || submittingOrder || cartStore.items.length === 0"
                 :class="[
                   'w-full font-medium py-3 px-4 rounded-lg transition-colors duration-200 flex items-center justify-center gap-2',
-                  (!isFormValid || savingOrder || cartStore.items.length === 0)
+                  (!isFormValid || savingOrder || submittingOrder || cartStore.items.length === 0)
+                    ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                    : 'bg-green-600 hover:bg-green-700 text-white shadow-lg'
+                ]"
+              >
+                {{ submittingOrder ? 'Duke dërguar...' : '📤 Dergo Porosin' }}
+              </button>
+              
+              <button 
+                @click="saveOrder"
+                :disabled="!isFormValid || savingOrder || submittingOrder || cartStore.items.length === 0"
+                :class="[
+                  'w-full font-medium py-3 px-4 rounded-lg transition-colors duration-200 flex items-center justify-center gap-2',
+                  (!isFormValid || savingOrder || submittingOrder || cartStore.items.length === 0)
                     ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
                     : 'bg-blue-600 hover:bg-blue-700 text-white'
                 ]"
@@ -551,6 +651,7 @@ export default {
       clientLocations: [],
       identifyingClient: false,
       savingOrder: false,
+      submittingOrder: false,
       saveSuccess: false,
       savedOrder: null,
       hasVat: false,
@@ -1589,6 +1690,50 @@ export default {
       } catch (error) {
         console.error('Error opening Viber:', error)
         alert('Nuk mund të hapet Viber. Ju lutem provoni përsëri ose dërgojeni manualisht.')
+      }
+    },
+    async submitOrder() {
+      if (!this.isFormValid) {
+        alert('Ju lutem plotësoni të gjitha fushat e detyrueshme!')
+        return
+      }
+
+      // Check if client has multiple locations and location is not selected
+      if (this.cartStore.client && this.clientLocations.length > 1 && !this.selectedLocationId) {
+        alert('Ju lutem zgjidhni pikën/njësinë për këtë porosi!')
+        return
+      }
+
+      if (!this.cartStore.items.length) {
+        alert('Shporta juaj është e zbrazët!')
+        return
+      }
+
+      this.submittingOrder = true
+      
+      try {
+        // First save the order
+        await this.saveOrder()
+        
+        // After successful save, navigate to OrderConfirmation page
+        if (this.saveSuccess && this.savedOrder) {
+          this.persistCustomerData()
+          localStorage.setItem('gastrotrade_order_data', JSON.stringify(this.customerData))
+          
+          // Navigate to OrderConfirmation page with order data
+          this.$router.push({
+            name: 'OrderConfirmation',
+            params: {
+              customerData: encodeURIComponent(JSON.stringify(this.customerData)),
+              orderNumber: this.savedOrder.order_number
+            }
+          })
+        }
+      } catch (error) {
+        console.error('Error submitting order:', error)
+        alert('Gabim gjatë dërgimit të porosisë. Ju lutem provoni përsëri.')
+      } finally {
+        this.submittingOrder = false
       }
     },
     sendOrderToViber(phoneNumber) {

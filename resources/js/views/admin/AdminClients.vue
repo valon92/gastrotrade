@@ -1,6 +1,6 @@
 <template>
-  <div class="min-h-screen bg-gray-50 py-8">
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+  <AdminLayout>
+    <div class="p-4 sm:p-6 lg:p-8">
       <div class="mb-8 flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
         <div class="flex-1">
           <h1 class="text-2xl sm:text-4xl font-bold text-gray-900 mb-4">Menaxhimi i Klientëve</h1>
@@ -9,49 +9,6 @@
             class="btn-primary w-full sm:w-auto"
           >
             + Shto Klient të Ri
-          </button>
-        </div>
-        <div class="flex flex-col sm:flex-row gap-3 w-full sm:w-auto">
-          <router-link
-            v-if="canViewSales"
-            to="/admin/sales"
-            class="btn-secondary text-center"
-          >
-            💰 Shitjet
-          </router-link>
-          <router-link
-            v-if="canManageProducts"
-            to="/admin/products"
-            class="btn-secondary text-center"
-          >
-            📦 Produktet
-          </router-link>
-          <router-link
-            v-if="canManageStock"
-            to="/admin/stock"
-            class="btn-secondary text-center"
-          >
-            📊 Stoku
-          </router-link>
-          <router-link
-            v-if="canViewTrash"
-            to="/admin/trash"
-            class="btn-secondary text-center"
-          >
-            🗑️ Historia e Fshirjeve
-          </router-link>
-          <router-link
-            v-if="canManage"
-            to="/admin/users"
-            class="btn-secondary text-center"
-          >
-            👤 Adminat
-          </router-link>
-          <button 
-            @click="logout"
-            class="btn-secondary w-full sm:w-auto"
-          >
-            🚪 Dil
           </button>
         </div>
       </div>
@@ -938,15 +895,19 @@
         </div>
       </div>
     </div>
-  </div>
+  </AdminLayout>
 </template>
 
 <script>
 import axios from 'axios'
 import { adminStore } from '../../stores/adminStore'
+import AdminLayout from '../../components/admin/AdminLayout.vue'
 
 export default {
   name: 'AdminClients',
+  components: {
+    AdminLayout
+  },
   data() {
     return {
       clients: [],
@@ -989,6 +950,9 @@ export default {
     }
   },
   async mounted() {
+    // Scroll to top when component mounts
+    window.scrollTo({ top: 0, behavior: 'smooth' })
+    
     await this.checkAuth()
     await this.loadClients()
     await this.loadAllOrders()
@@ -1145,17 +1109,7 @@ export default {
         this.$router.push('/admin/login')
       }
     },
-    async logout() {
-      try {
-        await axios.post('/api/admin/logout')
-      } catch (error) {
-        // Continue with logout even if API call fails
-      }
-      adminStore.clearUser()
-      localStorage.removeItem('admin_token')
-      delete axios.defaults.headers.common['Authorization']
-      this.$router.push('/admin/login')
-    },
+    // Logout is now handled by AdminLayout,
     async loadClients() {
       try {
         const response = await axios.get('/api/clients')

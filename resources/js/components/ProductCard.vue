@@ -2,7 +2,7 @@
   <div class="card overflow-hidden hover:scale-105 transition-transform duration-300">
     <div class="aspect-w-16 aspect-h-12 bg-gray-200">
       <img 
-        :src="product.image_path" 
+        :src="getProductImage()" 
         :alt="product.name"
         class="w-full h-48 object-cover"
         @error="handleImageError"
@@ -20,12 +20,18 @@
           💬 Viber: +383 44 82 43 14
         </div>
       </div>
-      <p v-if="product.description" class="text-gray-600 mb-4 line-clamp-1 text-sm">
+      <p v-if="productSpecsText" class="text-gray-600 mb-4 line-clamp-2 text-sm">
+        {{ productSpecsText }}
+      </p>
+      <p v-else-if="product.description" class="text-gray-600 mb-4 line-clamp-1 text-sm">
         {{ product.description }}
       </p>
       <div class="flex justify-between items-center">
         <span v-if="cartStore.client && product.price" class="text-lg font-bold text-primary-600">
           {{ formatPrice(product.price) }}
+        </span>
+        <span v-else-if="product.barcode" class="text-sm text-gray-600 font-medium">
+          Barkod: {{ product.barcode }}
         </span>
         <span v-else class="text-sm text-gray-500">
           Çmimi sipas kërkesës
@@ -61,6 +67,20 @@ export default {
       cartStore: cartStore
     }
   },
+  computed: {
+    productSpecsText() {
+      const size = this.product.size
+      const liters = this.product.liters
+      if (!size && !liters) return ''
+
+      const sizeStr = size ? (String(size).includes('x') ? `Size: ${size} cm` : `Size: ${size}`) : ''
+      const litersStr = liters ? `Litra: ${liters}` : ''
+      if (sizeStr && litersStr) return `${sizeStr} · ${litersStr}`
+      if (sizeStr) return sizeStr
+      if (litersStr) return litersStr
+      return ''
+    }
+  },
   methods: {
     formatPrice(price) {
       return new Intl.NumberFormat('sq-AL', {
@@ -68,8 +88,89 @@ export default {
         currency: 'EUR'
       }).format(price)
     },
+    getProductImage() {
+      // Rregullo fotot për kese mbeturinash 300L, 270L, 240L, 200L, 170L, 150L dhe 120L
+      const slug = this.product.slug || ''
+      const name = (this.product.name || '').toLowerCase()
+      
+      if (slug === 'kese-mbeturinash-300l' || name.includes('kese mbeturinash 300l')) {
+        return '/Images/Kese Mbeturina/300L/foto1.png'
+      } else if (slug === 'kese-mbeturinash-270l' || name.includes('kese mbeturinash 270l')) {
+        return '/Images/Kese Mbeturina/270L/foto1.png'
+      } else if (slug === 'kese-mbeturinash-240l' || name.includes('kese mbeturinash 240l')) {
+        return '/Images/Kese Mbeturina/240L/foto1.png'
+      } else if (slug === 'kese-mbeturinash-200l' || name.includes('kese mbeturinash 200l')) {
+        return '/Images/Kese Mbeturina/200L/foto1.png'
+      } else if (slug === 'kese-mbeturinash-170l' || name.includes('kese mbeturinash 170l')) {
+        return '/Images/Kese Mbeturina/170L/foto1.png'
+      } else if (slug === 'kese-mbeturinash-150l' || name.includes('kese mbeturinash 150l')) {
+        return '/Images/Kese Mbeturina/150L/foto1.png'
+      } else if (slug === 'kese-mbeturinash-120l' || name.includes('kese mbeturinash 120l')) {
+        return '/Images/Kese Mbeturina/120L/foto1.png'
+      }
+      
+      return this.product.image_path || '/images/placeholder.jpg'
+    },
     handleImageError(event) {
-      event.target.src = '/images/placeholder.jpg'
+      // Nëse është një nga këto tre produkte, provoni rrugët alternative
+      const slug = this.product.slug || ''
+      const name = (this.product.name || '').toLowerCase()
+      
+      if (slug === 'kese-mbeturinash-300l' || name.includes('kese mbeturinash 300l')) {
+        const currentSrc = event.target.src
+        if (currentSrc.includes('.png')) {
+          event.target.src = '/Images/Kese Mbeturina/300L/foto1.jpg'
+        } else {
+          event.target.src = '/Images/Kese Mbeturina/300L/foto1.png'
+        }
+      } else if (slug === 'kese-mbeturinash-270l' || name.includes('kese mbeturinash 270l')) {
+        const currentSrc = event.target.src
+        // Provoni të gjitha variantet për 270L
+        if (currentSrc.includes('foto1.png.png')) {
+          event.target.src = '/Images/Kese Mbeturina/270L/foto1.png'
+        } else if (currentSrc.includes('.png')) {
+          event.target.src = '/Images/Kese Mbeturina/270L/foto1.jpg'
+        } else {
+          event.target.src = '/Images/Kese Mbeturina/270L/foto1.png'
+        }
+      } else if (slug === 'kese-mbeturinash-240l' || name.includes('kese mbeturinash 240l')) {
+        const currentSrc = event.target.src
+        if (currentSrc.includes('.png')) {
+          event.target.src = '/Images/Kese Mbeturina/240L/foto1.jpg'
+        } else {
+          event.target.src = '/Images/Kese Mbeturina/240L/foto1.png'
+        }
+      } else if (slug === 'kese-mbeturinash-200l' || name.includes('kese mbeturinash 200l')) {
+        const currentSrc = event.target.src
+        if (currentSrc.includes('.png')) {
+          event.target.src = '/Images/Kese Mbeturina/200L/foto1.jpg'
+        } else {
+          event.target.src = '/Images/Kese Mbeturina/200L/foto1.png'
+        }
+      } else if (slug === 'kese-mbeturinash-170l' || name.includes('kese mbeturinash 170l')) {
+        const currentSrc = event.target.src
+        if (currentSrc.includes('.png')) {
+          event.target.src = '/Images/Kese Mbeturina/170L/foto1.jpg'
+        } else {
+          event.target.src = '/Images/Kese Mbeturina/170L/foto1.png'
+        }
+      } else if (slug === 'kese-mbeturinash-150l' || name.includes('kese mbeturinash 150l')) {
+        const currentSrc = event.target.src
+        if (currentSrc.includes('.png')) {
+          event.target.src = '/Images/Kese Mbeturina/150L/foto1.jpg'
+        } else {
+          event.target.src = '/Images/Kese Mbeturina/150L/foto1.png'
+        }
+      } else if (slug === 'kese-mbeturinash-120l' || name.includes('kese mbeturinash 120l')) {
+        const currentSrc = event.target.src
+        if (currentSrc.includes('.png')) {
+          event.target.src = '/Images/Kese Mbeturina/120L/foto1.jpg'
+        } else {
+          event.target.src = '/Images/Kese Mbeturina/120L/foto1.png'
+        }
+      } else {
+        event.target.src = '/images/placeholder.jpg'
+      }
     },
     addToCart() {
       cartStore.addItem(this.product, 1)
@@ -84,6 +185,7 @@ export default {
 .line-clamp-1 {
   display: -webkit-box;
   -webkit-line-clamp: 1;
+  line-clamp: 1;
   -webkit-box-orient: vertical;
   overflow: hidden;
 }

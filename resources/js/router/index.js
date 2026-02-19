@@ -16,6 +16,7 @@ import AdminSupplierInvoices from '../views/admin/AdminSupplierInvoices.vue'
 import AdminTrash from '../views/admin/AdminTrash.vue'
 import AdminSales from '../views/admin/AdminSales.vue'
 import AdminUsers from '../views/admin/AdminUsers.vue'
+import AdminDashboard from '../views/admin/AdminDashboard.vue'
 import { adminStore } from '../stores/adminStore'
 
 const routes = [
@@ -59,6 +60,12 @@ const routes = [
     path: '/admin/login',
     name: 'AdminLogin',
     component: AdminLogin
+  },
+  {
+    path: '/admin/dashboard',
+    name: 'AdminDashboard',
+    component: AdminDashboard,
+    meta: { requiresAuth: true }
   },
   {
     path: '/admin/clients',
@@ -113,7 +120,15 @@ const routes = [
 
 const router = createRouter({
   history: createWebHistory(),
-  routes
+  routes,
+  scrollBehavior(to, from, savedPosition) {
+    // Nëse ka pozicion të ruajtur (p.sh. kur përdor back button), kthehu atje
+    if (savedPosition) {
+      return savedPosition
+    }
+    // Përndryshe, shko në top të faqes
+    return { top: 0, behavior: 'smooth' }
+  }
 })
 
 // Global navigation guard for admin auth/roles
@@ -122,14 +137,14 @@ router.beforeEach(async (to, from, next) => {
   const requiresAdmin = to.meta?.requiresAdmin
   const token = localStorage.getItem('admin_token')
 
-  // If navigating to login and already authenticated, redirect to admin home
+  // If navigating to login and already authenticated, redirect to dashboard
   if (to.path === '/admin/login' && token) {
     try {
       axios.defaults.headers.common['Authorization'] = `Bearer ${token}`
       const res = await axios.get('/api/admin/check')
       if (res.data.success) {
         adminStore.setUser(res.data.data.user)
-        return next('/admin/clients')
+        return next('/admin/dashboard')
       }
     } catch (e) {
       // fall through to login
@@ -151,12 +166,35 @@ router.beforeEach(async (to, from, next) => {
   try {
     const res = await axios.get('/api/admin/check')
     if (res.data.success && res.data.data.user) {
-      adminStore.setUser(res.data.data.user)
+      const userData = res.data.data.user
+      adminStore.setUser(userData)
+      
       console.log('[Router] User loaded:', {
-        email: res.data.data.user.email,
-        role: res.data.data.user.role,
-        isAdmin: res.data.data.user.role === 'admin'
+        email: userData.email,
+        role: userData.role,
+        isAdmin: userData.role === 'admin',
+        adminStoreIsAdmin: adminStore.isAdmin
       })
+      
+      // If route requires admin role, check immediately after loading user
+      if (requiresAdmin) {
+        const userRole = userData.role
+        const isAdmin = userRole === 'admin'
+        
+        console.log('[Router] requiresAdmin check for', to.path, {
+          hasUser: !!adminStore.user,
+          role: userRole,
+          isAdmin: isAdmin,
+          adminStoreIsAdmin: adminStore.isAdmin,
+          userEmail: userData.email
+        })
+        
+        if (!isAdmin) {
+          console.warn('[Router] Access denied - user is not admin. Role:', userRole, 'Redirecting to /admin/dashboard')
+          // Redirect to dashboard instead of sales for better UX
+          return next('/admin/dashboard')
+        }
+      }
     } else {
       adminStore.clearUser()
       localStorage.removeItem('admin_token')
@@ -169,22 +207,6 @@ router.beforeEach(async (to, from, next) => {
     localStorage.removeItem('admin_token')
     delete axios.defaults.headers.common['Authorization']
     return next('/admin/login')
-  }
-
-  if (requiresAdmin) {
-    // Double check role from API response (already loaded above)
-    const userRole = adminStore.user?.role
-    console.log('[Router] requiresAdmin check for', to.path, {
-      hasUser: !!adminStore.user,
-      role: userRole,
-      isAdmin: adminStore.isAdmin,
-      userEmail: adminStore.user?.email
-    })
-    
-    if (!adminStore.user || userRole !== 'admin') {
-      console.warn('[Router] Access denied - redirecting to /admin/sales')
-      return next('/admin/sales')
-    }
   }
 
   return next()

@@ -6,7 +6,7 @@
         <div>
           <h3 class="text-lg font-semibold mb-4">GastroTrade</h3>
           <p class="text-gray-300 mb-4">
-            Zgjidhja juaj për furnizimet profesionale të kuzhinës. 
+            Zgjidhja juaj për furnizimet profesionale të biznesit. 
             Cilësi e lartë dhe shërbim i besueshëm.
           </p>
         </div>

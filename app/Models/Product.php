@@ -27,6 +27,9 @@ class Product extends Model
         'sort_order',
         'sold_by_package',
         'pieces_per_package',
+        'size',
+        'liters',
+        'barcode',
     ];
 
     protected $casts = [

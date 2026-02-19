@@ -26,7 +26,7 @@
         <div class="space-y-4">
           <div class="aspect-w-16 aspect-h-12 bg-white rounded-lg shadow-lg overflow-hidden">
             <img 
-              :src="product.image_path" 
+              :src="getProductImage()" 
               :alt="product.name"
               class="w-full h-96 object-cover"
               @error="handleImageError"
@@ -63,15 +63,21 @@
               >
                 {{ formatPrice(product.price) }}
               </span>
+              <span v-else-if="product.barcode" class="text-lg text-gray-600 font-medium">
+                Barkod: {{ product.barcode }}
+              </span>
               <span v-else class="text-lg text-gray-600">
                 Çmimi sipas kërkesës
               </span>
             </div>
           </div>
 
-          <div class="prose max-w-none">
-            <h3 class="text-lg font-semibold text-gray-900 mb-3">Përshkrimi</h3>
-            <p class="text-gray-700 leading-relaxed">
+          <div class="prose max-w-none" v-if="productSpecsText || product.description">
+            <h3 class="text-lg font-semibold text-gray-900 mb-3">{{ productSpecsText ? 'Specifikat' : 'Përshkrimi' }}</h3>
+            <p v-if="productSpecsText" class="text-gray-700 leading-relaxed font-medium">
+              {{ productSpecsText }}
+            </p>
+            <p v-if="product.description" class="text-gray-700 leading-relaxed" :class="{ 'mt-3': productSpecsText }">
               {{ product.description }}
             </p>
           </div>
@@ -79,6 +85,18 @@
           <div class="bg-gray-100 rounded-lg p-6">
             <h3 class="text-lg font-semibold text-gray-900 mb-4">Informacion shtesë</h3>
             <div class="space-y-2 text-sm">
+              <div v-if="product.size" class="flex justify-between">
+                <span class="text-gray-600">Size:</span>
+                <span class="font-medium">{{ product.size }}{{ String(product.size).includes('x') ? ' cm' : '' }}</span>
+              </div>
+              <div v-if="product.liters" class="flex justify-between">
+                <span class="text-gray-600">Litra:</span>
+                <span class="font-medium">{{ product.liters }}</span>
+              </div>
+              <div v-if="product.barcode" class="flex justify-between">
+                <span class="text-gray-600">Barkod:</span>
+                <span class="font-medium">{{ product.barcode }}</span>
+              </div>
               <div class="flex justify-between">
                 <span class="text-gray-600">Kategoria:</span>
                 <span class="font-medium">{{ product.category.name }}</span>
@@ -173,8 +191,23 @@ export default {
       cartStore: cartStore
     }
   },
-  async mounted() {
+  async   mounted() {
     await this.loadProduct()
+  },
+  computed: {
+    productSpecsText() {
+      if (!this.product) return ''
+      const size = this.product.size
+      const liters = this.product.liters
+      if (!size && !liters) return ''
+
+      const sizeStr = size ? (String(size).includes('x') ? `Size: ${size} cm` : `Size: ${size}`) : ''
+      const litersStr = liters ? `Litra: ${liters}` : ''
+      if (sizeStr && litersStr) return `${sizeStr} · ${litersStr}`
+      if (sizeStr) return sizeStr
+      if (litersStr) return litersStr
+      return ''
+    }
   },
   methods: {
     async loadProduct() {
@@ -182,7 +215,7 @@ export default {
       try {
         const response = await axios.get(`/api/products/${this.slug}`)
         this.product = response.data.data
-        this.mainImage = this.product.image_path
+        this.mainImage = this.getProductImage()
         
         // Load related products from the same category
         await this.loadRelatedProducts()
@@ -214,8 +247,88 @@ export default {
         currency: 'EUR'
       }).format(price)
     },
+    getProductImage() {
+      if (!this.product) return '/images/placeholder.jpg'
+      
+      // Rregullo fotot për kese mbeturinash 300L, 270L, 240L, 200L, 170L, 150L dhe 120L
+      const slug = this.product.slug || ''
+      
+      if (slug === 'kese-mbeturinash-300l') {
+        return '/Images/Kese Mbeturina/300L/foto1.png'
+      } else if (slug === 'kese-mbeturinash-270l') {
+        return '/Images/Kese Mbeturina/270L/foto1.png'
+      } else if (slug === 'kese-mbeturinash-240l') {
+        return '/Images/Kese Mbeturina/240L/foto1.png'
+      } else if (slug === 'kese-mbeturinash-200l') {
+        return '/Images/Kese Mbeturina/200L/foto1.png'
+      } else if (slug === 'kese-mbeturinash-170l') {
+        return '/Images/Kese Mbeturina/170L/foto1.png'
+      } else if (slug === 'kese-mbeturinash-150l') {
+        return '/Images/Kese Mbeturina/150L/foto1.png'
+      } else if (slug === 'kese-mbeturinash-120l') {
+        return '/Images/Kese Mbeturina/120L/foto1.png'
+      }
+      
+      return this.product.image_path || '/images/placeholder.jpg'
+    },
     handleImageError(event) {
-      event.target.src = '/images/placeholder.jpg'
+      // Nëse është një nga këto tre produkte, provoni rrugët alternative
+      const slug = this.product?.slug || ''
+      if (slug === 'kese-mbeturinash-300l') {
+        const currentSrc = event.target.src
+        if (currentSrc.includes('foto1')) {
+          event.target.src = '/Images/Kese Mbeturina/300L/foto1.jpg'
+        } else {
+          event.target.src = '/Images/Kese Mbeturina/300L/foto1.png'
+        }
+      } else if (slug === 'kese-mbeturinash-270l') {
+        const currentSrc = event.target.src
+        // Provoni të gjitha variantet për 270L
+        if (currentSrc.includes('foto1.png.png')) {
+          event.target.src = '/Images/Kese Mbeturina/270L/foto1.png'
+        } else if (currentSrc.includes('foto1')) {
+          event.target.src = '/Images/Kese Mbeturina/270L/foto1.jpg'
+        } else {
+          event.target.src = '/Images/Kese Mbeturina/270L/foto1.png'
+        }
+      } else if (slug === 'kese-mbeturinash-240l') {
+        const currentSrc = event.target.src
+        if (currentSrc.includes('foto1')) {
+          event.target.src = '/Images/Kese Mbeturina/240L/foto1.jpg'
+        } else {
+          event.target.src = '/Images/Kese Mbeturina/240L/foto1.png'
+        }
+      } else if (slug === 'kese-mbeturinash-200l') {
+        const currentSrc = event.target.src
+        if (currentSrc.includes('foto1')) {
+          event.target.src = '/Images/Kese Mbeturina/200L/foto1.jpg'
+        } else {
+          event.target.src = '/Images/Kese Mbeturina/200L/foto1.png'
+        }
+      } else if (slug === 'kese-mbeturinash-170l') {
+        const currentSrc = event.target.src
+        if (currentSrc.includes('foto1')) {
+          event.target.src = '/Images/Kese Mbeturina/170L/foto1.jpg'
+        } else {
+          event.target.src = '/Images/Kese Mbeturina/170L/foto1.png'
+        }
+      } else if (slug === 'kese-mbeturinash-150l') {
+        const currentSrc = event.target.src
+        if (currentSrc.includes('foto1')) {
+          event.target.src = '/Images/Kese Mbeturina/150L/foto1.jpg'
+        } else {
+          event.target.src = '/Images/Kese Mbeturina/150L/foto1.png'
+        }
+      } else if (slug === 'kese-mbeturinash-120l') {
+        const currentSrc = event.target.src
+        if (currentSrc.includes('foto1')) {
+          event.target.src = '/Images/Kese Mbeturina/120L/foto1.jpg'
+        } else {
+          event.target.src = '/Images/Kese Mbeturina/120L/foto1.png'
+        }
+      } else {
+        event.target.src = '/images/placeholder.jpg'
+      }
     },
     changeMainImage(imagePath) {
       this.mainImage = imagePath

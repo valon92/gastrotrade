@@ -129,6 +129,9 @@ class ProductController extends Controller
             'name' => ['required', 'string', 'max:255'],
             'category_id' => ['required', 'exists:categories,id'],
             'description' => ['nullable', 'string'],
+            'size' => ['nullable', 'string', 'max:100'],
+            'liters' => ['nullable', 'string', 'max:50'],
+            'barcode' => ['nullable', 'string', 'max:100'],
             'price' => ['nullable', 'numeric', 'min:0'],
             'is_featured' => ['nullable', 'boolean'],
             'sort_order' => ['nullable', 'integer', 'min:0'],
@@ -142,6 +145,9 @@ class ProductController extends Controller
         $data['is_featured'] = (bool)($validated['is_featured'] ?? false);
         $data['sold_by_package'] = (bool)($validated['sold_by_package'] ?? false);
         $data['description'] = $validated['description'] ?? null;
+        $data['size'] = isset($validated['size']) && $validated['size'] !== '' ? $validated['size'] : null;
+        $data['liters'] = isset($validated['liters']) && $validated['liters'] !== '' ? $validated['liters'] : null;
+        $data['barcode'] = isset($validated['barcode']) && $validated['barcode'] !== '' ? $validated['barcode'] : null;
 
         if (!$data['sold_by_package']) {
             $data['pieces_per_package'] = null;
@@ -164,10 +170,18 @@ class ProductController extends Controller
      */
     public function update(Request $request, Product $product)
     {
+        // Normalize empty price so validation accepts it
+        if ($request->has('price') && $request->input('price') === '') {
+            $request->merge(['price' => null]);
+        }
+
         $validated = $request->validate([
             'name' => ['sometimes', 'required', 'string', 'max:255'],
             'category_id' => ['sometimes', 'required', 'exists:categories,id'],
             'description' => ['nullable', 'string'],
+            'size' => ['nullable', 'string', 'max:100'],
+            'liters' => ['nullable', 'string', 'max:50'],
+            'barcode' => ['nullable', 'string', 'max:100'],
             'price' => ['nullable', 'numeric', 'min:0'],
             'cost_price' => ['nullable', 'numeric', 'min:0'],
             'is_featured' => ['nullable', 'boolean'],
@@ -178,6 +192,15 @@ class ProductController extends Controller
         ]);
 
         $data = $validated;
+        if (array_key_exists('size', $data) && $data['size'] === '') {
+            $data['size'] = null;
+        }
+        if (array_key_exists('liters', $data) && $data['liters'] === '') {
+            $data['liters'] = null;
+        }
+        if (array_key_exists('barcode', $data) && $data['barcode'] === '') {
+            $data['barcode'] = null;
+        }
 
         if (array_key_exists('name', $data) && $data['name'] !== $product->name) {
             $data['slug'] = $this->generateUniqueSlug($data['name'], $product->id);

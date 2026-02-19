@@ -3,7 +3,12 @@
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
       <div class="flex justify-between h-16">
         <div class="flex items-center">
-          <router-link to="/" class="flex-shrink-0 flex items-center">
+          <router-link to="/" class="flex-shrink-0 flex items-center gap-3">
+            <!-- GT Logo - distribucion produkte -->
+            <svg class="w-10 h-10 flex-shrink-0 text-primary-600" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+              <rect width="40" height="40" rx="8" fill="currentColor"/>
+              <text x="20" y="26" text-anchor="middle" fill="white" font-family="system-ui, sans-serif" font-weight="700" font-size="16">GT</text>
+            </svg>
             <h1 class="text-2xl font-bold text-primary-600">GastroTrade</h1>
           </router-link>
         </div>

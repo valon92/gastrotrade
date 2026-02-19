@@ -134,13 +134,34 @@
       <!-- Action Buttons -->
       <div class="bg-white rounded-lg shadow-lg p-6">
         <h3 class="text-xl font-bold text-gray-900 mb-4 text-center">
-          Dërgo Porosinë në Viber
+          Dërgo Porosinë
         </h3>
         <p class="text-sm text-gray-600 mb-6 text-center">
-          Klikoni në një nga butonat më poshtë për të dërguar porosinë në Viber
+          Dërgo porosinë në emailin zyrtar të GastroTrade dhe në Viber
         </p>
         
         <div class="space-y-3">
+          <button 
+            @click="sendOrderToEmail"
+            :disabled="sendingEmail"
+            :class="[
+              'w-full font-medium py-4 px-6 rounded-lg transition-colors duration-200 flex items-center justify-center gap-3 text-lg',
+              sendingEmail
+                ? 'bg-gray-400 text-white cursor-not-allowed'
+                : 'bg-blue-600 hover:bg-blue-700 text-white shadow-lg'
+            ]"
+          >
+            <span v-if="sendingEmail">⏳</span>
+            <span v-else>📧</span>
+            {{ sendingEmail ? 'Duke dërguar në email...' : 'Dërgo në Email Zyrtar' }}
+          </button>
+          
+          <div class="flex items-center gap-2 my-4">
+            <div class="flex-1 border-t border-gray-300"></div>
+            <span class="text-sm text-gray-500">ose</span>
+            <div class="flex-1 border-t border-gray-300"></div>
+          </div>
+          
           <button 
             @click="sendOrderToViber('+38348756646')"
             class="w-full bg-green-600 hover:bg-green-700 text-white font-medium py-4 px-6 rounded-lg transition-colors duration-200 flex items-center justify-center gap-3 text-lg"
@@ -188,6 +209,7 @@
 
 <script>
 import cartStore from '../store/cart'
+import axios from 'axios'
 
 export default {
   name: 'OrderConfirmation',
@@ -208,7 +230,9 @@ export default {
       },
       cartItems: [],
       totalItems: 0,
-      totalPrice: 0
+      totalPrice: 0,
+      sendingEmail: false,
+      emailSent: false
     }
   },
   mounted() {
@@ -472,6 +496,61 @@ export default {
     },
     goToProducts() {
       this.$router.push('/produktet')
+    },
+    async sendOrderToEmail() {
+      // Validate customer data
+      if (
+        !this.customerData ||
+        !this.customerData.name ||
+        !this.customerData.storeName ||
+        !this.customerData.fiscalNumber ||
+        !this.customerData.city
+      ) {
+        alert('Ju lutem plotësoni të gjitha fushat e detyrueshme para dërgimit të porosisë!')
+        this.$router.push('/shporta')
+        return
+      }
+
+      // Validate cart has items
+      if (!this.cartItems || this.cartItems.length === 0) {
+        alert('Shporta juaj është e zbrazët!')
+        this.$router.push('/produktet')
+        return
+      }
+
+      this.sendingEmail = true
+      this.emailSent = false
+
+      try {
+        // Get order number from route params or generate one
+        const orderNumber = this.$route.params.orderNumber || `GT-${new Date().toISOString().slice(0,10).replace(/-/g,'')}-${Date.now().toString().slice(-6)}`
+        
+        const orderData = {
+          order_number: orderNumber,
+          created_at: new Date().toISOString()
+        }
+
+        const response = await axios.post('/api/orders/send-email', {
+          order_data: orderData,
+          customer_data: this.customerData,
+          cart_items: this.cartItems,
+          total_items: this.totalItems,
+          total_price: this.totalPrice
+        })
+
+        if (response.data.success) {
+          this.emailSent = true
+          alert('✅ Porosia u dërgua me sukses në emailin zyrtar të GastroTrade!\n\nEmail: svalon95@gmail.com')
+        } else {
+          throw new Error(response.data.message || 'Gabim i panjohur')
+        }
+      } catch (error) {
+        console.error('Error sending order email:', error)
+        const errorMessage = error.response?.data?.message || error.message || 'Gabim gjatë dërgimit të emailit'
+        alert(`❌ ${errorMessage}\n\nJu lutem provoni përsëri ose dërgoni porosinë nëpërmjet Viber.`)
+      } finally {
+        this.sendingEmail = false
+      }
     }
   }
 }

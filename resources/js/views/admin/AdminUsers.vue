@@ -1,6 +1,6 @@
 <template>
-  <div class="min-h-screen bg-gray-50 py-8">
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+  <AdminLayout>
+    <div class="p-4 sm:p-6 lg:p-8">
       <div class="mb-8 flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
         <div class="flex-1">
           <h1 class="text-2xl sm:text-4xl font-bold text-gray-900 mb-4">Menaxhimi i Adminave</h1>
@@ -9,44 +9,6 @@
             class="btn-primary w-full sm:w-auto"
           >
             + Shto Admin të Ri
-          </button>
-        </div>
-        <div class="flex flex-col sm:flex-row gap-3 w-full sm:w-auto">
-          <router-link
-            to="/admin/clients"
-            class="btn-secondary text-center"
-          >
-            👥 Klientët
-          </router-link>
-          <router-link
-            to="/admin/sales"
-            class="btn-secondary text-center"
-          >
-            💰 Shitjet
-          </router-link>
-          <router-link
-            to="/admin/products"
-            class="btn-secondary text-center"
-          >
-            📦 Produktet
-          </router-link>
-          <router-link
-            to="/admin/stock"
-            class="btn-secondary text-center"
-          >
-            📊 Stoku
-          </router-link>
-          <router-link
-            to="/admin/trash"
-            class="btn-secondary text-center"
-          >
-            🗑️ Historia e Fshirjeve
-          </router-link>
-          <button 
-            @click="logout"
-            class="btn-secondary w-full sm:w-auto"
-          >
-            🚪 Dil
           </button>
         </div>
       </div>
@@ -256,15 +218,19 @@
         </div>
       </div>
     </div>
-  </div>
+  </AdminLayout>
 </template>
 
 <script>
 import axios from 'axios'
 import { adminStore } from '../../stores/adminStore'
+import AdminLayout from '../../components/admin/AdminLayout.vue'
 
 export default {
   name: 'AdminUsers',
+  components: {
+    AdminLayout
+  },
   data() {
     return {
       users: [],
@@ -290,6 +256,9 @@ export default {
     }
   },
   async mounted() {
+    // Scroll to top when component mounts
+    window.scrollTo({ top: 0, behavior: 'smooth' })
+    
     console.log('[AdminUsers] mounted start')
     // Load current user ID
     adminStore.loadUser()
@@ -315,7 +284,8 @@ export default {
 
     // Check if user has permission
     if (!adminStore.canManage()) {
-      this.$router.push('/admin/sales')
+      console.warn('[AdminUsers] Access denied - user is not admin. Redirecting to dashboard')
+      this.$router.push('/admin/dashboard')
       return
     }
 
@@ -461,12 +431,7 @@ export default {
         timeStyle: 'short'
       })
     },
-    async logout() {
-      adminStore.clearUser()
-      localStorage.removeItem('admin_token')
-      delete axios.defaults.headers.common['Authorization']
-      this.$router.push('/admin/login')
-    }
+    // Logout is now handled by AdminLayout
   }
 }
 </script>

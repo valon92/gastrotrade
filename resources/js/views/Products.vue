@@ -23,6 +23,12 @@
             <span>Viber: +383 48 75 66 46 / +383 44 82 43 14</span>
           </div>
         </div>
+        <router-link 
+          to="/shporta" 
+          class="inline-flex items-center gap-2 mt-4 px-4 py-2 bg-primary-600 text-white text-sm font-medium rounded-lg hover:bg-primary-700 transition-colors"
+        >
+          Klientët e regjistruar → Plotësoni të dhënat për çmimet tuaja
+        </router-link>
       </div>
     </div>
 

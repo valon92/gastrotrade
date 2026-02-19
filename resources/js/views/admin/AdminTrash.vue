@@ -1,32 +1,9 @@
 <template>
-  <div class="min-h-screen bg-gray-50 py-8">
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-      <div class="mb-8 flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
-        <div class="flex-1">
-          <h1 class="text-2xl sm:text-4xl font-bold text-gray-900 mb-2">Historia e Fshirjeve</h1>
-          <p class="text-sm text-gray-600">Shiko dhe rikthe artikujt e fshirë</p>
-        </div>
-        <div class="flex gap-3">
-          <router-link
-            to="/admin/clients"
-            class="btn-secondary text-center"
-          >
-            ← Kthehu
-          </router-link>
-          <router-link
-            v-if="canManage"
-            to="/admin/users"
-            class="btn-secondary text-center"
-          >
-            👤 Adminat
-          </router-link>
-          <button 
-            @click="logout"
-            class="btn-secondary w-full sm:w-auto"
-          >
-            🚪 Dil
-          </button>
-        </div>
+  <AdminLayout>
+    <div class="p-4 sm:p-6 lg:p-8">
+      <div class="mb-8">
+        <h1 class="text-2xl sm:text-4xl font-bold text-gray-900 mb-2">Historia e Fshirjeve</h1>
+        <p class="text-sm text-gray-600">Shiko dhe rikthe artikujt e fshirë</p>
       </div>
 
       <!-- Statistics -->
@@ -363,15 +340,19 @@
         </div>
       </div>
     </div>
-  </div>
+  </AdminLayout>
 </template>
 
 <script>
 import axios from 'axios'
 import { adminStore } from '../../stores/adminStore'
+import AdminLayout from '../../components/admin/AdminLayout.vue'
 
 export default {
   name: 'AdminTrash',
+  components: {
+    AdminLayout
+  },
   data() {
     return {
       trash: [],
@@ -394,6 +375,8 @@ export default {
     }
   },
   async mounted() {
+    // Scroll to top when component mounts
+    window.scrollTo({ top: 0, behavior: 'smooth' })
     await this.checkAuth()
     await this.loadTrash()
   },
@@ -413,16 +396,7 @@ export default {
         this.$router.push('/admin/login')
       }
     },
-    async logout() {
-      try {
-        await axios.post('/api/admin/logout')
-      } catch (error) {
-        // Continue with logout even if API call fails
-      }
-      localStorage.removeItem('admin_token')
-      delete axios.defaults.headers.common['Authorization']
-      this.$router.push('/admin/login')
-    },
+    // Logout is now handled by AdminLayout
     async loadTrash() {
       this.loading = true
       try {
