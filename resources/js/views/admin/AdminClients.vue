@@ -14,38 +14,38 @@
       </div>
 
       <!-- Overall Payment Statistics -->
-      <div class="mb-6 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <div class="bg-gradient-to-br from-green-50 to-green-100 rounded-xl p-5 border border-green-200 shadow-sm">
-          <div class="flex items-center justify-between mb-2">
-            <h3 class="text-sm font-semibold text-green-800">Të Paguara</h3>
-            <span class="text-2xl">✅</span>
+      <div class="mb-6 grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+        <div class="bg-gradient-to-br from-green-50 to-green-100 rounded-xl p-3 sm:p-5 border border-green-200 shadow-sm min-w-0">
+          <div class="flex items-center justify-between mb-1 sm:mb-2">
+            <h3 class="text-xs sm:text-sm font-semibold text-green-800 truncate">Të Paguara</h3>
+            <span class="text-lg sm:text-2xl shrink-0">✅</span>
           </div>
-          <p class="text-3xl font-bold text-green-900">{{ overallPaymentStats.paidCount }}</p>
-          <p class="text-sm text-green-700 mt-1">{{ formatPrice(overallPaymentStats.paidTotal) }}</p>
+          <p class="text-xl sm:text-3xl font-bold text-green-900">{{ overallPaymentStats.paidCount }}</p>
+          <p class="text-xs sm:text-sm text-green-700 mt-1 truncate">{{ formatPrice(overallPaymentStats.paidTotal) }}</p>
         </div>
-        <div class="bg-gradient-to-br from-red-50 to-red-100 rounded-xl p-5 border border-red-200 shadow-sm">
-          <div class="flex items-center justify-between mb-2">
-            <h3 class="text-sm font-semibold text-red-800">Të Papaguara</h3>
-            <span class="text-2xl">⚠️</span>
+        <div class="bg-gradient-to-br from-red-50 to-red-100 rounded-xl p-3 sm:p-5 border border-red-200 shadow-sm min-w-0">
+          <div class="flex items-center justify-between mb-1 sm:mb-2">
+            <h3 class="text-xs sm:text-sm font-semibold text-red-800 truncate">Të Papaguara</h3>
+            <span class="text-lg sm:text-2xl shrink-0">⚠️</span>
           </div>
-          <p class="text-3xl font-bold text-red-900">{{ overallPaymentStats.unpaidCount }}</p>
-          <p class="text-sm text-red-700 mt-1">{{ formatPrice(overallPaymentStats.unpaidTotal) }}</p>
+          <p class="text-xl sm:text-3xl font-bold text-red-900">{{ overallPaymentStats.unpaidCount }}</p>
+          <p class="text-xs sm:text-sm text-red-700 mt-1 truncate">{{ formatPrice(overallPaymentStats.unpaidTotal) }}</p>
         </div>
-        <div class="bg-gradient-to-br from-blue-50 to-blue-100 rounded-xl p-5 border border-blue-200 shadow-sm">
-          <div class="flex items-center justify-between mb-2">
-            <h3 class="text-sm font-semibold text-blue-800">Total Porosi</h3>
-            <span class="text-2xl">📦</span>
+        <div class="bg-gradient-to-br from-blue-50 to-blue-100 rounded-xl p-3 sm:p-5 border border-blue-200 shadow-sm min-w-0">
+          <div class="flex items-center justify-between mb-1 sm:mb-2">
+            <h3 class="text-xs sm:text-sm font-semibold text-blue-800 truncate">Total Porosi</h3>
+            <span class="text-lg sm:text-2xl shrink-0">📦</span>
           </div>
-          <p class="text-3xl font-bold text-blue-900">{{ overallPaymentStats.totalCount }}</p>
-          <p class="text-sm text-blue-700 mt-1">{{ formatPrice(overallPaymentStats.totalAmount) }}</p>
+          <p class="text-xl sm:text-3xl font-bold text-blue-900">{{ overallPaymentStats.totalCount }}</p>
+          <p class="text-xs sm:text-sm text-blue-700 mt-1 truncate">{{ formatPrice(overallPaymentStats.totalAmount) }}</p>
         </div>
-        <div class="bg-gradient-to-br from-purple-50 to-purple-100 rounded-xl p-5 border border-purple-200 shadow-sm">
-          <div class="flex items-center justify-between mb-2">
-            <h3 class="text-sm font-semibold text-purple-800">Klientë</h3>
-            <span class="text-2xl">👥</span>
+        <div class="bg-gradient-to-br from-purple-50 to-purple-100 rounded-xl p-3 sm:p-5 border border-purple-200 shadow-sm min-w-0">
+          <div class="flex items-center justify-between mb-1 sm:mb-2">
+            <h3 class="text-xs sm:text-sm font-semibold text-purple-800 truncate">Klientë</h3>
+            <span class="text-lg sm:text-2xl shrink-0">👥</span>
           </div>
-          <p class="text-3xl font-bold text-purple-900">{{ clients.length }}</p>
-          <p class="text-sm text-purple-700 mt-1">Total klientë</p>
+          <p class="text-xl sm:text-3xl font-bold text-purple-900">{{ clients.length }}</p>
+          <p class="text-xs sm:text-sm text-purple-700 mt-1">Total klientë</p>
         </div>
       </div>
 
@@ -89,45 +89,47 @@
         </div>
       </div>
 
-      <!-- Clients Table - Desktop -->
-      <div class="hidden md:block bg-white rounded-lg shadow-lg overflow-hidden">
+      <!-- Clients Table - Desktop (vetëm në ekrane të mëdha lg+) -->
+      <div class="hidden lg:block bg-white rounded-lg shadow-lg overflow-hidden">
         <div class="overflow-x-auto">
           <table class="min-w-full divide-y divide-gray-200">
             <thead class="bg-gray-50">
               <tr>
-                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Emri</th>
-                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Emri i Biznisit</th>
-                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Nr. Fiskal</th>
-                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Qyteti</th>
-                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Nr. Rrugës</th>
-                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Njësia</th>
-                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Telefon</th>
-                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Viber</th>
-                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Statusi</th>
-                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Veprime</th>
+                <th class="px-3 lg:px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Emri</th>
+                <th class="px-3 lg:px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Emri i Biznisit</th>
+                <th class="px-3 lg:px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Nr. Fiskal</th>
+                <th class="px-3 lg:px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Qyteti</th>
+                <th class="px-3 lg:px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Nr. Rrugës</th>
+                <th class="px-3 lg:px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Njësia</th>
+                <th class="px-3 lg:px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Telefon</th>
+                <th class="px-3 lg:px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Viber</th>
+                <th class="px-3 lg:px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Statusi</th>
+                <th class="px-3 lg:px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Veprime</th>
               </tr>
             </thead>
             <tbody class="bg-white divide-y divide-gray-200">
               <tr v-for="client in filteredClients" :key="client.id">
-                <td class="px-4 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{{ client.name }}</td>
-                <td class="px-4 py-4 whitespace-nowrap text-sm text-gray-500">{{ client.store_name || '-' }}</td>
-                <td class="px-4 py-4 whitespace-nowrap text-sm text-gray-500">{{ client.fiscal_number || '-' }}</td>
-                <td class="px-4 py-4 whitespace-nowrap text-sm text-gray-500">{{ client.city || '-' }}</td>
-                <td class="px-4 py-4 whitespace-nowrap text-sm text-gray-500">{{ client.street_number || '-' }}</td>
-                <td class="px-4 py-4 whitespace-nowrap text-sm text-gray-500">{{ client.unit || '-' }}</td>
-                <td class="px-4 py-4 whitespace-nowrap text-sm text-gray-500">{{ client.phone || '-' }}</td>
-                <td class="px-4 py-4 whitespace-nowrap text-sm text-gray-500">{{ client.viber || '-' }}</td>
-                <td class="px-4 py-4 whitespace-nowrap">
+                <td class="px-3 lg:px-4 py-3 lg:py-4 whitespace-nowrap text-sm font-medium text-gray-900">{{ client.name }}</td>
+                <td class="px-3 lg:px-4 py-3 lg:py-4 whitespace-nowrap text-sm text-gray-500">{{ client.store_name || '-' }}</td>
+                <td class="px-3 lg:px-4 py-3 lg:py-4 whitespace-nowrap text-sm text-gray-500">{{ client.fiscal_number || '-' }}</td>
+                <td class="px-3 lg:px-4 py-3 lg:py-4 whitespace-nowrap text-sm text-gray-500">{{ client.city || '-' }}</td>
+                <td class="px-3 lg:px-4 py-3 lg:py-4 whitespace-nowrap text-sm text-gray-500">{{ client.street_number || '-' }}</td>
+                <td class="px-3 lg:px-4 py-3 lg:py-4 whitespace-nowrap text-sm text-gray-500">{{ client.unit || '-' }}</td>
+                <td class="px-3 lg:px-4 py-3 lg:py-4 whitespace-nowrap text-sm text-gray-500">{{ client.phone || '-' }}</td>
+                <td class="px-3 lg:px-4 py-3 lg:py-4 whitespace-nowrap text-sm text-gray-500">{{ client.viber || '-' }}</td>
+                <td class="px-3 lg:px-4 py-3 lg:py-4 whitespace-nowrap">
                   <span :class="client.is_active ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'" 
                         class="px-2 py-1 text-xs font-semibold rounded-full">
                     {{ client.is_active ? 'Aktiv' : 'Jo Aktiv' }}
                   </span>
                 </td>
-                <td class="px-4 py-4 whitespace-nowrap text-sm font-medium space-x-2">
-                  <button @click="editClient(client)" class="text-primary-600 hover:text-primary-900">Edit</button>
-                  <button @click="viewOrders(client)" class="text-indigo-600 hover:text-indigo-900">Porositë</button>
-                  <button @click="viewPrices(client)" class="text-green-600 hover:text-green-900">Çmimet</button>
-                  <button @click="deleteClient(client.id)" class="text-red-600 hover:text-red-900">Fshi</button>
+                <td class="px-3 lg:px-4 py-3 lg:py-4 text-sm font-medium">
+                  <div class="flex flex-wrap gap-1.5">
+                    <button @click="editClient(client)" class="text-primary-600 hover:text-primary-900 whitespace-nowrap">Edit</button>
+                    <button @click="viewOrders(client)" class="text-indigo-600 hover:text-indigo-900 whitespace-nowrap">Porositë</button>
+                    <button @click="viewPrices(client)" class="text-green-600 hover:text-green-900 whitespace-nowrap">Çmimet</button>
+                    <button @click="deleteClient(client.id)" class="text-red-600 hover:text-red-900 whitespace-nowrap">Fshi</button>
+                  </div>
                 </td>
               </tr>
             </tbody>
@@ -135,8 +137,8 @@
         </div>
       </div>
 
-      <!-- Clients Cards - Mobile -->
-      <div class="md:hidden space-y-4">
+      <!-- Clients Cards - Mobile & Tablet (deri në lg) -->
+      <div class="lg:hidden space-y-4">
         <div 
           v-for="client in filteredClients" 
           :key="client.id"
@@ -180,8 +182,8 @@
       </div>
 
       <!-- Add/Edit Modal -->
-      <div v-if="showAddModal || editingClient" class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
-        <div class="relative top-4 sm:top-20 mx-auto p-4 sm:p-5 border w-full sm:w-96 max-w-2xl shadow-lg rounded-md bg-white m-4 max-h-[90vh] overflow-y-auto">
+      <div v-if="showAddModal || editingClient" class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50 flex items-start justify-center p-3 sm:p-4">
+        <div class="relative w-full max-w-2xl bg-white shadow-lg rounded-lg my-4 sm:my-12 p-4 sm:p-5 max-h-[calc(100vh-2rem)] overflow-y-auto">
           <h3 class="text-lg font-bold text-gray-900 mb-4">
             {{ editingClient ? 'Edit Klient' : 'Shto Klient të Ri' }}
           </h3>
@@ -345,9 +347,9 @@
       </div>
 
       <!-- Orders Modal -->
-      <div v-if="showOrdersModal" class="fixed inset-0 bg-gray-900 bg-opacity-50 overflow-y-auto h-full w-full z-50">
-        <div class="relative top-0 sm:top-12 mx-auto max-w-4xl w-full p-3 sm:p-6">
-          <div class="bg-white rounded-xl shadow-2xl overflow-hidden">
+      <div v-if="showOrdersModal" class="fixed inset-0 bg-gray-900 bg-opacity-50 overflow-y-auto h-full w-full z-50 flex items-start justify-center p-2 sm:p-4 md:p-6">
+        <div class="relative w-full max-w-4xl my-4 sm:my-8 px-0 sm:px-2">
+          <div class="bg-white rounded-xl shadow-2xl overflow-hidden min-w-0">
             <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between px-4 sm:px-6 py-4 border-b border-gray-200 gap-3">
               <div class="flex-1">
                 <h3 class="text-xl sm:text-2xl font-bold text-gray-900">Porositë e Klientit</h3>
@@ -363,7 +365,7 @@
               </button>
             </div>
 
-            <div class="px-4 sm:px-6 py-4 sm:py-5 max-h-[70vh] overflow-y-auto">
+            <div class="px-3 sm:px-6 py-4 sm:py-5 max-h-[calc(100vh-8rem)] sm:max-h-[70vh] overflow-y-auto">
               <!-- Payment Statistics -->
               <div v-if="!ordersLoading && !ordersError && selectedClientOrders.length > 0" class="mb-6 grid grid-cols-1 sm:grid-cols-3 gap-4">
                 <div class="bg-gradient-to-br from-green-50 to-green-100 rounded-xl p-4 border border-green-200">
@@ -594,9 +596,9 @@
       </div>
 
       <!-- Edit Order Modal -->
-      <div v-if="showEditOrderModal && editingOrder" class="fixed inset-0 bg-gray-900 bg-opacity-50 overflow-y-auto h-full w-full z-50">
-        <div class="relative top-4 sm:top-12 mx-auto max-w-4xl w-full p-3 sm:p-6">
-          <div class="bg-white rounded-xl shadow-2xl overflow-hidden">
+      <div v-if="showEditOrderModal && editingOrder" class="fixed inset-0 bg-gray-900 bg-opacity-50 overflow-y-auto h-full w-full z-50 flex items-start justify-center p-2 sm:p-4 md:p-6">
+        <div class="relative w-full max-w-4xl my-4 sm:my-8 px-0 sm:px-2">
+          <div class="bg-white rounded-xl shadow-2xl overflow-hidden min-w-0">
             <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between px-4 sm:px-6 py-4 border-b border-gray-200 gap-3">
               <div>
                 <h3 class="text-xl sm:text-2xl font-bold text-gray-900">Edito Porosinë</h3>
@@ -610,7 +612,7 @@
               </button>
             </div>
 
-            <div class="px-4 sm:px-6 py-4 sm:py-5 max-h-[80vh] overflow-y-auto">
+            <div class="px-3 sm:px-6 py-4 sm:py-5 max-h-[calc(100vh-10rem)] sm:max-h-[80vh] overflow-y-auto">
               <!-- Customer Info -->
               <div class="mb-6 p-4 bg-gray-50 rounded-lg">
                 <h4 class="font-semibold text-gray-900 mb-3">Të Dhënat e Klientit</h4>

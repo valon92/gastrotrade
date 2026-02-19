@@ -5,7 +5,7 @@
         <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="csrf-token" content="{{ csrf_token() }}">
 
-    <title>{{ config('app.name', 'GastroTrade') }}</title>
+    <title>{{ config('app.name', 'Gastro Trade') }}</title>
     <!-- Favicon GT logo - data URI që shfaqet gjithmonë në tab -->
     <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 40 40' fill='none'%3E%3Crect width='40' height='40' rx='8' fill='%230d9488'/%3E%3Ctext x='20' y='26' text-anchor='middle' fill='white' font-family='system-ui,sans-serif' font-weight='700' font-size='16'%3EGT%3C/text%3E%3C/svg%3E">
 

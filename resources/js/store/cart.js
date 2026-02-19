@@ -21,7 +21,25 @@ const cartStore = reactive({
     const savedClient = localStorage.getItem('gastrotrade_client')
     if (savedClient) {
       try {
-        this.client = JSON.parse(savedClient)
+        const client = JSON.parse(savedClient)
+        this.client = client
+        // Rindërto çmimet e klientit që klienti të qëndrojë i kyqur edhe pas rifreskimit
+        if (client && client.prices && Array.isArray(client.prices)) {
+          this.clientPrices = {}
+          this.clientPieceSales = {}
+          client.prices.forEach(price => {
+            this.clientPrices[price.product_id] = price.price
+            this.clientPieceSales[price.product_id] = price.allow_piece_sales || false
+          })
+          this.items.forEach(item => {
+            if (this.clientPrices[item.id]) {
+              item.price = this.clientPrices[item.id]
+            } else {
+              item.price = null
+            }
+          })
+          this.save()
+        }
       } catch (e) {
         this.client = null
       }

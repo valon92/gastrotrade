@@ -22,15 +22,21 @@
       </nav>
 
       <div class="grid grid-cols-1 lg:grid-cols-2 gap-12">
-        <!-- Product Image -->
+        <!-- Product Image (çmimi mbi imazh) -->
         <div class="space-y-4">
-          <div class="aspect-w-16 aspect-h-12 bg-white rounded-lg shadow-lg overflow-hidden">
+          <div class="relative aspect-w-16 aspect-h-12 bg-white rounded-lg shadow-lg overflow-hidden">
             <img 
               :src="getProductImage()" 
               :alt="product.name"
               class="w-full h-96 object-cover"
               @error="handleImageError"
             />
+            <span
+              v-if="cartStore.client && displayPrice != null"
+              class="absolute top-4 left-4 z-10 inline-flex items-center font-bold text-white bg-red-600 rounded-xl px-4 py-2 text-xl shadow-xl ring-1 ring-red-700/40 backdrop-blur-sm"
+            >
+              {{ formatPrice(displayPrice) }}
+            </span>
           </div>
           
           <!-- Additional Images -->
@@ -56,19 +62,10 @@
             <h1 class="text-3xl md:text-4xl font-bold text-gray-900 mb-4">
               {{ product.name }}
             </h1>
-            <div class="flex items-center space-x-4 mb-6">
-              <span 
-                v-if="cartStore.client && product.price" 
-                class="text-2xl font-bold text-primary-600"
-              >
-                {{ formatPrice(product.price) }}
-              </span>
-              <span v-else-if="product.barcode" class="text-lg text-gray-600 font-medium">
-                Barkod: {{ product.barcode }}
-              </span>
-              <span v-else class="text-lg text-gray-600">
-                Çmimi sipas kërkesës
-              </span>
+            <!-- Barcode gjithmonë aty (çmimi është mbi imazh) -->
+            <div class="flex flex-col items-start gap-2 mb-6">
+              <span class="text-xs text-gray-500 uppercase tracking-wide">Barcode</span>
+              <BarcodeDisplay :value="product.barcode" />
             </div>
           </div>
 
@@ -93,9 +90,9 @@
                 <span class="text-gray-600">Litra:</span>
                 <span class="font-medium">{{ product.liters }}</span>
               </div>
-              <div v-if="product.barcode" class="flex justify-between">
-                <span class="text-gray-600">Barkod:</span>
-                <span class="font-medium">{{ product.barcode }}</span>
+              <div class="pt-2 border-t border-gray-200">
+                <span class="text-gray-600 block mb-2">Barcode</span>
+                <BarcodeDisplay :value="product.barcode" />
               </div>
               <div class="flex justify-between">
                 <span class="text-gray-600">Kategoria:</span>
@@ -168,13 +165,15 @@
 
 <script>
 import ProductCard from '../components/ProductCard.vue'
+import BarcodeDisplay from '../components/BarcodeDisplay.vue'
 import axios from 'axios'
 import cartStore from '../store/cart'
 
 export default {
   name: 'ProductDetail',
   components: {
-    ProductCard
+    ProductCard,
+    BarcodeDisplay
   },
   props: {
     slug: {
@@ -207,6 +206,13 @@ export default {
       if (sizeStr) return sizeStr
       if (litersStr) return litersStr
       return ''
+    },
+    // Çmimi për klientin e identifikuar: nga menaxhmenti GT ose nga produkti
+    displayPrice() {
+      if (!this.product) return null
+      if (!this.cartStore.client) return this.product.price ?? null
+      const clientPrice = this.cartStore.clientPrices[this.product.id]
+      return clientPrice != null ? clientPrice : (this.product.price ?? null)
     }
   },
   methods: {

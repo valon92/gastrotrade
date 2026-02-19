@@ -1,12 +1,47 @@
 <template>
   <div class="card overflow-hidden hover:scale-105 transition-transform duration-300">
-    <div class="aspect-w-16 aspect-h-12 bg-gray-200">
+    <!-- Imazhi me çmim mbi të (overlay) -->
+    <div class="relative aspect-w-16 aspect-h-12 bg-gray-200">
       <img 
         :src="getProductImage()" 
         :alt="product.name"
         class="w-full h-48 object-cover"
         @error="handleImageError"
       />
+      <div
+        v-if="cartStore.client && displayPrice != null"
+        class="absolute top-3 left-3 z-10 inline-flex items-center gap-1.5 font-bold text-white bg-red-600 rounded-lg px-3 py-1.5 text-sm shadow-lg ring-1 ring-red-700/40 backdrop-blur-sm"
+      >
+        <span>{{ formatPrice(displayPrice) }}</span>
+        <button
+          v-if="hasPackageInfo"
+          @mouseenter="showInfoTooltip = true"
+          @mouseleave="showInfoTooltip = false"
+          @click.stop="showInfoTooltip = !showInfoTooltip"
+          class="relative shrink-0 w-5 h-5 rounded-full bg-blue-500 hover:bg-blue-600 active:bg-blue-700 text-white flex items-center justify-center text-xs font-bold shadow-md hover:shadow-lg ring-2 ring-blue-400/50 hover:ring-blue-300 transition-all duration-200 hover:scale-110 active:scale-95"
+          title="Informacion për çmimin"
+        >
+          i
+        </button>
+        <!-- Tooltip me llogaritjen -->
+        <div
+          v-if="showInfoTooltip && hasPackageInfo"
+          class="absolute top-full left-0 mt-2 w-64 p-3 bg-gradient-to-br from-blue-50 to-blue-100 border-2 border-blue-300 text-blue-900 text-xs rounded-xl shadow-2xl z-20 whitespace-normal backdrop-blur-sm animate-in fade-in slide-in-from-top-2 duration-200"
+          @mouseenter="showInfoTooltip = true"
+          @mouseleave="showInfoTooltip = false"
+        >
+          <div class="flex items-start gap-2">
+            <div class="shrink-0 w-5 h-5 rounded-full bg-blue-500 text-white flex items-center justify-center text-xs font-bold mt-0.5">
+              i
+            </div>
+            <div class="flex-1">
+              <p class="font-bold mb-1.5 text-blue-900">Total Kompleti:</p>
+              <p class="text-blue-800 font-medium mb-2">{{ packageCalculationText }}</p>
+              <p class="text-blue-700 text-[10px] leading-relaxed">{{ packageTotalPrice }} është çmimi për një kompleti.</p>
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
     <div class="p-6 relative">
       <div class="flex justify-between items-start gap-4 mb-2">
@@ -26,25 +61,21 @@
       <p v-else-if="product.description" class="text-gray-600 mb-4 line-clamp-1 text-sm">
         {{ product.description }}
       </p>
+      <!-- Barcode gjithmonë aty; butoni djathtas -->
       <div class="flex justify-between items-center">
-        <span v-if="cartStore.client && product.price" class="text-lg font-bold text-primary-600">
-          {{ formatPrice(product.price) }}
-        </span>
-        <span v-else-if="product.barcode" class="text-sm text-gray-600 font-medium">
-          Barkod: {{ product.barcode }}
-        </span>
-        <span v-else class="text-sm text-gray-500">
-          Çmimi sipas kërkesës
-        </span>
+        <div class="flex flex-col items-center gap-1 min-w-0 max-w-[140px]">
+          <span class="text-xs text-gray-500 uppercase tracking-wide">Barcode</span>
+          <BarcodeDisplay :value="product.barcode" compact />
+        </div>
         <button 
           @click="addToCart"
-          class="bg-primary-600 hover:bg-primary-700 text-white font-medium py-2 px-4 rounded-lg transition-colors duration-200 text-sm flex items-center justify-center gap-2"
+          class="shrink-0 bg-primary-600 hover:bg-primary-700 active:bg-primary-800 active:scale-[0.98] text-white font-semibold py-2.5 px-4 rounded-xl shadow-md hover:shadow-lg transition-all duration-200 text-sm md:py-2.5 md:px-4 lg:py-3 lg:px-5 lg:text-base flex items-center justify-center gap-2 min-h-[44px] min-w-0 max-w-full"
           title="Shto në shportë"
         >
-          <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-white shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" />
           </svg>
-          Shto në Shportë
+          <span class="truncate">Shto në Shportë</span>
         </button>
       </div>
     </div>
@@ -53,9 +84,11 @@
 
 <script>
 import cartStore from '../store/cart'
+import BarcodeDisplay from './BarcodeDisplay.vue'
 
 export default {
   name: 'ProductCard',
+  components: { BarcodeDisplay },
   props: {
     product: {
       type: Object,
@@ -64,7 +97,8 @@ export default {
   },
   data() {
     return {
-      cartStore: cartStore
+      cartStore: cartStore,
+      showInfoTooltip: false
     }
   },
   computed: {
@@ -79,6 +113,34 @@ export default {
       if (sizeStr) return sizeStr
       if (litersStr) return litersStr
       return ''
+    },
+    // Çmimi për klientin e identifikuar: nga menaxhmenti GT ose nga produkti
+    displayPrice() {
+      if (!this.cartStore.client) return this.product.price ?? null
+      const clientPrice = this.cartStore.clientPrices[this.product.id]
+      return clientPrice != null ? clientPrice : (this.product.price ?? null)
+    },
+    // Kontrollon nëse produkti ka informacion për paketim
+    hasPackageInfo() {
+      return this.product.sold_by_package && 
+             this.product.pieces_per_package && 
+             this.displayPrice != null &&
+             this.displayPrice > 0
+    },
+    // Teksti i llogaritjes për produktet me paketim
+    packageCalculationText() {
+      if (!this.hasPackageInfo) return ''
+      const pieces = this.product.pieces_per_package
+      const price = this.displayPrice
+      const total = pieces * price
+      return `${pieces}cp × ${this.formatPrice(price)} = ${this.formatPrice(total)}`
+    },
+    // Çmimi total për një kompleti
+    packageTotalPrice() {
+      if (!this.hasPackageInfo) return ''
+      const pieces = this.product.pieces_per_package
+      const price = this.displayPrice
+      return this.formatPrice(pieces * price)
     }
   },
   methods: {

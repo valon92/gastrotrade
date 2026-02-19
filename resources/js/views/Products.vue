@@ -24,11 +24,14 @@
           </div>
         </div>
         <router-link 
-          to="/shporta" 
+          to="/kycu" 
           class="inline-flex items-center gap-2 mt-4 px-4 py-2 bg-primary-600 text-white text-sm font-medium rounded-lg hover:bg-primary-700 transition-colors"
         >
-          Klientët e regjistruar → Plotësoni të dhënat për çmimet tuaja
+          Kyçu – Të dhënat e biznesit për çmimet tuaja
         </router-link>
+        <p class="mt-2 text-gray-500 text-xs">
+          Çmimet vendosen nga kompania GastroTrade, jo nga klientët.
+        </p>
       </div>
     </div>
 

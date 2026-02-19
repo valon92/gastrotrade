@@ -24,14 +24,35 @@
           <h3 class="text-xl font-semibold text-gray-900 mb-2">
             Të dhënat e biznesit
           </h3>
-          <p class="text-sm text-gray-600 mb-6">
+          <p class="text-sm text-gray-600 mb-2">
             Klientët e regjistruar me çmime të caktuara: plotësoni më poshtë që të identifikoheni. Kur shtoni produkte, do të shfaqen çmimet tuaja.
           </p>
+          <p class="text-xs text-gray-500 mb-4">
+            Çmimet vendosen nga kompania GastroTrade, jo nga klientët.
+          </p>
+          <div v-if="!hasClientPrices" class="text-sm text-gray-600 bg-blue-50 border border-blue-100 rounded-lg p-3 mb-6">
+            <p class="mb-3">
+              <strong>Klient i ri?</strong> Nëse dëshironi çmime të personalizuara për biznesin tuaj, fillimisht kontaktoni menaxhmentin e GastroTrade. Pas kontaktit do t'ju vendosen çmimet përkatëse dhe do të shfaqen këtu kur të identifikoheni.
+            </p>
+            <router-link
+              to="/kontakt"
+              class="inline-flex items-center gap-2 px-4 py-2 bg-primary-600 text-white text-sm font-medium rounded-lg hover:bg-primary-700 transition-colors"
+            >
+              Kontakto menaxhmentin
+            </router-link>
+          </div>
 
-          <div v-if="hasClientPrices" class="mb-6 p-4 bg-green-50 border border-green-200 rounded-lg">
+          <div v-if="hasClientPrices" class="mb-6 p-4 bg-green-50 border border-green-200 rounded-lg flex flex-wrap items-center justify-between gap-3">
             <p class="text-sm text-green-800">
               ✅ Klienti i identifikuar: <strong>{{ cartStore.client.name }}</strong>. Kur shtoni produkte në shportë, do të aplikohen çmimet tuaja.
             </p>
+            <button
+              type="button"
+              @click="logoutClient"
+              class="shrink-0 px-3 py-1.5 text-sm font-medium text-green-800 bg-white border border-green-300 rounded-lg hover:bg-green-100 transition-colors"
+            >
+              Dil nga llogaria
+            </button>
           </div>
           <div v-else-if="identifyingClient" class="mb-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
             <p class="text-sm text-blue-800">🔍 Duke identifikuar klientin...</p>
@@ -244,14 +265,35 @@
               <p class="text-sm text-amber-900">
                 <strong>Para se të ruani ose dërgoni porosinë</strong>, plotësoni të dhënat e porositësit më poshtë. Nëse jeni klient i regjistruar (me çmime të caktuara), pas plotësimit të <strong>Emrit të Biznisit</strong> dhe <strong>Numrit Fiskal</strong> do të shfaqen automatikisht çmimet tuaja për këtë porosi.
               </p>
+              <p class="text-xs text-amber-800/80 mt-2">
+                Çmimet vendosen nga kompania GastroTrade, jo nga klientët.
+              </p>
+              <template v-if="!hasClientPrices">
+                <p class="text-xs text-amber-800/90 mt-2 pt-2 border-t border-amber-200/50">
+                  <strong>Klient i ri?</strong> Nëse dëshironi çmime të personalizuara, kontaktoni menaxhmentin e GastroTrade; pas kontaktit do t'ju vendosen çmimet përkatëse.
+                </p>
+                <router-link
+                  to="/kontakt"
+                  class="inline-flex items-center gap-2 mt-2 px-3 py-1.5 bg-amber-600 text-white text-xs font-medium rounded-md hover:bg-amber-700 transition-colors"
+                >
+                  Kontakto menaxhmentin
+                </router-link>
+              </template>
             </div>
             
             <!-- Client Identification Notice -->
-            <div v-if="hasClientPrices" class="mb-4 p-3 bg-green-50 border border-green-200 rounded-lg">
+            <div v-if="hasClientPrices" class="mb-4 p-3 bg-green-50 border border-green-200 rounded-lg flex flex-wrap items-center justify-between gap-3">
               <p class="text-sm text-green-800">
                 ✅ Klienti i identifikuar: <strong>{{ cartStore.client.name }}</strong><br>
                 Çmimet e personalizuara janë të aplikuara
               </p>
+              <button
+                type="button"
+                @click="logoutClient"
+                class="shrink-0 px-3 py-1.5 text-sm font-medium text-green-800 bg-white border border-green-300 rounded-lg hover:bg-green-100 transition-colors"
+              >
+                Dil nga llogaria
+              </button>
             </div>
             
             <div v-else-if="identifyingClient" class="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
@@ -757,6 +799,21 @@ export default {
       }
     }
 
+    // Klienti i kyqur mbetet i kyqur: plotëso formën nga klienti i ruajtur në localStorage
+    if (this.cartStore.client) {
+      const c = this.cartStore.client
+      this.customerData.name = c.name || this.customerData.name
+      this.customerData.storeName = c.store_name || this.customerData.storeName
+      this.customerData.fiscalNumber = c.fiscal_number || this.customerData.fiscalNumber
+      this.customerData.city = c.city || this.customerData.city
+      this.customerData.phone = c.phone || this.customerData.phone
+      // Ngarko lokacionet e klientit nëse ekzistojnë
+      if (c.locations && Array.isArray(c.locations) && c.locations.length > 0) {
+        this.clientLocations = c.locations.filter(loc => loc && (loc.is_active !== false && loc.is_active !== 0))
+        if (this.clientLocations.length === 1) this.selectedLocationId = this.clientLocations[0].id
+      }
+    }
+
     if (this.customerData.storeName && this.customerData.fiscalNumber) {
       this.identifyClient(this.customerData.storeName, this.customerData.fiscalNumber)
     }
@@ -898,6 +955,22 @@ export default {
         localStorage.removeItem('gastrotrade_customer_data')
         localStorage.removeItem('gastrotrade_order_data')
       }
+    },
+    /** Dil nga llogaria e klientit: çmimet nuk shfaqen më; klienti nuk mund të ndryshojë asgjë, vetëm të shohë çmimet kur është i kyqur. */
+    logoutClient() {
+      this.cartStore.clearClient()
+      this.clientLocations = []
+      this.selectedLocationId = null
+      this.customerData = {
+        name: '',
+        storeName: '',
+        fiscalNumber: '',
+        city: '',
+        phone: ''
+      }
+      localStorage.removeItem('gastrotrade_customer_data')
+      this.ordersHistory = []
+      this.orderHistoryLoaded = false
     },
     scheduleClientIdentification() {
       if (this.phoneDebounce) {

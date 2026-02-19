@@ -43,6 +43,13 @@
             KONTAKT
           </router-link>
           <router-link 
+            to="/kycu" 
+            class="text-gray-700 hover:text-primary-600 px-3 py-2 rounded-md text-sm font-medium transition-colors duration-200"
+            active-class="text-primary-600"
+          >
+            KYÇU
+          </router-link>
+          <router-link 
             to="/shporta" 
             class="relative text-gray-700 hover:text-primary-600 px-3 py-2 rounded-md text-sm font-medium transition-colors duration-200"
             active-class="text-primary-600"
@@ -102,6 +109,13 @@
           @click="closeMobileMenu"
         >
           KONTAKT
+        </router-link>
+        <router-link 
+          to="/kycu" 
+          class="text-gray-700 hover:text-primary-600 block px-3 py-2 rounded-md text-base font-medium transition-colors duration-200"
+          @click="closeMobileMenu"
+        >
+          KYÇU
         </router-link>
         <router-link 
           to="/shporta" 

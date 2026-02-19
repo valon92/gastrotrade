@@ -179,9 +179,18 @@
             <h3 class="text-2xl font-bold text-gray-900 mb-6">
               Na Gjeni
             </h3>
-            <div class="bg-gray-200 rounded-lg h-64 flex items-center justify-center">
-              <p class="text-gray-500">Harta do të shtohet këtu</p>
-            </div>
+            <p class="text-sm text-gray-500 mb-3">
+              Harta interaktive – Ferizaj, Rruga Lidhja E Prizerent
+            </p>
+            <div ref="mapContainer" class="rounded-lg overflow-hidden border border-gray-200 shadow-inner" style="height: 360px; min-height: 280px;"></div>
+            <a
+              href="https://www.openstreetmap.org/?mlat=42.3702&amp;mlon=21.1553#map=16/42.3702/21.1553"
+              target="_blank"
+              rel="noopener noreferrer"
+              class="inline-block mt-3 text-sm text-primary-600 hover:text-primary-700 font-medium"
+            >
+              Hap në OpenStreetMap →
+            </a>
           </div>
         </div>
       </div>
@@ -203,10 +212,59 @@ export default {
       },
       submitting: false,
       message: '',
-      messageType: ''
+      messageType: '',
+      map: null
+    }
+  },
+  mounted() {
+    this.initMap()
+  },
+  beforeUnmount() {
+    if (this.map) {
+      this.map.remove()
+      this.map = null
     }
   },
   methods: {
+    initMap() {
+      if (!this.$refs.mapContainer) return
+      const loadLeaflet = () => {
+        if (window.L) {
+          this.createMap()
+          return
+        }
+        const link = document.createElement('link')
+        link.rel = 'stylesheet'
+        link.href = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.css'
+        link.crossOrigin = 'anonymous'
+        document.head.appendChild(link)
+        const script = document.createElement('script')
+        script.src = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.js'
+        script.crossOrigin = 'anonymous'
+        script.onload = () => this.createMap()
+        document.head.appendChild(script)
+      }
+      loadLeaflet()
+    },
+    createMap() {
+      if (!this.$refs.mapContainer || !window.L) return
+      this.map = window.L.map(this.$refs.mapContainer).setView([42.3702, 21.1553], 16)
+      window.L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
+        maxZoom: 19
+      }).addTo(this.map)
+      const icon = window.L.icon({
+        iconUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png',
+        iconRetinaUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png',
+        shadowUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png',
+        iconSize: [25, 41],
+        iconAnchor: [12, 41]
+      })
+      window.L.marker([42.3702, 21.1553], { icon })
+        .addTo(this.map)
+        .bindPopup('<strong>GastroTrade</strong><br>Ferizaj, Rruga Lidhja E Prizerent')
+        .openPopup()
+    },
     async submitForm() {
       this.submitting = true
       this.message = ''
