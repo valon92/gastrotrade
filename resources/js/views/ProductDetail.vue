@@ -32,7 +32,7 @@
               @error="handleImageError"
             />
             <span
-              v-if="cartStore.client && displayPrice != null"
+              v-if="displayPrice != null"
               class="absolute top-4 left-4 z-10 inline-flex items-center font-bold text-white bg-red-600 rounded-xl px-4 py-2 text-xl shadow-xl ring-1 ring-red-700/40 backdrop-blur-sm"
             >
               {{ formatPrice(displayPrice) }}
@@ -256,7 +256,7 @@ export default {
     getProductImage() {
       if (!this.product) return '/images/placeholder.jpg'
       
-      // Rregullo fotot për kese mbeturinash 300L, 270L, 240L, 200L, 170L, 150L dhe 120L
+      // Rregullo fotot për kese mbeturinash 300L, 270L, 240L, 200L, 170L, 150L, 120L, 70L dhe 40L
       const slug = this.product.slug || ''
       
       if (slug === 'kese-mbeturinash-300l') {
@@ -273,6 +273,12 @@ export default {
         return '/Images/Kese Mbeturina/150L/foto1.png'
       } else if (slug === 'kese-mbeturinash-120l') {
         return '/Images/Kese Mbeturina/120L/foto1.png'
+      } else if (slug === 'kese-mbeturinash-70l') {
+        return '/Images/Kese Mbeturina/70L/foto1.png'
+      } else if (slug === 'kese-mbeturinash-40l') {
+        return '/Images/Kese Mbeturina/40L/foto1.png'
+      } else if (slug === 'leter-kuzhine-nush-2-shtresa') {
+        return '/images/Pallomat/XL/foto1.png'
       }
       
       return this.product.image_path || '/images/placeholder.jpg'
@@ -331,6 +337,27 @@ export default {
           event.target.src = '/Images/Kese Mbeturina/120L/foto1.jpg'
         } else {
           event.target.src = '/Images/Kese Mbeturina/120L/foto1.png'
+        }
+      } else if (slug === 'kese-mbeturinash-70l') {
+        const currentSrc = event.target.src
+        if (currentSrc.includes('foto1')) {
+          event.target.src = '/Images/Kese Mbeturina/70L/foto1.jpg'
+        } else {
+          event.target.src = '/Images/Kese Mbeturina/70L/foto1.png'
+        }
+      } else if (slug === 'kese-mbeturinash-40l') {
+        const currentSrc = event.target.src
+        if (currentSrc.includes('foto1')) {
+          event.target.src = '/Images/Kese Mbeturina/40L/foto1.jpg'
+        } else {
+          event.target.src = '/Images/Kese Mbeturina/40L/foto1.png'
+        }
+      } else if (slug === 'leter-kuzhine-nush-2-shtresa') {
+        const currentSrc = event.target.src
+        if (currentSrc.includes('foto1')) {
+          event.target.src = '/images/Pallomat/XL/foto1.jpg'
+        } else {
+          event.target.src = '/images/Pallomat/XL/foto1.png'
         }
       } else {
         event.target.src = '/images/placeholder.jpg'

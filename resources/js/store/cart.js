@@ -95,22 +95,26 @@ const cartStore = reactive({
     this.save()
   },
   
-  // Add product to cart
-  addItem(product, quantity = 1) {
+  // Add product to cart (quantity = numër kompletesh; actualPieces = optional, kur blerja është me copa)
+  addItem(product, quantity = 1, actualPieces = null) {
     const existingItem = this.items.find(item => item.id === product.id)
     
-    // Only set price if client is registered and has a price for this product
-    // If no client is registered, price will be null (shows "Çmimi sipas kërkesës")
     let price = null
     if (this.client && this.clientPrices[product.id]) {
       price = this.clientPrices[product.id]
     }
     
     if (existingItem) {
-      existingItem.quantity += quantity
-      existingItem.price = price // Update price in case client was set after adding
+      if (actualPieces != null) {
+        const prevPieces = existingItem.actual_pieces ?? (existingItem.quantity * (existingItem.pieces_per_package || 1))
+        existingItem.actual_pieces = prevPieces + actualPieces
+        existingItem.quantity = Math.ceil(existingItem.actual_pieces / (existingItem.pieces_per_package || 1))
+      } else {
+        existingItem.quantity += quantity
+      }
+      existingItem.price = price
     } else {
-      this.items.push({
+      const newItem = {
         id: product.id,
         name: product.name,
         slug: product.slug,
@@ -122,7 +126,12 @@ const cartStore = reactive({
         discount_amount: 0,
         discount_type: '',
         discount_value: 0
-      })
+      }
+      if (actualPieces != null) {
+        newItem.actual_pieces = actualPieces
+        newItem.quantity = Math.ceil(actualPieces / (product.pieces_per_package || 1))
+      }
+      this.items.push(newItem)
     }
     
     this.save()
