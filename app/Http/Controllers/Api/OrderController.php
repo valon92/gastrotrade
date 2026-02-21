@@ -24,7 +24,7 @@ class OrderController extends Controller
             'status' => ['nullable', 'string', 'max:50'],
         ]);
 
-        $query = Order::with(['items', 'client'])->latest();
+        $query = Order::with(['items.product', 'client'])->latest();
 
         if ($request->client_id) {
             $query->where('client_id', $request->client_id);
@@ -305,7 +305,7 @@ class OrderController extends Controller
 
         return response()->json([
             'success' => true,
-            'data' => $order->load(['items', 'clientLocation']),
+            'data' => $order->load(['items.product', 'clientLocation']),
         ], 201);
     }
 
@@ -323,7 +323,7 @@ class OrderController extends Controller
             ], 422);
         }
 
-        $query = Order::with('items')->latest();
+        $query = Order::with(['items.product'])->latest();
 
         if ($request->client_id) {
             $query->where('client_id', $request->client_id);
@@ -368,7 +368,7 @@ class OrderController extends Controller
 
         return response()->json([
             'success' => true,
-            'data' => $order->load(['items', 'clientLocation']),
+            'data' => $order->load(['items.product', 'clientLocation']),
         ]);
     }
 
@@ -580,7 +580,7 @@ class OrderController extends Controller
 
         return response()->json([
             'success' => true,
-            'data' => $order->load(['items', 'clientLocation']),
+            'data' => $order->load(['items.product', 'clientLocation']),
         ]);
     }
 

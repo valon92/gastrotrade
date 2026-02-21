@@ -5,11 +5,13 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Schema;
 
 class Client extends Model
 {
     use SoftDeletes;
+
     protected $fillable = [
         'name',
         'store_name',
@@ -20,14 +22,29 @@ class Client extends Model
         'phone',
         'viber',
         'notes',
+        'password',
         'is_active',
         'allow_piece_sales',
+    ];
+
+    protected $hidden = [
+        'password',
     ];
 
     protected $casts = [
         'is_active' => 'boolean',
         'allow_piece_sales' => 'boolean',
     ];
+
+    /**
+     * Hash password when setting.
+     */
+    public function setPasswordAttribute($value)
+    {
+        if (filled($value)) {
+            $this->attributes['password'] = Hash::make($value);
+        }
+    }
 
     public function prices(): HasMany
     {

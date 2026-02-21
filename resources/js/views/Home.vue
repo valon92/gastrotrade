@@ -79,12 +79,26 @@
           <p class="mt-4 text-gray-600">Duke ngarkuar produktet...</p>
         </div>
         
-        <div v-else-if="filteredFeaturedProducts.length" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-          <ProductCard 
-            v-for="product in filteredFeaturedProducts" 
-            :key="product.id" 
-            :product="product"
-          />
+        <div v-else-if="filteredFeaturedProducts.length" class="space-y-10">
+          <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+            <ProductCard 
+              v-for="product in displayedFeaturedProducts" 
+              :key="product.id" 
+              :product="product"
+            />
+          </div>
+          <div v-if="showMoreFeaturedVisible" class="text-center">
+            <button
+              type="button"
+              @click="showMoreFeatured = true"
+              class="inline-flex items-center gap-2 px-6 py-3 bg-primary-600 text-white font-semibold rounded-xl hover:bg-primary-700 shadow-md hover:shadow-lg transition-all duration-200"
+            >
+              Më shumë
+              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+              </svg>
+            </button>
+          </div>
         </div>
         <div v-else class="bg-white rounded-xl shadow p-10 text-center text-gray-600">
           <p class="text-2xl mb-2">😕 Nuk u gjet asnjë produkt</p>
@@ -148,7 +162,9 @@ export default {
       categories: [],
       loading: true,
       categoriesLoading: true,
-      searchQuery: ''
+      searchQuery: '',
+      showMoreFeatured: false,
+      featuredLimitDesktop: 21
     }
   },
   computed: {
@@ -164,6 +180,18 @@ export default {
           product.category?.name?.toLowerCase().includes(query)
         )
       })
+    },
+    displayedFeaturedProducts() {
+      if (this.showMoreFeatured) return this.filteredFeaturedProducts
+      return this.filteredFeaturedProducts.slice(0, this.featuredLimitDesktop)
+    },
+    showMoreFeaturedVisible() {
+      return !this.showMoreFeatured && this.filteredFeaturedProducts.length > this.featuredLimitDesktop
+    }
+  },
+  watch: {
+    searchQuery() {
+      this.showMoreFeatured = false
     }
   },
   async mounted() {

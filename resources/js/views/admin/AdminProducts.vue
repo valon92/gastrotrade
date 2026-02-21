@@ -284,24 +284,15 @@
                   >
                 </div>
                 <div>
-                  <label class="block text-sm font-medium text-gray-700 mb-1">Barkod (shfaqet te produkti kur nuk ka çmim)</label>
-                  <div class="flex gap-2">
-                    <input
-                      v-model="productForm.barcode"
-                      type="text"
-                      inputmode="numeric"
-                      maxlength="20"
-                      class="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
-                      placeholder="p.sh. 3904481760132"
-                    >
-                    <button
-                      type="button"
-                      @click="generateBarcode"
-                      class="btn-secondary whitespace-nowrap"
-                    >
-                      Gjenero
-                    </button>
-                  </div>
+                  <label class="block text-sm font-medium text-gray-700 mb-1">Barcode</label>
+                  <input
+                    v-model="productForm.barcode"
+                    type="text"
+                    inputmode="numeric"
+                    maxlength="20"
+                    class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+                    placeholder="p.sh. 3904481760132"
+                  >
                 </div>
               </div>
               <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">

@@ -1,13 +1,20 @@
 <template>
-  <div class="card overflow-hidden hover:scale-105 transition-transform duration-300">
-    <!-- Imazhi me çmim mbi të (overlay) -->
+  <div class="rounded-2xl border border-gray-200 bg-white overflow-hidden shadow-sm hover:shadow-md hover:border-primary-200 transition-all duration-300 h-full flex flex-col">
+    <!-- Imazhi me çmim mbi të (overlay) – i klikueshëm për zmadhim -->
     <div class="relative aspect-w-16 aspect-h-12 bg-gray-200">
-      <img 
-        :src="getProductImage()" 
-        :alt="product.name"
-        class="w-full h-48 object-cover"
-        @error="handleImageError"
-      />
+      <button
+        type="button"
+        @click="showImageLightbox = true"
+        class="block w-full h-full focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-inset rounded-t-2xl overflow-hidden cursor-zoom-in"
+        :aria-label="'Zmadho imazhin: ' + product.name"
+      >
+        <img 
+          :src="getProductImage()" 
+          :alt="product.name"
+          class="w-full h-48 object-cover hover:opacity-95 transition-opacity"
+          @error="handleImageError"
+        />
+      </button>
       <div
         v-if="displayPrice != null"
         class="absolute top-3 left-3 z-10 flex flex-wrap items-center gap-2 max-w-[90%]"
@@ -52,42 +59,89 @@
         </span>
       </div>
     </div>
-    <div class="p-6 relative">
-      <div class="flex justify-between items-start gap-4 mb-2">
-        <h3 class="text-xl font-semibold text-gray-900 flex-1">
+    <div class="p-4 sm:p-5 flex-1 flex flex-col relative">
+      <div class="flex justify-between items-start gap-2 mb-2">
+        <h3 class="text-lg font-bold text-gray-900 flex-1 min-w-0">
           {{ product.name }}
         </h3>
-        <div class="text-xs md:text-[9px] lg:text-[8px] text-gray-600 text-right whitespace-nowrap flex-shrink-0">
-          📞 048 75 66 46<br>
-          📞 044 82 43 14<br>
-          💬 Viber: +383 48 75 66 46<br>
-          💬 Viber: +383 44 82 43 14
+        <div class="text-[10px] text-gray-500 text-right whitespace-nowrap flex-shrink-0 hidden sm:block">
+          📞 048 75 66 46 / 044 82 43 14
         </div>
       </div>
-      <p v-if="productSpecsText" class="text-gray-600 mb-4 line-clamp-2 text-sm">
-        {{ productSpecsText }}
-      </p>
-      <p v-else-if="product.description" class="text-gray-600 mb-4 line-clamp-1 text-sm">
-        {{ product.description }}
-      </p>
-      <!-- Barcode gjithmonë aty; butoni djathtas -->
-      <div class="flex justify-between items-center">
+      <div class="flex-1 min-h-0 mb-4">
+        <p v-if="productSpecsText" class="text-gray-600 line-clamp-2 text-sm">
+          {{ productSpecsText }}
+        </p>
+        <p v-else-if="product.description" class="text-gray-600 line-clamp-2 text-sm">
+          {{ product.description }}
+        </p>
+      </div>
+      <!-- Barcode dhe butoni -->
+      <div class="flex justify-between items-center gap-3 mt-auto">
         <div class="flex flex-col items-center gap-1 min-w-0 max-w-[140px]">
           <span class="text-xs text-gray-500 uppercase tracking-wide">Barcode</span>
           <BarcodeDisplay :value="product.barcode" compact />
         </div>
         <button 
           @click="onMainButtonClick"
-          class="shrink-0 bg-primary-600 hover:bg-primary-700 active:bg-primary-800 active:scale-[0.98] text-white font-semibold py-2.5 px-4 rounded-xl shadow-md hover:shadow-lg transition-all duration-200 text-sm md:py-2.5 md:px-4 lg:py-3 lg:px-5 lg:text-base flex items-center justify-center gap-2 min-h-[44px] min-w-0 max-w-full"
+          :class="[
+            'shrink-0 bg-primary-600 hover:bg-primary-700 active:bg-primary-800 active:scale-[0.98] text-white font-semibold rounded-xl shadow-md hover:shadow-lg transition-all duration-200 flex items-center justify-center gap-2 min-h-[44px] min-w-0',
+            compactButton
+              ? 'py-2.5 px-4 text-sm md:py-2.5 md:px-4 lg:py-2 lg:px-3 lg:text-sm lg:max-w-[130px]'
+              : 'py-2.5 px-4 text-sm md:py-2.5 md:px-4 lg:py-3 lg:px-5 lg:text-base max-w-full'
+          ]"
           title="Bëj porosi"
         >
-          <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-white shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" />
+          <svg xmlns="http://www.w3.org/2000/svg" :class="compactButton ? 'h-5 w-5 lg:h-4 lg:w-4 text-white shrink-0' : 'h-5 w-5 text-white shrink-0'" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M5 12h14M12 5l7 7-7 7" />
           </svg>
           <span class="truncate">Bëj Porosi</span>
         </button>
       </div>
     </div>
+
+    <!-- Lightbox: imazhi i zmadhuar për analizë -->
+    <Teleport to="body">
+      <Transition
+        enter-active-class="transition duration-200 ease-out"
+        enter-from-class="opacity-0"
+        enter-to-class="opacity-100"
+        leave-active-class="transition duration-150 ease-in"
+        leave-from-class="opacity-100"
+        leave-to-class="opacity-0"
+      >
+        <div
+          v-if="showImageLightbox"
+          class="fixed inset-0 z-[110] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="lightbox-product-name"
+          @click.self="showImageLightbox = false"
+        >
+          <div class="relative max-w-4xl w-full max-h-[90vh] flex flex-col items-center">
+            <button
+              type="button"
+              @click="showImageLightbox = false"
+              class="absolute -top-2 -right-2 z-10 w-10 h-10 rounded-full bg-white/90 hover:bg-white text-gray-800 shadow-lg flex items-center justify-center transition-colors focus:outline-none focus:ring-2 focus:ring-primary-500"
+              aria-label="Mbyll"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+            <img 
+              :src="getProductImage()" 
+              :alt="product.name"
+              class="max-w-full max-h-[80vh] w-auto h-auto object-contain rounded-lg shadow-2xl"
+              @error="handleImageError"
+            />
+            <p id="lightbox-product-name" class="mt-3 text-white text-center font-medium text-lg drop-shadow-lg">
+              {{ product.name }}
+            </p>
+          </div>
+        </div>
+      </Transition>
+    </Teleport>
 
     <!-- Modal: zgjedhja e sasisë për bizneset (komplete ose copa) -->
     <Teleport to="body">
@@ -197,6 +251,10 @@ export default {
     product: {
       type: Object,
       required: true
+    },
+    compactButton: {
+      type: Boolean,
+      default: false
     }
   },
   data() {
@@ -204,6 +262,7 @@ export default {
       cartStore: cartStore,
       showInfoTooltip: false,
       showOrderModal: false,
+      showImageLightbox: false,
       orderMode: 'packages',
       orderPackages: 1,
       orderPieces: 1
@@ -277,6 +336,25 @@ export default {
       const packages = Math.max(1, parseInt(this.orderPackages, 10) || 1)
       return packages * this.product.pieces_per_package
     }
+  },
+  watch: {
+    showImageLightbox(open) {
+      if (open) {
+        document.body.classList.add('overflow-hidden')
+      } else {
+        document.body.classList.remove('overflow-hidden')
+      }
+    }
+  },
+  mounted() {
+    this._escapeLightbox = (e) => {
+      if (e.key === 'Escape' && this.showImageLightbox) this.showImageLightbox = false
+    }
+    document.addEventListener('keydown', this._escapeLightbox)
+  },
+  beforeUnmount() {
+    if (this._escapeLightbox) document.removeEventListener('keydown', this._escapeLightbox)
+    document.body.classList.remove('overflow-hidden')
   },
   methods: {
     formatPrice(price) {

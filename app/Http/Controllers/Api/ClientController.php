@@ -5,8 +5,9 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Models\Client;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Validator;
+use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Schema;
+use Illuminate\Support\Facades\Validator;
 
 class ClientController extends Controller
 {
@@ -48,6 +49,7 @@ class ClientController extends Controller
             'phone' => 'nullable|string',
             'viber' => 'nullable|string',
             'notes' => 'nullable|string',
+            'password' => 'nullable|string|min:6|max:255',
             'allow_piece_sales' => 'nullable|boolean',
             'locations' => 'nullable|array',
             'locations.*.unit_name' => 'required_with:locations|string|max:255',
@@ -147,6 +149,7 @@ class ClientController extends Controller
             'phone' => 'nullable|string',
             'viber' => 'nullable|string',
             'notes' => 'nullable|string',
+            'password' => 'nullable|string|min:6|max:255',
             'is_active' => 'sometimes|boolean',
             'allow_piece_sales' => 'nullable|boolean',
             'locations' => 'nullable|array',
@@ -167,6 +170,9 @@ class ClientController extends Controller
         }
 
         $clientData = $request->except(['locations']);
+        if (!$request->filled('password')) {
+            unset($clientData['password']);
+        }
         $client->update($clientData);
 
         // Sync locations (only if table exists)
@@ -274,13 +280,14 @@ class ClientController extends Controller
     }
 
     /**
-     * Find client by business name
+     * Find client by business name and fiscal number; verify password if client has one set.
      */
     public function findByBusinessAndFiscal(Request $request)
     {
         $validator = Validator::make($request->all(), [
             'business_name' => 'required|string',
             'fiscal_number' => 'required|string',
+            'password' => 'nullable|string',
         ]);
 
         if ($validator->fails()) {
@@ -309,6 +316,16 @@ class ClientController extends Controller
                 'success' => false,
                 'message' => 'Client not found'
             ], 404);
+        }
+
+        if (filled($client->password)) {
+            $password = $request->input('password', '');
+            if (!Hash::check($password, $client->password)) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Fjalëkalimi është i gabuar.'
+                ], 401);
+            }
         }
 
         return response()->json([

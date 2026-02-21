@@ -325,6 +325,24 @@
                        placeholder="p.sh. 123456789"
                        class="mt-1 block w-full border-gray-300 rounded-md shadow-sm uppercase tracking-wide">
               </div>
+              <div class="relative">
+                <label class="block text-sm font-medium text-gray-700">Fjalëkalimi për Kyçu (opsional)</label>
+                <input v-model="clientForm.password" :type="showClientPassword ? 'text' : 'password'"
+                       :placeholder="editingClient ? 'Lëreni bosh për të mos ndryshuar' : 'Min. 6 karaktere'"
+                       class="mt-1 block w-full border-gray-300 rounded-md shadow-sm pr-10">
+                <button type="button" @click="showClientPassword = !showClientPassword"
+                        class="absolute right-2 top-8 p-1 text-gray-500 hover:text-gray-700 rounded"
+                        :aria-label="showClientPassword ? 'Fshih' : 'Shfaq'">
+                  <svg v-if="showClientPassword" xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21" />
+                  </svg>
+                  <svg v-else xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                  </svg>
+                </button>
+                <p class="mt-1 text-xs text-gray-500">Klienti e përdor në faqen Kyçu për identifikim të sigurt.</p>
+              </div>
               <div>
                 <label class="block text-sm font-medium text-gray-700">Shënime</label>
                 <textarea v-model="clientForm.notes" rows="3" 
@@ -929,9 +947,11 @@ export default {
         phone: '',
         viber: '',
         notes: '',
+        password: '',
         is_active: true,
         locations: [] // Array për shumë pika/njësi
       },
+      showClientPassword: false,
       showOrdersModal: false,
       ordersLoading: false,
       ordersError: null,
@@ -1152,6 +1172,7 @@ export default {
           phone: client.phone || '',
           viber: client.viber || '',
           notes: client.notes || '',
+          password: '',
           is_active: client.is_active !== undefined ? client.is_active : true,
           locations: client.locations && client.locations.length > 0 
             ? client.locations.map(loc => ({
@@ -1223,13 +1244,16 @@ export default {
           }
         }
         
-        // Prepare data with locations
+        // Prepare data with locations (send password only when set)
         const dataToSend = {
           ...this.clientForm,
           locations: (this.clientForm.locations || []).map(loc => ({
             ...loc,
             is_active: loc.is_active !== undefined ? loc.is_active : true
           }))
+        }
+        if (!dataToSend.password || !String(dataToSend.password).trim()) {
+          delete dataToSend.password
         }
         
         if (this.editingClient) {
@@ -1284,6 +1308,7 @@ export default {
         phone: '',
         viber: '',
         notes: '',
+        password: '',
         is_active: true,
         locations: []
       }

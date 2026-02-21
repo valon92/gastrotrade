@@ -43,6 +43,9 @@
         <div v-else-if="identifyingClient" class="mb-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
           <p class="text-sm text-blue-800">🔍 Duke identifikuar klientin...</p>
         </div>
+        <div v-else-if="loginError" class="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg">
+          <p class="text-sm text-red-800">{{ loginError }}</p>
+        </div>
 
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div class="sm:col-span-2">
@@ -98,6 +101,37 @@
               class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
             />
           </div>
+          <div class="sm:col-span-2">
+            <label for="kycuPassword" class="block text-sm font-medium text-gray-700 mb-1">Fjalëkalimi</label>
+            <div class="relative">
+              <input
+                id="kycuPassword"
+                :type="showPassword ? 'text' : 'password'"
+                v-model="customerData.password"
+                @input="scheduleClientIdentification"
+                placeholder="Vendosni fjalëkalimin (nëse ju është caktuar nga menaxhmenti)"
+                autocomplete="current-password"
+                class="w-full px-3 py-2 pr-10 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+              />
+              <button
+                type="button"
+                @click="showPassword = !showPassword"
+                class="absolute right-2 top-1/2 -translate-y-1/2 p-1.5 text-gray-500 hover:text-gray-700 rounded focus:outline-none focus:ring-2 focus:ring-primary-500/30"
+                :aria-label="showPassword ? 'Fshih fjalëkalimin' : 'Shfaq fjalëkalimin'"
+              >
+              <svg v-if="showPassword" xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21" />
+              </svg>
+              <svg v-else xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+              </svg>
+              </button>
+            </div>
+            <p class="mt-1 text-xs text-gray-500">
+              Për siguri dhe privatësi. Nëse menaxhmenti ju ka caktuar fjalëkalim, vendoseni këtu.
+            </p>
+          </div>
         </div>
 
         <p class="mt-4 text-xs text-gray-500">
@@ -137,9 +171,12 @@ export default {
         storeName: '',
         fiscalNumber: '',
         city: '',
-        phone: ''
+        phone: '',
+        password: ''
       },
+      showPassword: false,
       identifyingClient: false,
+      loginError: null,
       phoneDebounce: null
     }
   },
@@ -176,13 +213,15 @@ export default {
       }
     }
 
+    // Plotëso vetëm fushat bosh nga klienti i kyqur, që të mos mbishkruhen ndryshimet e përdoruesit
     if (this.cartStore.client) {
       const c = this.cartStore.client
-      this.customerData.name = c.name || this.customerData.name
-      this.customerData.storeName = c.store_name || this.customerData.storeName
-      this.customerData.fiscalNumber = c.fiscal_number || this.customerData.fiscalNumber
-      this.customerData.city = c.city || this.customerData.city
-      this.customerData.phone = c.phone || this.customerData.phone
+      if (!this.customerData.name?.trim()) this.customerData.name = c.name || ''
+      if (!this.customerData.storeName?.trim()) this.customerData.storeName = c.store_name || ''
+      if (!this.customerData.fiscalNumber?.trim()) this.customerData.fiscalNumber = c.fiscal_number || ''
+      if (!this.customerData.city?.trim()) this.customerData.city = c.city || ''
+      if (!this.customerData.phone?.trim()) this.customerData.phone = c.phone || ''
+      this.persistCustomerData()
     }
 
     if (this.customerData.storeName && this.customerData.fiscalNumber) {
@@ -194,7 +233,13 @@ export default {
   },
   methods: {
     persistCustomerData() {
-      localStorage.setItem('gastrotrade_customer_data', JSON.stringify(this.customerData))
+      const toStore = { ...this.customerData }
+      delete toStore.password
+      // Ruaj duke mbajtur të dhënat e tjera (p.sh. lokacioni nga shporta) që të jenë konsistente
+      const existing = localStorage.getItem('gastrotrade_customer_data')
+      const merged = existing ? { ...JSON.parse(existing), ...toStore } : toStore
+      delete merged.password
+      localStorage.setItem('gastrotrade_customer_data', JSON.stringify(merged))
     },
     scheduleClientIdentification() {
       if (this.phoneDebounce) clearTimeout(this.phoneDebounce)
@@ -215,16 +260,22 @@ export default {
     async identifyClient(businessName, fiscalNumber) {
       if (!businessName || !fiscalNumber) {
         this.cartStore.clearClient()
+        this.loginError = null
         return
       }
       if (this.identifyingClient) return
 
       this.identifyingClient = true
+      this.loginError = null
       try {
-        const response = await axios.post('/api/clients/find-by-business-and-fiscal', {
+        const payload = {
           business_name: businessName.trim(),
           fiscal_number: fiscalNumber.trim()
-        })
+        }
+        if (this.customerData.password !== undefined && this.customerData.password !== null) {
+          payload.password = String(this.customerData.password)
+        }
+        const response = await axios.post('/api/clients/find-by-business-and-fiscal', payload)
         if (response.data.success && response.data.data) {
           const client = response.data.data
           await this.cartStore.setClient(client)
@@ -234,11 +285,16 @@ export default {
           if (!this.customerData.city) this.customerData.city = client.city || ''
           if (!this.customerData.phone && client.phone) this.customerData.phone = client.phone
           this.persistCustomerData()
+          this.$router.push('/shporta')
           return
         }
         this.cartStore.clearClient()
       } catch (error) {
-        console.error('Error identifying client:', error)
+        if (error.response?.status === 401 && error.response?.data?.message) {
+          this.loginError = error.response.data.message
+        } else {
+          this.loginError = 'Identifikimi dështoi. Kontrolloni të dhënat ose fjalëkalimin.'
+        }
         this.cartStore.clearClient()
       } finally {
         this.identifyingClient = false
@@ -246,12 +302,14 @@ export default {
     },
     logoutClient() {
       this.cartStore.clearClient()
+      this.loginError = null
       this.customerData = {
         name: '',
         storeName: '',
         fiscalNumber: '',
         city: '',
-        phone: ''
+        phone: '',
+        password: ''
       }
       localStorage.removeItem('gastrotrade_customer_data')
     }

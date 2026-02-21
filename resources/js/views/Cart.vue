@@ -112,6 +112,37 @@
                 class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
               />
             </div>
+            <div class="sm:col-span-2">
+              <label for="emptyPassword" class="block text-sm font-medium text-gray-700 mb-1">Fjalëkalimi</label>
+              <div class="relative">
+                <input
+                  id="emptyPassword"
+                  :type="showPassword ? 'text' : 'password'"
+                  v-model="customerData.password"
+                  @input="scheduleClientIdentification"
+                  placeholder="Vendosni fjalëkalimin (nëse ju është caktuar nga menaxhmenti)"
+                  autocomplete="current-password"
+                  class="w-full px-3 py-2 pr-10 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+                />
+                <button
+                  type="button"
+                  @click="showPassword = !showPassword"
+                  class="absolute right-2 top-1/2 -translate-y-1/2 p-1.5 text-gray-500 hover:text-gray-700 rounded focus:outline-none focus:ring-2 focus:ring-primary-500/30"
+                  :aria-label="showPassword ? 'Fshih fjalëkalimin' : 'Shfaq fjalëkalimin'"
+                >
+                  <svg v-if="showPassword" xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21" />
+                  </svg>
+                  <svg v-else xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                  </svg>
+                </button>
+              </div>
+              <p class="mt-1 text-xs text-gray-500">
+                Për siguri dhe privatësi. Nëse menaxhmenti ju ka caktuar fjalëkalim, vendoseni këtu.
+              </p>
+            </div>
           </div>
           <p class="mt-4 text-xs text-gray-500">
             Pas plotësimit të emrit të biznisit dhe numrit fiskal, identifikimi bëhet automatikisht nëse jeni klient i regjistruar.
@@ -455,6 +486,39 @@
                     Numri juaj për komunikim në Viber (opsional)
                   </p>
                 </div>
+                <div>
+                  <label for="password" class="block text-sm font-medium text-gray-700 mb-1">
+                    Fjalëkalimi
+                  </label>
+                  <div class="relative">
+                    <input
+                      id="password"
+                      :type="showPassword ? 'text' : 'password'"
+                      v-model="customerData.password"
+                      @input="scheduleClientIdentification"
+                      placeholder="Vendosni fjalëkalimin (nëse ju është caktuar nga menaxhmenti)"
+                      autocomplete="current-password"
+                      class="w-full px-3 py-2 pr-10 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+                    />
+                    <button
+                      type="button"
+                      @click="showPassword = !showPassword"
+                      class="absolute right-2 top-1/2 -translate-y-1/2 p-1.5 text-gray-500 hover:text-gray-700 rounded focus:outline-none focus:ring-2 focus:ring-primary-500/30"
+                      :aria-label="showPassword ? 'Fshih fjalëkalimin' : 'Shfaq fjalëkalimin'"
+                    >
+                      <svg v-if="showPassword" xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21" />
+                      </svg>
+                      <svg v-else xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                      </svg>
+                    </button>
+                  </div>
+                  <p class="mt-1 text-xs text-gray-500">
+                    Për siguri dhe privatësi. Nëse menaxhmenti ju ka caktuar fjalëkalim, vendoseni këtu.
+                  </p>
+                </div>
               </div>
             </div>
             
@@ -687,8 +751,10 @@ export default {
         storeName: '',
         fiscalNumber: '',
         city: '',
-        phone: ''
+        phone: '',
+        password: ''
       },
+      showPassword: false,
       selectedLocationId: null,
       clientLocations: [],
       identifyingClient: false,
@@ -799,14 +865,15 @@ export default {
       }
     }
 
-    // Klienti i kyqur mbetet i kyqur: plotëso formën nga klienti i ruajtur në localStorage
+    // Plotëso vetëm fushat bosh nga klienti i kyqur (e njëjta logjikë si te Kyçu), që të dhënat të jenë konsistente
     if (this.cartStore.client) {
       const c = this.cartStore.client
-      this.customerData.name = c.name || this.customerData.name
-      this.customerData.storeName = c.store_name || this.customerData.storeName
-      this.customerData.fiscalNumber = c.fiscal_number || this.customerData.fiscalNumber
-      this.customerData.city = c.city || this.customerData.city
-      this.customerData.phone = c.phone || this.customerData.phone
+      if (!this.customerData.name?.trim()) this.customerData.name = c.name || ''
+      if (!this.customerData.storeName?.trim()) this.customerData.storeName = c.store_name || ''
+      if (!this.customerData.fiscalNumber?.trim()) this.customerData.fiscalNumber = c.fiscal_number || ''
+      if (!this.customerData.city?.trim()) this.customerData.city = c.city || ''
+      if (!this.customerData.phone?.trim()) this.customerData.phone = c.phone || ''
+      this.persistCustomerData()
       // Ngarko lokacionet e klientit nëse ekzistojnë
       if (c.locations && Array.isArray(c.locations) && c.locations.length > 0) {
         this.clientLocations = c.locations.filter(loc => loc && (loc.is_active !== false && loc.is_active !== 0))
@@ -948,7 +1015,8 @@ export default {
           storeName: '',
           fiscalNumber: '',
           city: '',
-          phone: ''
+          phone: '',
+          password: ''
         }
         this.clientLocations = []
         this.selectedLocationId = null
@@ -966,7 +1034,8 @@ export default {
         storeName: '',
         fiscalNumber: '',
         city: '',
-        phone: ''
+        phone: '',
+        password: ''
       }
       localStorage.removeItem('gastrotrade_customer_data')
       this.ordersHistory = []
@@ -1007,10 +1076,14 @@ export default {
 
       this.identifyingClient = true
       try {
-        const response = await axios.post('/api/clients/find-by-business-and-fiscal', { 
+        const payload = {
           business_name: businessName.trim(),
           fiscal_number: fiscalNumber.trim()
-        })
+        }
+        if (this.customerData.password !== undefined && this.customerData.password !== null && String(this.customerData.password).trim() !== '') {
+          payload.password = String(this.customerData.password).trim()
+        }
+        const response = await axios.post('/api/clients/find-by-business-and-fiscal', payload)
         if (response.data.success && response.data.data) {
           const client = response.data.data
           await this.cartStore.setClient(client)
@@ -1116,7 +1189,12 @@ export default {
       }
     },
     persistCustomerData() {
-      localStorage.setItem('gastrotrade_customer_data', JSON.stringify(this.customerData))
+      const toStore = { ...this.customerData }
+      delete toStore.password
+      const existing = localStorage.getItem('gastrotrade_customer_data')
+      const merged = existing ? { ...JSON.parse(existing), ...toStore } : toStore
+      delete merged.password
+      localStorage.setItem('gastrotrade_customer_data', JSON.stringify(merged))
     },
     updateLocationData() {
       // Update customerData with location data when location is selected
@@ -1355,48 +1433,39 @@ export default {
 
       const totalAmount = order.total_amount ? this.formatPrice(order.total_amount) : 'Sipas kërkesës'
       const createdAt = this.formatDate(order.created_at)
+      const invoiceDateFormatted = this.formatDate(order.created_at)
       const paidAt = order.paid_at ? this.formatDate(order.paid_at) : null
       const isPaid = order.is_paid === true || order.is_paid === 1
-      const paymentStatus = isPaid ? 'E PAGUAR' : 'JO E PAGUAR'
-      const paymentStatusClass = isPaid ? 'color: #059669; font-weight: bold;' : 'color: #dc2626; font-weight: bold;'
-      
+      const hasVat = order.has_vat === true || order.has_vat === 1
+      const vatRate = 18
+      const fmtNum = (n) => (n != null && !isNaN(n) ? Number(n).toFixed(2) : '-')
+      const amountBeforeVat = hasVat && order.total_amount ? parseFloat(order.total_amount) / 1.18 : (order.amount_before_vat != null ? parseFloat(order.amount_before_vat) : (order.total_amount ? parseFloat(order.total_amount) : null))
+      const vatAmount = hasVat && order.total_amount ? parseFloat(order.total_amount) - (parseFloat(order.total_amount) / 1.18) : (order.vat_amount != null ? parseFloat(order.vat_amount) : 0)
+      const totalItemDiscounts = (order.items || []).reduce((sum, item) => sum + (parseFloat(item.discount_amount) || 0), 0)
+      const valueBeforeDiscount = (order.subtotal != null ? parseFloat(order.subtotal) : null) || (order.items || []).reduce((s, i) => s + (parseFloat(i.total_price) || 0), 0)
+
       const itemsRows = (order.items || [])
-        .map(item => {
-          const quantityText = item.quantity_text || this.formatOrderItemQuantity(item)
-          const unitPrice = item.unit_price ? this.formatPrice(item.unit_price) : 'Sipas kërkesës'
-          
-          // Calculate item subtotal
-          let itemSubtotal = 0
-          if (item.unit_price) {
-            if (item.sold_by_package && item.pieces_per_package) {
-              itemSubtotal = item.unit_price * item.quantity * item.pieces_per_package
-            } else {
-              itemSubtotal = item.unit_price * item.quantity
-            }
-          }
-          
-          const itemDiscount = item.discount_amount || 0
-          const itemTotal = item.total_price || (itemSubtotal > 0 ? itemSubtotal - itemDiscount : 0)
-          
-          return `
-            <tr>
-              <td>${item.product_name}</td>
-              <td>${quantityText}</td>
-              <td>${unitPrice}</td>
-              <td>
-                ${itemSubtotal > 0 ? this.formatPrice(itemSubtotal) : 'Sipas kërkesës'}
-                ${itemDiscount > 0 ? '<br><span style="color: #dc2626; font-size: 11px;">- ' + this.formatPrice(itemDiscount) + '</span>' : ''}
-                <br><strong>${itemTotal > 0 ? this.formatPrice(itemTotal) : 'Sipas kërkesës'}</strong>
-              </td>
-            </tr>
-          `
+        .map((item, idx) => {
+          const barcode = (item.barcode != null && item.barcode !== '') ? String(item.barcode) : (item.product && item.product.barcode != null && item.product.barcode !== '' ? String(item.product.barcode) : '')
+          const qty = parseFloat(item.quantity) || 1
+          const unitPrice = item.unit_price != null ? parseFloat(item.unit_price) : null
+          const lineTotal = item.total_price != null ? parseFloat(item.total_price) : (unitPrice ? unitPrice * qty : 0)
+          const unitPriceNoVat = hasVat && unitPrice ? unitPrice / 1.18 : unitPrice
+          const discountPct = 0
+          return '<tr>' +
+            '<td class="inv-num">' + (idx + 1) + '</td>' +
+            '<td class="inv-code">' + (barcode || '-') + '</td>' +
+            '<td class="inv-desc">' + (item.product_name || '') + (barcode ? ' - Barcode: ' + barcode : '') + '</td>' +
+            '<td class="inv-qty">' + fmtNum(qty) + '</td>' +
+            '<td class="inv-unit">Copë</td>' +
+            '<td class="inv-num">' + (unitPriceNoVat != null ? fmtNum(unitPriceNoVat) : '-') + '</td>' +
+            '<td class="inv-num">' + fmtNum(discountPct) + '</td>' +
+            '<td class="inv-num">' + (hasVat ? vatRate : 0) + '</td>' +
+            '<td class="inv-num">' + (unitPrice != null ? fmtNum(unitPrice) : '-') + '</td>' +
+            '<td class="inv-num">' + (lineTotal > 0 ? fmtNum(lineTotal) : '-') + '</td>' +
+            '</tr>'
         })
         .join('')
-
-      // Calculate total item discounts
-      const totalItemDiscounts = (order.items || []).reduce((sum, item) => {
-        return sum + (parseFloat(item.discount_amount) || 0)
-      }, 0)
 
       const orderDataJson = JSON.stringify({
         order_number: order.order_number || 'N/A',
@@ -1416,104 +1485,119 @@ export default {
       const scriptTag = '<' + 'script' + '>'
       const scriptClose = '<' + '/' + 'script' + '>'
 
-      const htmlContent = '<html>' +
-        '<head>' +
+      const buyerName = (order.business_name || order.customer_name || 'N/A').trim()
+      const buyerAddress = order.location_street_number || ''
+      const buyerCity = (order.location_city || order.city || 'N/A').trim()
+      const buyerFiscal = (order.fiscal_number || '').trim() || '-'
+      const expDate = invoiceDateFormatted
+
+      const taxBase18 = amountBeforeVat != null ? fmtNum(amountBeforeVat) : '0.00'
+      const taxVat18 = hasVat ? fmtNum(vatAmount) : '0.00'
+      const taxVal18 = order.total_amount ? fmtNum(parseFloat(order.total_amount)) : '0.00'
+      const valBeforeDiscount = valueBeforeDiscount != null ? fmtNum(valueBeforeDiscount) : '0.00'
+      const discountVal = totalItemDiscounts > 0 ? fmtNum(totalItemDiscounts) : '0.00'
+      const valNoVat = amountBeforeVat != null ? fmtNum(amountBeforeVat) : '0.00'
+      const paymentDone = isPaid ? (order.total_amount ? fmtNum(parseFloat(order.total_amount)) : '0.00') : '0.00'
+
+      const htmlContent = '<!DOCTYPE html><html lang="sq">' +
+        '<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">' +
         '<title>Faturë ' + (order.order_number || 'N/A') + '</title>' +
         '<style>' +
-        'body { font-family: Arial, sans-serif; padding: 24px; color: #111827; }' +
-        'h1 { font-size: 24px; margin-bottom: 8px; }' +
-        '.meta { margin-bottom: 16px; font-size: 14px; }' +
-        '.payment-status { margin-top: 12px; padding: 8px 12px; border-radius: 4px; display: inline-block; font-size: 14px; }' +
-        '.payment-status.paid { background-color: #d1fae5; color: #059669; font-weight: bold; }' +
-        '.payment-status.unpaid { background-color: #fee2e2; color: #dc2626; font-weight: bold; }' +
-        'table { width: 100%; border-collapse: collapse; margin-top: 16px; }' +
-        'th, td { border: 1px solid #e5e7eb; padding: 8px; text-align: left; font-size: 14px; }' +
-        'th { background-color: #f9fafb; }' +
-        '.totals { margin-top: 16px; font-weight: bold; }' +
-        '</style>' +
-        '</head>' +
-        '<body>' +
-        '<h1>Faturë ' + (order.order_number || 'N/A') + '</h1>' +
-        '<div class="meta">' +
-        '<p><strong>Data e Porosisë:</strong> ' + createdAt + '</p>' +
-        // If location data exists, show ONLY location data, otherwise show client data
-        (order.location_unit_name || order.location_street_number || order.location_city || order.location_phone || order.location_viber ? (
-          '<div style="background-color: #f0f9ff; padding: 12px; border-radius: 6px; margin-bottom: 12px; border-left: 4px solid #3b82f6;">' +
-          '<p style="margin: 0 0 8px 0; font-weight: bold; color: #1e40af; font-size: 14px;">📍 Të Dhënat e Pikës/Njësisë</p>' +
-          (order.location_unit_name ? '<p style="margin: 4px 0;"><strong>Pika/Njësia:</strong> ' + order.location_unit_name + '</p>' : '') +
-          (order.location_street_number ? '<p style="margin: 4px 0;"><strong>Adresa:</strong> ' + order.location_street_number + '</p>' : '') +
-          (order.location_city ? '<p style="margin: 4px 0;"><strong>Vendi/Qyteti:</strong> ' + order.location_city + '</p>' : '') +
-          (order.location_phone ? '<p style="margin: 4px 0;"><strong>Telefon:</strong> ' + order.location_phone + '</p>' : '') +
-          (order.location_viber ? '<p style="margin: 4px 0;"><strong>Viber:</strong> ' + order.location_viber + '</p>' : '') +
-          '</div>'
-        ) : (
-          // If no location data, show only client data
-          '<div style="margin-bottom: 12px;">' +
-          '<p><strong>Klienti:</strong> ' + (order.customer_name || 'N/A') + ' — ' + (order.business_name || 'N/A') + '</p>' +
-          '<p><strong>Nr. Fiskal:</strong> ' + (order.fiscal_number || 'N/A') + '</p>' +
-          '<p><strong>Qyteti:</strong> ' + (order.city || 'N/A') + '</p>' +
-          '<p><strong>Telefon/Viber:</strong> ' + (order.phone || 'N/A') + '</p>' +
-          '</div>'
-        )) +
-        (isPaid ? '<div class="payment-status paid">' +
-        '<strong>Statusi i Pagesës:</strong> ' + paymentStatus +
-        (paidAt ? '<br><span style="font-size: 12px;">E paguar më: ' + paidAt + '</span>' : '') +
-        '</div>' : '') +
+        '*{box-sizing:border-box}' +
+        'body{font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;padding:24px 32px;color:#111827;font-size:13px;line-height:1.4;max-width:900px;margin:0 auto}' +
+        '@media print{body{padding:12px 16px}.no-print{display:none !important}}' +
+        '.inv-header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:20px;padding-bottom:16px;border-bottom:2px solid #0d9488}' +
+        '.inv-title{font-size:11px;color:#6b7280;text-transform:uppercase;letter-spacing:0.05em;margin-bottom:2px}' +
+        '.inv-seller{min-width:200px}.inv-company{font-weight:700;font-size:18px;color:#0f766e;margin:0 0 8px 0;display:block}' +
+        '.inv-nr{text-align:right;font-weight:700;font-size:14px;color:#0d9488}' +
+        '.inv-bleresi{background:#f8fafc;padding:12px 16px;border-radius:8px;margin-bottom:16px;border:1px solid #e2e8f0}' +
+        '.inv-bleresi h3{font-size:12px;text-transform:uppercase;color:#64748b;margin:0 0 8px 0}' +
+        '.inv-meta{width:100%;border-collapse:collapse;margin-bottom:16px;font-size:12px}' +
+        '.inv-meta th,.inv-meta td{border:1px solid #e2e8f0;padding:6px 10px;text-align:left}' +
+        '.inv-meta th{background:#f1f5f9;font-weight:600;color:#475569}' +
+        '.inv-table{width:100%;border-collapse:collapse;margin-bottom:16px;font-size:12px}' +
+        '.inv-table th,.inv-table td{border:1px solid #e2e8f0;padding:6px 8px}' +
+        '.inv-table th{background:#0d9488;color:#fff;font-weight:600;text-align:center}' +
+        '.inv-table .inv-num{text-align:right}.inv-table .inv-desc{text-align:left}.inv-table .inv-code{text-align:center}' +
+        '.inv-tax{width:100%;max-width:320px;margin-left:auto;border-collapse:collapse;font-size:12px;margin-bottom:12px}' +
+        '.inv-tax th,.inv-tax td{border:1px solid #e2e8f0;padding:6px 10px;text-align:right}' +
+        '.inv-tax th{background:#f1f5f9;font-weight:600}' +
+        '.inv-totals{max-width:280px;margin-left:auto;font-size:13px}' +
+        '.inv-totals .row{display:flex;justify-content:space-between;padding:4px 0;border-bottom:1px solid #e2e8f0}' +
+        '.inv-totals .row.total{font-weight:700;font-size:15px;color:#0d9488;border-bottom:none;padding-top:8px;margin-top:4px;border-top:2px solid #0d9488}' +
+        '.inv-footer{display:flex;justify-content:space-between;align-items:flex-end;margin-top:40px;padding-top:24px;border-top:2px solid #e2e8f0}' +
+        '.inv-sig{text-align:center;min-width:180px}' +
+        '.inv-sig .line{border-top:1px solid #111827;padding-top:4px;margin-top:32px;font-weight:600;font-size:12px}' +
+        '.inv-sig .sub{font-size:11px;color:#64748b;margin-top:4px}' +
+        '.inv-bank{font-size:12px;color:#64748b;margin-top:16px}' +
+        '.no-print{margin-top:24px;padding:16px;border-top:2px solid #e2e8f0;text-align:center}' +
+        '.no-print h3{margin-bottom:12px;font-size:14px;color:#475569}' +
+        '.no-print .btns{display:flex;gap:8px;justify-content:center;flex-wrap:wrap}' +
+        '.no-print button{padding:10px 18px;border:none;border-radius:8px;cursor:pointer;font-size:14px;font-weight:500}' +
+        '</style></head><body>' +
+        '<div class="inv-header">' +
+        '<div class="inv-seller">' +
+        '<h2 class="inv-company">Gastro Trade</h2>' +
+        '<div class="inv-title">Nrf / NIPT</div><div>' + (order.company_nrf || '—') + '</div>' +
+        '<div class="inv-title">tel</div><div>+383 48 75 66 46 / +383 44 82 43 14</div>' +
+        '<div class="inv-title">email</div><div>svalon95@gmail.com</div>' +
         '</div>' +
-        '<table>' +
-        '<thead>' +
-        '<tr><th>Produkti</th><th>Sasia</th><th>Çmimi Njësi</th><th>Totali</th></tr>' +
-        '</thead>' +
-        '<tbody>' +
-        itemsRows +
-        '</tbody>' +
+        '<div style="text-align:right">' +
+        '<div class="inv-title">Adresë</div><div>Ferizaj, Kosovë, Rruga Lidhja e Prizrenit</div>' +
+        '<div class="inv-title">Nrb</div><div>' + (order.company_nrb || '—') + '</div>' +
+        '<div class="inv-title">Tvsh</div><div>' + (order.company_tvsh || '—') + '</div>' +
+        '</div>' +
+        '<div>' +
+        '<div class="inv-nr">' + (order.order_number || 'N/A') + '</div>' +
+        '<div class="inv-title">Nr. Faturës</div>' +
+        '</div></div>' +
+        '<div class="inv-bleresi">' +
+        '<h3>Bleresi</h3>' +
+        '<div><strong>' + buyerName + '</strong></div>' +
+        (buyerAddress ? '<div>Adresa: ' + buyerAddress + '</div>' : '') +
+        '<div>Qyteti: ' + buyerCity + '</div>' +
+        '<div>No fiskal: ' + buyerFiscal + '</div>' +
+        '<div>Numri unik: ' + buyerFiscal + '</div>' +
+        (order.phone ? '<div>Telefon: ' + order.phone + '</div>' : '') +
+        '</div>' +
+        '<table class="inv-meta">' +
+        '<tr><th>Data fatura</th><th>Kushtet</th><th>Data e skadimit</th><th>User</th><th>Referenca</th><th>Lokacioni</th></tr>' +
+        '<tr><td>' + invoiceDateFormatted + '</td><td></td><td>' + expDate + '</td><td>Klient</td><td></td><td>' + (order.location_unit_name || '-') + '</td></tr>' +
         '</table>' +
-        '<div class="totals">' +
-        '<div style="margin-bottom: 8px;">' +
-        '<p><strong>Totali i produkteve:</strong> ' + order.total_items + '</p>' +
-        (order.subtotal ? '<p><strong>Nëntotali (para zbritjeve):</strong> ' + this.formatPrice(order.subtotal) + '</p>' : '') +
-        (totalItemDiscounts > 0 ? '<p style="color: #dc2626;"><strong>Totali i zbritjeve të produkteve:</strong> -' + this.formatPrice(totalItemDiscounts) + '</p>' : '') +
-        (order.discount_amount && order.discount_amount > 0 ? '<p style="color: #dc2626;"><strong>Zbritje e përgjithshme ' + (order.discount_type === 'percentage' ? order.discount_value + '%' : 'fikse') + ':</strong> -' + this.formatPrice(order.discount_amount) + '</p>' : '') +
-        (order.has_vat === true || order.has_vat === 1 ? 
-          '<div style="margin-top: 12px; padding-top: 12px; border-top: 1px solid #e5e7eb;">' +
-          '<p><strong>Shuma para TVSH:</strong> ' + (order.amount_before_vat ? this.formatPrice(order.amount_before_vat) : (order.total_amount ? this.formatPrice(parseFloat(order.total_amount) / 1.18) : '-')) + '</p>' +
-          '<p><strong>TVSH (18%):</strong> ' + (order.vat_amount ? this.formatPrice(order.vat_amount) : (order.total_amount ? this.formatPrice(parseFloat(order.total_amount) - (parseFloat(order.total_amount) / 1.18)) : '-')) + '</p>' +
-          '<p style="font-size: 16px; margin-top: 8px;"><strong>Vlera Totale me TVSH:</strong> ' + totalAmount + '</p>' +
-          '</div>' :
-          '<p style="font-size: 16px; margin-top: 8px;"><strong>Vlera Totale:</strong> ' + totalAmount + '</p>'
-        ) +
+        '<table class="inv-table">' +
+        '<thead><tr>' +
+        '<th>No</th><th>Barcode</th><th>Emertimi</th><th>Sasia</th><th>Njesia</th>' +
+        '<th>Cmimi pa TVSH</th><th>Rabati %</th><th>TVSH %</th><th>Cmimi me TVSH</th><th>Vlera me TVSH</th>' +
+        '</tr></thead><tbody>' + itemsRows + '</tbody></table>' +
+        '<table class="inv-tax">' +
+        '<tr><th>Normat Tatimore</th><th>Baza</th><th>TVSH</th><th>Vlera</th></tr>' +
+        '<tr><td>TVSH 0%</td><td>0.00</td><td>0.00</td><td>0.00</td></tr>' +
+        '<tr><td>TVSH 8%</td><td>0.00</td><td>0.00</td><td>0.00</td></tr>' +
+        '<tr><td>TVSH 18%</td><td>' + taxBase18 + '</td><td>' + taxVat18 + '</td><td>' + taxVal18 + '</td></tr>' +
+        '</table>' +
+        '<div class="inv-totals">' +
+        '<div class="row"><span>Vlera para zbritjes</span><span>' + valBeforeDiscount + '</span></div>' +
+        '<div class="row"><span>Rabati</span><span>' + discountVal + '</span></div>' +
+        '<div class="row"><span>Vlera pa TVSH</span><span>' + valNoVat + '</span></div>' +
+        '<div class="row"><span>TVSH</span><span>' + taxVat18 + '</span></div>' +
+        '<div class="row total"><span>Vlera për pagesë (EUR)</span><span>' + (order.total_amount ? fmtNum(parseFloat(order.total_amount)) : '-') + '</span></div>' +
+        '<div class="row"><span>Pagesa</span><span>' + paymentDone + '</span></div>' +
+        '<div class="row"><span>Mbetja</span><span>' + (order.total_amount ? (isPaid ? '0.00' : fmtNum(parseFloat(order.total_amount))) : '-') + '</span></div>' +
         '</div>' +
+        '<div class="inv-footer">' +
+        '<div class="inv-sig"><div class="line">Faturoi</div><div class="sub">Gastro Trade</div></div>' +
+        '<div class="inv-sig"><div class="line">Dergoi</div><div class="sub">Gastro Trade</div></div>' +
+        '<div class="inv-sig"><div class="line">Pranoi</div><div class="sub">' + buyerName + '</div></div>' +
         '</div>' +
-        '<div style="margin-top: 48px; padding-top: 24px; border-top: 2px solid #e5e7eb;">' +
-        '<div style="display: flex; justify-content: space-between; margin-bottom: 60px;">' +
-        '<div style="width: 45%; text-align: center;">' +
-        '<p style="font-weight: bold; margin-bottom: 40px; border-top: 1px solid #111827; padding-top: 4px; display: inline-block; min-width: 200px;">Nënshkrimi i Blerësit</p>' +
-        // If location data exists, show only location name, otherwise show business/customer name
-        (order.location_unit_name || order.location_street_number ? (
-          '<p style="font-size: 12px; color: #6b7280; margin-top: 8px;">' + (order.location_unit_name || '') + '</p>' +
-          (order.location_street_number ? '<p style="font-size: 12px; color: #6b7280; margin-top: 2px;">' + order.location_street_number + '</p>' : '')
-        ) : (
-          '<p style="font-size: 12px; color: #6b7280; margin-top: 8px;">' + (order.business_name || order.customer_name || '') + '</p>'
-        )) +
-        '</div>' +
-        '<div style="width: 45%; text-align: center;">' +
-        '<p style="font-weight: bold; margin-bottom: 40px; border-top: 1px solid #111827; padding-top: 4px; display: inline-block; min-width: 200px;">Nënshkrimi i Shitësit</p>' +
-        '<p style="font-size: 12px; color: #6b7280; margin-top: 8px;">GastroTrade</p>' +
-        '</div>' +
-        '</div>' +
-        '<div style="text-align: center; margin-top: 24px; font-size: 12px; color: #6b7280;">' +
-        '<p><strong>Data e lëshimit:</strong> ' + createdAt + '</p>' +
-        '</div>' +
-        '</div>' +
-        '<div style="margin-top: 24px; padding: 16px; border-top: 2px solid #e5e7eb; text-align: center;">' +
-        '<h3 style="margin-bottom: 12px; font-size: 16px;">Ndaj Faturën:</h3>' +
-        '<div style="display: flex; gap: 8px; justify-content: center; flex-wrap: wrap;">' +
-        '<button onclick="shareToViber()" style="padding: 8px 16px; background-color: #7360F2; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 14px;">💬 Viber</button>' +
-        '<button onclick="shareToWhatsApp()" style="padding: 8px 16px; background-color: #25D366; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 14px;">📱 WhatsApp</button>' +
-        '<button onclick="shareToGmail()" style="padding: 8px 16px; background-color: #EA4335; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 14px;">📧 Gmail</button>' +
-        '<button onclick="window.print()" style="padding: 8px 16px; background-color: #6B7280; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 14px;">🖨 Printo</button>' +
-        '</div>' +
-        '</div>' +
+        '<div class="inv-bank">Llogaria bankare: (vendosni nëse keni)</div>' +
+        '<div class="no-print">' +
+        '<h3>Ndaj Faturën</h3>' +
+        '<div class="btns">' +
+        '<button onclick="shareToViber()" style="background:#7360F2;color:white">💬 Viber</button>' +
+        '<button onclick="shareToWhatsApp()" style="background:#25D366;color:white">📱 WhatsApp</button>' +
+        '<button onclick="shareToGmail()" style="background:#EA4335;color:white">📧 Gmail</button>' +
+        '<button onclick="window.print()" style="background:#475569;color:white">🖨 Printo</button>' +
+        '</div></div>' +
         scriptTag +
         'const orderData = ' + orderDataJson + ';' +
         'function shareToViber() {' +
@@ -1678,6 +1762,7 @@ export default {
           return {
             id: item.id,
             product_name: item.name,
+            barcode: item.barcode != null ? item.barcode : '',
             quantity: item.quantity,
             quantity_text: quantityText,
             sold_by_package: item.sold_by_package || false,

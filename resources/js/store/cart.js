@@ -119,6 +119,7 @@ const cartStore = reactive({
         name: product.name,
         slug: product.slug,
         image_path: product.image_path,
+        barcode: product.barcode || null,
         price: price,
         quantity: quantity,
         sold_by_package: product.sold_by_package || false,
