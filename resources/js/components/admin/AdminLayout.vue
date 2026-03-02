@@ -3,56 +3,69 @@
     <!-- Sidebar -->
     <aside 
       :class="[
-        'fixed inset-y-0 left-0 z-50 w-64 bg-gradient-to-b from-gray-900 to-gray-800 text-white transform transition-transform duration-300 ease-in-out lg:translate-x-0',
-        sidebarOpen ? 'translate-x-0' : '-translate-x-full'
+        'fixed inset-y-0 left-0 z-50 w-64 bg-gray-900 text-white transform transition-transform duration-300 ease-in-out',
+        sidebarOpen ? 'translate-x-0' : '-translate-x-full',
+        sidebarPinnedOpen ? 'lg:translate-x-0' : 'lg:-translate-x-full'
       ]"
     >
       <div class="flex flex-col h-full">
         <!-- Logo & Brand -->
-        <div class="flex items-center justify-between h-16 px-6 border-b border-gray-700">
-          <div class="flex items-center gap-3">
-            <svg class="w-10 h-10 flex-shrink-0 text-primary-600" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-              <rect width="40" height="40" rx="8" fill="currentColor"/>
-              <text x="20" y="26" text-anchor="middle" fill="white" font-family="system-ui, sans-serif" font-weight="700" font-size="16">GT</text>
-            </svg>
-            <div>
-              <h1 class="text-lg font-bold">GastroTrade</h1>
-              <p class="text-xs text-gray-400">Admin Panel</p>
+        <div class="flex items-center justify-between h-16 px-5 border-b border-white/10">
+          <div class="flex items-center gap-3 min-w-0">
+            <div class="w-10 h-10 flex-shrink-0 rounded-xl bg-primary-500 flex items-center justify-center shadow-lg">
+              <span class="text-white font-bold text-sm">GT</span>
+            </div>
+            <div class="min-w-0">
+              <h1 class="text-base font-bold text-white truncate">GastroTrade</h1>
+              <p class="text-xs text-white/60">Paneli i administrimit</p>
             </div>
           </div>
-          <button 
-            @click="toggleSidebar"
-            class="lg:hidden text-gray-400 hover:text-white"
-          >
-            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-            </svg>
-          </button>
+          <div class="flex items-center gap-1">
+            <button 
+              @click="hideSidebar"
+              class="hidden lg:flex p-2 rounded-lg text-white/60 hover:text-white hover:bg-white/10 transition-colors"
+              title="Fsheh menunë"
+              aria-label="Fsheh menunë"
+            >
+              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 19l-7-7 7-7m8 14l-7-7 7-7" />
+              </svg>
+            </button>
+            <button 
+              @click="toggleSidebar"
+              class="lg:hidden p-2 rounded-lg text-white/60 hover:text-white"
+              aria-label="Mbyll menunë"
+            >
+              <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+          </div>
         </div>
 
         <!-- User Info -->
-        <div class="px-6 py-4 border-b border-gray-700">
+        <div class="px-5 py-4 border-b border-white/10">
           <div class="flex items-center gap-3">
-            <div class="w-10 h-10 bg-gradient-to-br from-green-400 to-blue-500 rounded-full flex items-center justify-center">
-              <span class="text-sm font-semibold">{{ userInitials }}</span>
+            <div class="w-10 h-10 flex-shrink-0 rounded-full bg-white/10 flex items-center justify-center text-white font-semibold text-sm ring-2 ring-white/20">
+              {{ userInitials }}
             </div>
             <div class="flex-1 min-w-0">
-              <p class="text-sm font-medium truncate">{{ adminStore.user?.name || 'Admin' }}</p>
-              <p class="text-xs text-gray-400 truncate">{{ adminStore.user?.email || '' }}</p>
+              <p class="text-sm font-medium text-white truncate">{{ displayName }}</p>
+              <p class="text-xs text-white/60 truncate">{{ adminStore.user?.email || '' }}</p>
               <span 
                 :class="[
-                  'inline-block mt-1 px-2 py-0.5 text-xs rounded-full',
-                  adminStore.isAdmin ? 'bg-green-500/20 text-green-300' : 'bg-blue-500/20 text-blue-300'
+                  'inline-block mt-1.5 px-2 py-0.5 text-xs font-medium rounded-md',
+                  adminStore.isAdmin ? 'bg-emerald-500/25 text-emerald-200' : 'bg-sky-500/25 text-sky-200'
                 ]"
               >
-                {{ adminStore.isAdmin ? 'Admin' : 'Order Manager' }}
+                {{ roleLabel }}
               </span>
             </div>
           </div>
         </div>
 
         <!-- Navigation -->
-        <nav class="flex-1 overflow-y-auto px-4 py-4 space-y-1">
+        <nav class="flex-1 overflow-y-auto px-3 py-4 space-y-0.5" aria-label="Menuja kryesore">
           <!-- Dashboard -->
           <router-link
             to="/admin/dashboard"
@@ -158,15 +171,15 @@
         </nav>
 
         <!-- Logout -->
-        <div class="px-4 py-4 border-t border-gray-700">
+        <div class="px-4 py-4 border-t border-white/10">
           <button
             @click="logout"
-            class="w-full flex items-center gap-3 px-4 py-3 text-sm font-medium text-red-300 hover:bg-red-500/10 rounded-lg transition-colors"
+            class="w-full flex items-center gap-3 px-4 py-3 text-sm font-medium text-white/80 hover:bg-red-500/20 hover:text-red-200 rounded-xl transition-all duration-200"
           >
-            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
             </svg>
-            <span>Dil</span>
+            <span>Dilni</span>
           </button>
         </div>
       </div>
@@ -180,31 +193,44 @@
     ></div>
 
     <!-- Main Content -->
-    <div class="flex-1 flex flex-col lg:ml-64">
+    <div 
+      class="flex-1 flex flex-col transition-[margin] duration-300"
+      :class="sidebarPinnedOpen ? 'lg:ml-64' : 'lg:ml-0'"
+    >
       <!-- Top Header -->
-      <header class="sticky top-0 z-30 bg-white border-b border-gray-200 shadow-sm">
-        <div class="flex items-center justify-between h-16 px-4 sm:px-6 lg:px-8">
-          <button
-            @click="toggleSidebar"
-            class="lg:hidden p-2 rounded-md text-gray-600 hover:bg-gray-100"
-          >
-            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
-            </svg>
-          </button>
-          
-          <div class="flex-1 flex items-center justify-between">
-            <div>
-              <h2 class="text-xl font-semibold text-gray-900">{{ pageTitle }}</h2>
-            </div>
-            
-            <div class="flex items-center gap-4">
-              <!-- Notifications (placeholder) -->
-              <button class="p-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors">
-                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 00-2-2h-1a2 2 0 00-2 2v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
-                </svg>
-              </button>
+      <header class="sticky top-0 z-30 bg-white border-b border-gray-200/80 shadow-sm">
+        <div class="flex items-center justify-between h-14 lg:h-16 px-4 sm:px-6 lg:px-8">
+          <div class="flex items-center gap-2">
+            <button
+              v-if="!sidebarPinnedOpen"
+              @click="showSidebar"
+              class="hidden lg:flex items-center gap-2 px-3 py-2 rounded-lg text-gray-600 hover:bg-gray-100 hover:text-gray-900 transition-colors"
+              aria-label="Shfaq menunë"
+            >
+              <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
+              </svg>
+              <span class="text-sm font-medium">Menuja</span>
+            </button>
+            <button
+              @click="toggleSidebar"
+              class="lg:hidden p-2 rounded-lg text-gray-500 hover:bg-gray-100 hover:text-gray-700 transition-colors"
+              aria-label="Hap menunë"
+            >
+              <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
+              </svg>
+            </button>
+          </div>
+          <div class="flex-1 flex items-center justify-between gap-4">
+            <h2 class="text-lg lg:text-xl font-semibold text-gray-900 truncate">{{ pageTitle }}</h2>
+            <div class="hidden sm:flex items-center gap-2 text-sm text-gray-500">
+              <span class="truncate max-w-[180px]">{{ adminStore.user?.email }}</span>
+              <span 
+                :class="['px-2 py-0.5 rounded-md text-xs font-medium', adminStore.isAdmin ? 'bg-emerald-100 text-emerald-700' : 'bg-sky-100 text-sky-700']"
+              >
+                {{ roleLabel }}
+              </span>
             </div>
           </div>
         </div>
@@ -218,108 +244,134 @@
   </div>
 </template>
 
-<script>
+<script setup>
 import { ref, computed, onMounted, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { adminStore } from '../../stores/adminStore'
 import axios from 'axios'
 
-export default {
-  name: 'AdminLayout',
-  setup() {
-    const route = useRoute()
-    const router = useRouter()
-    const sidebarOpen = ref(false)
+const SIDEBAR_STORAGE_KEY = 'admin_sidebar_visible'
+const route = useRoute()
+const router = useRouter()
+const sidebarOpen = ref(false)
+const sidebarPinnedOpen = ref(true)
 
-    const toggleSidebar = () => {
-      sidebarOpen.value = !sidebarOpen.value
-    }
+const toggleSidebar = () => {
+  sidebarOpen.value = !sidebarOpen.value
+}
 
-    const userInitials = computed(() => {
-      if (!adminStore.user?.name) return 'A'
-      const names = adminStore.user.name.split(' ')
-      if (names.length >= 2) {
-        return (names[0][0] + names[1][0]).toUpperCase()
-      }
-      return names[0][0].toUpperCase()
-    })
+const hideSidebar = () => {
+  sidebarPinnedOpen.value = false
+  try { localStorage.setItem(SIDEBAR_STORAGE_KEY, '0') } catch (_) {}
+}
 
-    const pageTitle = computed(() => {
-      const titles = {
-        '/admin/dashboard': 'Dashboard',
-        '/admin/sales': 'Shitjet',
-        '/admin/clients': 'Klientët',
-        '/admin/products': 'Produktet',
-        '/admin/stock': 'Stoku',
-        '/admin/supplier-invoices': 'Faturat e Furnitorëve',
-        '/admin/trash': 'Historia e Fshirjeve',
-        '/admin/users': 'Adminat'
-      }
-      return titles[route.path] || 'Admin Panel'
-    })
+const showSidebar = () => {
+  sidebarPinnedOpen.value = true
+  try { localStorage.setItem(SIDEBAR_STORAGE_KEY, '1') } catch (_) {}
+}
 
-    const logout = () => {
-      adminStore.clearUser()
-      localStorage.removeItem('admin_token')
-      delete axios.defaults.headers.common['Authorization']
-      router.push('/admin/login')
-    }
+const loadSidebarPreference = () => {
+  try {
+    const v = localStorage.getItem(SIDEBAR_STORAGE_KEY)
+    if (v === '0') sidebarPinnedOpen.value = false
+    else if (v === '1') sidebarPinnedOpen.value = true
+  } catch (_) {}
+}
 
-    // Watch for route changes and scroll to top
-    watch(() => route.path, () => {
-      // Scroll to top when route changes
-      setTimeout(() => {
-        window.scrollTo({ top: 0, behavior: 'smooth' })
-        // Also scroll main content area if it exists
-        const mainContent = document.querySelector('main.flex-1')
-        if (mainContent) {
-          mainContent.scrollTo({ top: 0, behavior: 'smooth' })
-        }
-      }, 100)
-    })
-    
-    onMounted(() => {
-      // Scroll to top when layout mounts
-      window.scrollTo({ top: 0, behavior: 'smooth' })
-      
-      adminStore.loadUser()
-      
-      // Load user from API if not in store
-      if (!adminStore.user) {
-        const token = localStorage.getItem('admin_token')
-        if (token) {
-          axios.defaults.headers.common['Authorization'] = `Bearer ${token}`
-          axios.get('/api/admin/check')
-            .then(res => {
-              if (res.data.success) {
-                adminStore.setUser(res.data.data.user)
-              }
-            })
-            .catch(() => {
-              logout()
-            })
-        }
-      }
-    })
+const userInitials = computed(() => {
+  const name = adminStore.user?.name || ''
+  const email = adminStore.user?.email || ''
+  if (name && name.trim()) {
+    const parts = name.trim().split(/\s+/)
+    if (parts.length >= 2) return (parts[0][0] + parts[1][0]).toUpperCase()
+    if (parts[0].length >= 2) return parts[0].slice(0, 2).toUpperCase()
+    return parts[0][0].toUpperCase()
+  }
+  if (email) {
+    const local = email.split('@')[0] || ''
+    if (local.length >= 2) return local.slice(0, 2).toUpperCase()
+    return local[0].toUpperCase()
+  }
+  return 'A'
+})
 
-    return {
-      adminStore,
-      sidebarOpen,
-      toggleSidebar,
-      userInitials,
-      pageTitle,
-      logout
+const displayName = computed(() => {
+  const name = adminStore.user?.name || ''
+  const email = adminStore.user?.email || ''
+  if (name && name.trim()) return name.trim()
+  return email || 'Administrator'
+})
+
+const roleLabel = computed(() => {
+  return adminStore.isAdmin ? 'Administrator' : 'Menaxher porosish'
+})
+
+const pageTitle = computed(() => {
+  const titles = {
+    '/admin/dashboard': 'Dashboard',
+    '/admin/sales': 'Shitjet',
+    '/admin/clients': 'Klientët',
+    '/admin/products': 'Produktet',
+    '/admin/stock': 'Stoku',
+    '/admin/supplier-invoices': 'Faturat e Furnitorëve',
+    '/admin/trash': 'Historia e Fshirjeve',
+    '/admin/users': 'Adminat'
+  }
+  return titles[route.path] || 'Admin Panel'
+})
+
+const logout = () => {
+  adminStore.clearUser()
+  localStorage.removeItem('admin_token')
+  delete axios.defaults.headers.common['Authorization']
+  router.push('/admin/login')
+}
+
+watch(() => route.path, () => {
+  setTimeout(() => {
+    window.scrollTo({ top: 0, behavior: 'smooth' })
+    const mainContent = document.querySelector('main.flex-1')
+    if (mainContent) mainContent.scrollTo({ top: 0, behavior: 'smooth' })
+  }, 100)
+})
+
+onMounted(() => {
+  loadSidebarPreference()
+  window.scrollTo({ top: 0, behavior: 'smooth' })
+  adminStore.loadUser()
+  if (!adminStore.user) {
+    const token = localStorage.getItem('admin_token')
+    if (token) {
+      axios.defaults.headers.common['Authorization'] = `Bearer ${token}`
+      axios.get('/api/admin/check')
+        .then(res => {
+          if (res.data.success) adminStore.setUser(res.data.data.user)
+        })
+        .catch(() => logout())
     }
   }
-}
+})
 </script>
 
 <style scoped>
 .nav-item {
-  @apply flex items-center gap-3 px-4 py-3 text-sm font-medium text-gray-300 rounded-lg transition-all duration-200 hover:bg-gray-700/50 hover:text-white;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.625rem 1rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: rgba(255, 255, 255, 0.75);
+  border-radius: 0.5rem;
+  transition: background-color 0.2s, color 0.2s;
 }
-
+.nav-item:hover {
+  background-color: rgba(255, 255, 255, 0.08);
+  color: white;
+}
 .nav-item-active {
-  @apply bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-lg;
+  background-color: var(--color-primary-600, #0d9488);
+  color: white;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
 }
 </style>

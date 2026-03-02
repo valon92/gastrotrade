@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Product;
 use App\Models\Category;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 
@@ -30,7 +31,7 @@ class ProductController extends Controller
             $query->where('is_featured', true);
         }
 
-        $products = $query->orderBy('sort_order', 'asc')->orderBy('created_at', 'desc')->get();
+        $products = $query->orderBy('name', 'asc')->get();
 
         return response()->json([
             'success' => true,
@@ -110,8 +111,7 @@ class ProductController extends Controller
         }
 
         $products = $query
-            ->orderBy('sort_order', 'asc')
-            ->orderBy('created_at', 'desc')
+            ->orderBy('name', 'asc')
             ->get();
 
         return response()->json([
@@ -137,7 +137,8 @@ class ProductController extends Controller
             'sort_order' => ['nullable', 'integer', 'min:0'],
             'sold_by_package' => ['nullable', 'boolean'],
             'pieces_per_package' => ['nullable', 'integer', 'min:1'],
-            'image' => ['nullable', 'image', 'max:4096'],
+            'image' => ['nullable', 'file', 'mimes:jpeg,jpg,png,gif,webp', 'mimetypes:image/jpeg,image/png,image/gif,image/webp', 'max:8192'],
+            'image_path' => ['nullable', 'string', 'max:500'],
         ]);
 
         $data = $validated;
@@ -155,6 +156,8 @@ class ProductController extends Controller
 
         if ($request->hasFile('image')) {
             $data['image_path'] = $this->storeImage($request->file('image'));
+        } elseif ($request->filled('image_path') && str_starts_with($request->input('image_path'), '/images/')) {
+            $data['image_path'] = $request->input('image_path');
         }
 
         $product = Product::create($data);
@@ -170,9 +173,15 @@ class ProductController extends Controller
      */
     public function update(Request $request, Product $product)
     {
-        // Normalize empty price so validation accepts it
+        // Normalize empty inputs so validation accepts them (FormData sends strings)
         if ($request->has('price') && $request->input('price') === '') {
             $request->merge(['price' => null]);
+        }
+        if ($request->has('sort_order') && $request->input('sort_order') === '') {
+            $request->merge(['sort_order' => null]);
+        }
+        if ($request->has('pieces_per_package') && $request->input('pieces_per_package') === '') {
+            $request->merge(['pieces_per_package' => null]);
         }
 
         $validated = $request->validate([
@@ -188,7 +197,8 @@ class ProductController extends Controller
             'sort_order' => ['nullable', 'integer', 'min:0'],
             'sold_by_package' => ['nullable', 'boolean'],
             'pieces_per_package' => ['nullable', 'integer', 'min:1'],
-            'image' => ['nullable', 'image', 'max:4096'],
+            'image' => ['nullable', 'file', 'mimes:jpeg,jpg,png,gif,webp', 'mimetypes:image/jpeg,image/png,image/gif,image/webp', 'max:8192'],
+            'image_path' => ['nullable', 'string', 'max:500'],
         ]);
 
         $data = $validated;
@@ -220,6 +230,8 @@ class ProductController extends Controller
         if ($request->hasFile('image')) {
             $this->deleteImage($product->image_path);
             $data['image_path'] = $this->storeImage($request->file('image'));
+        } elseif ($request->filled('image_path') && str_starts_with($request->input('image_path'), '/images/')) {
+            $data['image_path'] = $request->input('image_path');
         }
 
         $product->update($data);
@@ -276,5 +288,37 @@ class ProductController extends Controller
         }
 
         return $slug;
+    }
+
+    /**
+     * Admin: list image paths from public/images (foto nga projekti)
+     */
+    public function listProjectImages()
+    {
+        $basePath = public_path('images');
+        $paths = [];
+        $extensions = ['jpg', 'jpeg', 'png', 'gif', 'webp'];
+        if (!File::isDirectory($basePath)) {
+            return response()->json(['success' => true, 'data' => []]);
+        }
+        $baseReal = realpath($basePath);
+        $iterator = new \RecursiveIteratorIterator(
+            new \RecursiveDirectoryIterator($basePath, \RecursiveDirectoryIterator::SKIP_DOTS)
+        );
+        foreach ($iterator as $file) {
+            if (!$file->isFile()) {
+                continue;
+            }
+            $ext = strtolower($file->getExtension());
+            if (!in_array($ext, $extensions, true)) {
+                continue;
+            }
+            $full = $file->getRealPath();
+            $relative = substr($full, strlen($baseReal) + 1);
+            $relative = str_replace(DIRECTORY_SEPARATOR, '/', $relative);
+            $paths[] = '/images/' . $relative;
+        }
+        sort($paths);
+        return response()->json(['success' => true, 'data' => $paths]);
     }
 }

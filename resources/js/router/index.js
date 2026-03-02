@@ -7,6 +7,7 @@ import About from '../views/About.vue'
 import Contact from '../views/Contact.vue'
 import Cart from '../views/Cart.vue'
 import Kycu from '../views/Kycu.vue'
+import Regjistrohu from '../views/Regjistrohu.vue'
 import OrderConfirmation from '../views/OrderConfirmation.vue'
 import AdminClients from '../views/admin/AdminClients.vue'
 import AdminClientPrices from '../views/admin/AdminClientPrices.vue'
@@ -56,6 +57,11 @@ const routes = [
     path: '/kycu',
     name: 'Kycu',
     component: Kycu
+  },
+  {
+    path: '/regjistrohu',
+    name: 'Regjistrohu',
+    component: Regjistrohu
   },
   {
     path: '/konfirmo-porosine',

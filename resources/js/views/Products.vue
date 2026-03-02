@@ -20,7 +20,7 @@
           to="/kycu"
           class="inline-flex items-center gap-2 mt-6 px-5 py-2.5 bg-white text-primary-700 font-semibold rounded-xl hover:bg-primary-50 shadow-lg hover:shadow-xl transition-all duration-200"
         >
-          Kyçu – Të dhënat e biznesit për çmimet tuaja
+          Kyçu për çmimet tuaja
         </router-link>
         <p class="mt-3 text-primary-200 text-sm">
           Çmimet vendosen nga GastroTrade për klientët e regjistruar.

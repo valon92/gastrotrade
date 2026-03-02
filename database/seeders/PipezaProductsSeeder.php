@@ -35,7 +35,7 @@ class PipezaProductsSeeder extends Seeder
                 'description' => 'Pipëza transparente të qarta 100Cp për pije të ndryshme. Materiali i pastër dhe i sigurt për përdorim. Të qëndrueshme dhe të lehta. Ideal për kafetë, restorantet, evente dhe përdorim shtëpiak. Transparenca lejon shikimin e pijes dhe krijon një pamje elegante. Përshtatet për pije të nxehta dhe të ftohta.
 
 **Paketimi:** Shitet vetëm në komplete. 1 kompleti = 20 copa.',
-                'image_path' => '/images/IMG_6819.jpeg',
+                'image_path' => '/images/Pipat/Pipa-100cp/Color/foto1.jpg',
                 'is_featured' => false,
                 'sort_order' => 1,
                 'sold_by_package' => true,
@@ -48,7 +48,7 @@ class PipezaProductsSeeder extends Seeder
                 'description' => 'Pipëza plastike të zeza 100Cp të cilësisë së lartë për pije të ndryshme. Të qëndrueshme, të sigurta për përdorim dhe të lehta. Përshtaten për pije të nxehta dhe të ftohta. Ideal për kafetë, restorantet, evente dhe përdorim shtëpiak. Dizajni elegant i zi i përshtatet me çdo ambient.
 
 **Paketimi:** Shitet vetëm në komplete. 1 kompleti = 20 copa.',
-                'image_path' => '/images/IMG_6822.jpeg',
+                'image_path' => '/images/Pipat/Pipa-100cp/Black/foto1.jpg',
                 'is_featured' => false,
                 'sort_order' => 2,
                 'sold_by_package' => true,
@@ -61,7 +61,7 @@ class PipezaProductsSeeder extends Seeder
                 'description' => 'Pipëza me ngjyra të ndryshme 100Cp për pije. Dizajn i bukur dhe i gjallë që i përshtatet çdo ambienti. Të qëndrueshme, të sigurta për përdorim dhe të lehta. Ideal për evente, festa, restorantet dhe kafetë. Ngjyrat e ndryshme lejojnë organizimin dhe dallimin e pijeve të ndryshme. Përshtatet për pije të nxehta dhe të ftohta.
 
 **Paketimi:** Shitet vetëm në komplete. 1 kompleti = 20 copa.',
-                'image_path' => '/images/IMG_6816.jpeg',
+                'image_path' => '/images/Pipat/Pipa-100cp/Color/foto1.jpg',
                 'is_featured' => false,
                 'sort_order' => 3,
                 'sold_by_package' => true,

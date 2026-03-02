@@ -20,7 +20,7 @@
             to="/kycu" 
             class="inline-block bg-primary-500/90 text-white font-semibold py-3 px-8 rounded-lg hover:bg-primary-400 border-2 border-white/50 transition-colors duration-200 text-lg"
           >
-            Kyçu – Të dhënat e biznesit
+            Kyçu
           </router-link>
           <router-link 
             to="/shporta" 
@@ -30,7 +30,7 @@
           </router-link>
         </div>
         <p class="mt-4 text-primary-100 text-sm">
-          Keni çmime të caktuara? <router-link to="/kycu" class="underline hover:no-underline">Kyçuni</router-link> me të dhënat e biznesit për të parë çmimet tuaja.
+          Keni llogari? <router-link to="/kycu" class="underline hover:no-underline">Kyçuni</router-link> me email dhe fjalëkalim për të parë çmimet tuaja.
         </p>
         <p class="mt-2 text-primary-200/90 text-xs max-w-xl mx-auto">
           Çmimet për klientët e regjistruar vendosen nga kompania GastroTrade, jo nga klientët.

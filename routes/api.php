@@ -3,6 +3,7 @@
 use App\Http\Controllers\Api\ProductController;
 use App\Http\Controllers\Api\ClientController;
 use App\Http\Controllers\Api\ClientPriceController;
+use App\Http\Controllers\Api\ClientAuthController;
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\OrderController;
 use App\Http\Controllers\Api\SupplierController;
@@ -19,27 +20,25 @@ Route::get('/user', function (Request $request) {
     return $request->user();
 })->middleware('auth:sanctum');
 
-// Product routes
+// Product routes (public)
 Route::get('/products', [ProductController::class, 'index']);
 Route::get('/products/featured', [ProductController::class, 'featured']);
 Route::get('/products/{slug}', [ProductController::class, 'show']);
 Route::get('/categories', [ProductController::class, 'categories']);
 
-// Client routes
-Route::get('/clients', [ClientController::class, 'index']);
-Route::post('/clients', [ClientController::class, 'store']);
-Route::get('/clients/{id}', [ClientController::class, 'show']);
-Route::put('/clients/{id}', [ClientController::class, 'update']);
-Route::delete('/clients/{id}', [ClientController::class, 'destroy']);
-Route::post('/clients/find-by-phone', [ClientController::class, 'findByPhone']);
+// Client auth: register (self-registration), then admin sets prices; client logs in by identifying
+Route::post('/client/register', [ClientAuthController::class, 'register'])->middleware('throttle:5,1');
+Route::post('/client/login', [ClientAuthController::class, 'login'])->middleware('throttle:10,1');
+Route::get('/client/me', [ClientAuthController::class, 'me'])->middleware('auth:sanctum');
+Route::post('/client/logout', [ClientAuthController::class, 'logout'])->middleware('auth:sanctum');
 
 // Auth routes
 Route::post('/admin/login', [AuthController::class, 'login']);
 Route::get('/admin/check', [AuthController::class, 'check'])->middleware('auth:sanctum');
 Route::post('/admin/logout', [AuthController::class, 'logout'])->middleware('auth:sanctum');
 
-// Client Price routes (protected)
-Route::middleware('auth:sanctum')->group(function () {
+// Admin-only routes (Sanctum + must be User admin; client tokens cannot access)
+Route::middleware(['auth:sanctum', 'admin.user'])->group(function () {
     Route::get('/client-prices', [ClientPriceController::class, 'index']);
     Route::post('/client-prices', [ClientPriceController::class, 'store']);
     Route::get('/client-prices/{id}', [ClientPriceController::class, 'show']);
@@ -56,6 +55,7 @@ Route::middleware('auth:sanctum')->group(function () {
 
     // Admin product routes
     Route::get('/admin/products', [ProductController::class, 'adminIndex']);
+    Route::get('/admin/project-images', [ProductController::class, 'listProjectImages']);
     Route::post('/admin/products', [ProductController::class, 'store']);
     Route::post('/admin/products/{product}', [ProductController::class, 'update']); // fallback for clients without PUT support
     Route::put('/admin/products/{product}', [ProductController::class, 'update']);
@@ -103,10 +103,10 @@ Route::middleware('auth:sanctum')->group(function () {
     });
 });
 
-// Public client find by phone (for cart identification - legacy)
-Route::post('/clients/find-by-phone', [ClientController::class, 'findByPhone']);
-// Public client find by business & fiscal number (for cart identification)
-Route::post('/clients/find-by-business-and-fiscal', [ClientController::class, 'findByBusinessAndFiscal']);
+// Public client find by phone (for cart identification - legacy); throttle to protect privacy
+Route::post('/clients/find-by-phone', [ClientController::class, 'findByPhone'])->middleware('throttle:30,1');
+// Public client find by business & fiscal number (for cart); requires password if client has one
+Route::post('/clients/find-by-business-and-fiscal', [ClientController::class, 'findByBusinessAndFiscal'])->middleware('throttle:30,1');
 
 // Order routes
 Route::post('/orders', [OrderController::class, 'store']);

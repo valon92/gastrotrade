@@ -314,18 +314,24 @@ class ClientController extends Controller
         if (!$client) {
             return response()->json([
                 'success' => false,
-                'message' => 'Client not found'
+                'message' => 'Klienti nuk u gjet. Regjistrohuni fillimisht në platformë.'
             ], 404);
         }
 
-        if (filled($client->password)) {
-            $password = $request->input('password', '');
-            if (!Hash::check($password, $client->password)) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Fjalëkalimi është i gabuar.'
-                ], 401);
-            }
+        // Vetëm klientët e regjistruar (me fjalëkalim) mund të identifikohen
+        if (empty($client->password)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Ky klient nuk është ende i regjistruar me fjalëkalim. Regjistrohuni ose kërkojini administratorit të vendosë fjalëkalimin.'
+            ], 401);
+        }
+
+        $password = $request->input('password', '');
+        if (!Hash::check($password, $client->password)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Fjalëkalimi është i gabuar.'
+            ], 401);
         }
 
         return response()->json([

@@ -14,6 +14,7 @@ return Application::configure(basePath: dirname(__DIR__))
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->alias([
             'admin.role' => \App\Http\Middleware\CheckAdminRole::class,
+            'admin.user' => \App\Http\Middleware\EnsureAdminUser::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {

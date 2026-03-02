@@ -52,7 +52,7 @@ class ProductSeeder extends Seeder
 **Paketimi:** Shitet vetëm në komplete. 1 kompleti = 20 copa.
 
 Të gjitha llojet janë të sigurta për kontakt me ushqim dhe të lehta për transport.',
-                'image_path' => '/images/IMG_6822.jpeg',
+                'image_path' => '/images/IMG_6821.jpeg',
                 'is_featured' => true,
                 'sold_by_package' => true,
                 'pieces_per_package' => 20,
@@ -72,10 +72,18 @@ Të gjitha llojet janë të sigurta për kontakt me ushqim dhe të lehta për tr
                 'description' => 'Letër kuzhine NUSH me 2 shtresa, 100% celulozë të pastër. Absorbueshme, të buta dhe të qëndrueshme. Ideal për pastrimin e kuzhinës, tavolinave dhe sipërfaqeve të tjera. Materiali i pastër siguron siguri dhe higjienë të plotë. Përshtatet për përdorim profesional dhe shtëpiak.
 
 **Paketimi:** Shitet vetëm në komplete. 1 kompleti = 12 copa.',
-                'image_path' => '/images/IMG_6813.jpeg',
+                'image_path' => '/images/Pallomat/XL/foto1.png',
                 'is_featured' => true,
                 'sold_by_package' => true,
                 'pieces_per_package' => 12,
+            ],
+            [
+                'category_id' => $pecetaCategory->id,
+                'name' => 'Letër Salvete',
+                'slug' => 'leter-salvete',
+                'description' => 'Salvete letre të cilësisë së lartë për tavolina dhe nevoja të ndryshme. Të buta, absorbueshme dhe të sigurta për përdorim. Ideal për restorante, kafetë, evente dhe përdorim shtëpiak.',
+                'image_path' => '/images/Pallomat/Salvete/foto1.jpg',
+                'is_featured' => true,
             ],
             [
                 'category_id' => $laguraCategory->id,
@@ -294,7 +302,7 @@ Të gjitha llojet janë të sigurta për kontakt me ushqim dhe të lehta për tr
                 'description' => 'Gota letre profesionale 2.5oz për kafe dhe pije të ngrohta. Materiali me cilësi të lartë mban temperaturën dhe siguron përdorim të sigurt në kafene, restorante dhe evente. Ideal për përdorim profesional dhe shtëpiak. Të sigurta për kontakt me ushqim dhe rezistente ndaj rrjedhjeve.
 
 **Paketimi:** Shitet vetëm në komplete. 1 kompleti = 40 copa.',
-                'image_path' => '/images/IMG_6821.jpeg',
+                'image_path' => '/images/IMG_6822.jpeg',
                 'is_featured' => true,
                 'sort_order' => 0,
                 'sold_by_package' => true,
@@ -307,7 +315,7 @@ Të gjitha llojet janë të sigurta për kontakt me ushqim dhe të lehta për tr
                 'description' => 'Gota letre profesionale 3oz për kafe dhe pije të ngrohta. Materiali me cilësi të lartë mban temperaturën dhe siguron përdorim të sigurt në kafene, restorante dhe evente. Ideal për përdorim profesional dhe shtëpiak. Të sigurta për kontakt me ushqim dhe rezistente ndaj rrjedhjeve.
 
 **Paketimi:** Shitet vetëm në komplete. 1 kompleti = 20 copa.',
-                'image_path' => '/images/IMG_6821.jpeg',
+                'image_path' => '/images/IMG_6823.jpeg',
                 'is_featured' => true,
                 'sort_order' => 0,
                 'sold_by_package' => true,
@@ -320,7 +328,7 @@ Të gjitha llojet janë të sigurta për kontakt me ushqim dhe të lehta për tr
                 'description' => 'Gota letre profesionale 4oz për kafe dhe pije të ngrohta. Materiali me cilësi të lartë mban temperaturën dhe siguron përdorim të sigurt në kafene, restorante dhe evente. Ideal për përdorim profesional dhe shtëpiak. Të sigurta për kontakt me ushqim dhe rezistente ndaj rrjedhjeve.
 
 **Paketimi:** Shitet vetëm në komplete. 1 kompleti = 20 copa.',
-                'image_path' => '/images/IMG_6821.jpeg',
+                'image_path' => '/images/IMG_6824.jpeg',
                 'is_featured' => true,
                 'sort_order' => 0,
                 'sold_by_package' => true,
@@ -333,7 +341,7 @@ Të gjitha llojet janë të sigurta për kontakt me ushqim dhe të lehta për tr
                 'description' => 'Gota letre profesionale 7oz për kafe dhe pije të ngrohta. Materiali me cilësi të lartë mban temperaturën dhe siguron përdorim të sigurt në kafene, restorante dhe evente. Ideal për përdorim profesional dhe shtëpiak. Të sigurta për kontakt me ushqim dhe rezistente ndaj rrjedhjeve.
 
 **Paketimi:** Shitet vetëm në komplete. 1 kompleti = 20 copa.',
-                'image_path' => '/images/IMG_6821.jpeg',
+                'image_path' => '/images/IMG_6825.jpeg',
                 'is_featured' => true,
                 'sort_order' => 0,
                 'sold_by_package' => true,
@@ -341,10 +349,18 @@ Të gjitha llojet janë të sigurta për kontakt me ushqim dhe të lehta për tr
             ],
             [
                 'category_id' => $tjeraCategory->id,
+                'name' => 'Gota Plastike',
+                'slug' => 'gota-plastike',
+                'description' => 'Gota plastike të cilësisë së lartë për pije të nxehta dhe të ftohta. Të qëndrueshme, të sigurta për përdorim dhe të lehta. Ideal për kafetë, restorantet, evente dhe përdorim shtëpiak.',
+                'image_path' => '/images/Gota Plastike/foto1.jpg',
+                'is_featured' => true,
+            ],
+            [
+                'category_id' => $tjeraCategory->id,
                 'name' => 'Produkt Shtesë 1',
                 'slug' => 'produkt-shtese-1',
                 'description' => 'Produkt shtesë i cilësisë së lartë për kuzhinë. Materiali i sigurt dhe i qëndrueshëm siguron përdorim të besueshëm. Ideal për përdorim profesional dhe shtëpiak. Dizajni praktik dhe funksional. Përshtatet për nevojat e ndryshme të kuzhinës dhe siguron cilësi të lartë në përdorim.',
-                'image_path' => '/images/IMG_6823.jpeg',
+                'image_path' => '/images/IMG_6821.jpeg',
                 'is_featured' => false,
             ],
             [
@@ -352,7 +368,7 @@ Të gjitha llojet janë të sigurta për kontakt me ushqim dhe të lehta për tr
                 'name' => 'Produkt Shtesë 2',
                 'slug' => 'produkt-shtese-2',
                 'description' => 'Produkt shtesë profesional për kuzhinë. Cilësi e lartë dhe qëndrueshmëri e provuar. Materiali i sigurt për kontakt me ushqim. Ideal për restorantet, kafetë dhe përdorim profesional. Dizajni modern dhe praktik. Siguron efikasitet dhe lehtësi në përdorim për çdo nevojë të kuzhinës.',
-                'image_path' => '/images/IMG_6824.jpeg',
+                'image_path' => '/images/IMG_6821.jpeg',
                 'is_featured' => false,
             ],
             [
@@ -360,7 +376,7 @@ Të gjitha llojet janë të sigurta për kontakt me ushqim dhe të lehta për tr
                 'name' => 'Produkt Shtesë 3',
                 'slug' => 'produkt-shtese-3',
                 'description' => 'Produkt shtesë i cilësisë së lartë për kuzhinë dhe biznes. Materiali i sigurt dhe i qëndrueshëm siguron përdorim të besueshëm. Ideal për përdorim profesional në restorante, kafetë, markete dhe përdorim shtëpiak. Dizajni praktik dhe funksional. Përshtatet për nevojat e ndryshme të kuzhinës dhe siguron cilësi të lartë në përdorim.',
-                'image_path' => '/images/IMG_6825.jpeg',
+                'image_path' => '/images/IMG_6821.jpeg',
                 'is_featured' => false,
             ],
         ];

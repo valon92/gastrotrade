@@ -19,134 +19,42 @@
           </router-link>
         </div>
 
-        <!-- Të dhënat e biznesit për klientët e regjistruar (edhe kur shporta është e zbrazët) -->
+        <!-- Identifikimi: kur i kyqur nuk shfaqet ftoja për identifikim -->
         <div class="mt-10 bg-white rounded-xl shadow-lg p-6 border border-gray-200">
           <h3 class="text-xl font-semibold text-gray-900 mb-2">
-            Të dhënat e biznesit
+            Identifikimi
           </h3>
-          <p class="text-sm text-gray-600 mb-2">
-            Klientët e regjistruar me çmime të caktuara: plotësoni më poshtë që të identifikoheni. Kur shtoni produkte, do të shfaqen çmimet tuaja.
-          </p>
-          <p class="text-xs text-gray-500 mb-4">
-            Çmimet vendosen nga kompania GastroTrade, jo nga klientët.
-          </p>
-          <div v-if="!hasClientPrices" class="text-sm text-gray-600 bg-blue-50 border border-blue-100 rounded-lg p-3 mb-6">
-            <p class="mb-3">
-              <strong>Klient i ri?</strong> Nëse dëshironi çmime të personalizuara për biznesin tuaj, fillimisht kontaktoni menaxhmentin e GastroTrade. Pas kontaktit do t'ju vendosen çmimet përkatëse dhe do të shfaqen këtu kur të identifikoheni.
+          <template v-if="!cartStore.client">
+            <p class="text-sm text-gray-600 mb-4">
+              Për të parë çmimet tuaja në shportë, identifikohu me <strong>email</strong> dhe <strong>fjalëkalim</strong> në faqen Kyçu.
             </p>
-            <router-link
-              to="/kontakt"
-              class="inline-flex items-center gap-2 px-4 py-2 bg-primary-600 text-white text-sm font-medium rounded-lg hover:bg-primary-700 transition-colors"
-            >
-              Kontakto menaxhmentin
-            </router-link>
-          </div>
-
-          <div v-if="hasClientPrices" class="mb-6 p-4 bg-green-50 border border-green-200 rounded-lg flex flex-wrap items-center justify-between gap-3">
+            <div class="flex flex-wrap gap-3">
+              <router-link
+                to="/kycu"
+                class="inline-flex items-center gap-2 px-4 py-2 bg-primary-600 text-white text-sm font-medium rounded-lg hover:bg-primary-700 transition-colors"
+              >
+                Kyçu
+              </router-link>
+              <router-link
+                to="/regjistrohu"
+                class="inline-flex items-center gap-2 px-4 py-2 border border-gray-300 text-gray-700 text-sm font-medium rounded-lg hover:bg-gray-50 transition-colors"
+              >
+                Regjistrohu
+              </router-link>
+            </div>
+          </template>
+          <div v-else class="p-4 bg-green-50 border border-green-200 rounded-lg flex flex-wrap items-center justify-between gap-3">
             <p class="text-sm text-green-800">
-              ✅ Klienti i identifikuar: <strong>{{ cartStore.client.name }}</strong>. Kur shtoni produkte në shportë, do të aplikohen çmimet tuaja.
+              ✅ I identifikuar: <strong>{{ cartStore.client.name || cartStore.client.store_name || cartStore.client.email }}</strong>
             </p>
             <button
               type="button"
               @click="logoutClient"
               class="shrink-0 px-3 py-1.5 text-sm font-medium text-green-800 bg-white border border-green-300 rounded-lg hover:bg-green-100 transition-colors"
             >
-              Dil nga llogaria
+              Dil
             </button>
           </div>
-          <div v-else-if="identifyingClient" class="mb-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
-            <p class="text-sm text-blue-800">🔍 Duke identifikuar klientin...</p>
-          </div>
-
-          <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div class="sm:col-span-2">
-              <label for="emptyCustomerName" class="block text-sm font-medium text-gray-700 mb-1">Emri i porositësit</label>
-              <input
-                id="emptyCustomerName"
-                type="text"
-                v-model="customerData.name"
-                @input="persistCustomerData"
-                placeholder="Emri juaj"
-                class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
-              />
-            </div>
-            <div>
-              <label for="emptyStoreName" class="block text-sm font-medium text-gray-700 mb-1">Emri i biznisit <span class="text-red-500">*</span></label>
-              <input
-                id="emptyStoreName"
-                type="text"
-                v-model="customerData.storeName"
-                placeholder="Emri i biznesit"
-                class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
-              />
-            </div>
-            <div>
-              <label for="emptyFiscalNumber" class="block text-sm font-medium text-gray-700 mb-1">Numri fiskal <span class="text-red-500">*</span></label>
-              <input
-                id="emptyFiscalNumber"
-                type="text"
-                v-model="customerData.fiscalNumber"
-                placeholder="Nr. fiskal"
-                class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 uppercase tracking-wide"
-              />
-            </div>
-            <div>
-              <label for="emptyCity" class="block text-sm font-medium text-gray-700 mb-1">Qyteti <span class="text-red-500">*</span></label>
-              <input
-                id="emptyCity"
-                type="text"
-                v-model="customerData.city"
-                @input="persistCustomerData"
-                placeholder="Qyteti"
-                class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
-              />
-            </div>
-            <div>
-              <label for="emptyPhone" class="block text-sm font-medium text-gray-700 mb-1">Telefon / Viber</label>
-              <input
-                id="emptyPhone"
-                type="tel"
-                v-model="customerData.phone"
-                @input="persistCustomerData"
-                placeholder="+383 XX XXX XXX"
-                class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
-              />
-            </div>
-            <div class="sm:col-span-2">
-              <label for="emptyPassword" class="block text-sm font-medium text-gray-700 mb-1">Fjalëkalimi</label>
-              <div class="relative">
-                <input
-                  id="emptyPassword"
-                  :type="showPassword ? 'text' : 'password'"
-                  v-model="customerData.password"
-                  @input="scheduleClientIdentification"
-                  placeholder="Vendosni fjalëkalimin (nëse ju është caktuar nga menaxhmenti)"
-                  autocomplete="current-password"
-                  class="w-full px-3 py-2 pr-10 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
-                />
-                <button
-                  type="button"
-                  @click="showPassword = !showPassword"
-                  class="absolute right-2 top-1/2 -translate-y-1/2 p-1.5 text-gray-500 hover:text-gray-700 rounded focus:outline-none focus:ring-2 focus:ring-primary-500/30"
-                  :aria-label="showPassword ? 'Fshih fjalëkalimin' : 'Shfaq fjalëkalimin'"
-                >
-                  <svg v-if="showPassword" xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21" />
-                  </svg>
-                  <svg v-else xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-                  </svg>
-                </button>
-              </div>
-              <p class="mt-1 text-xs text-gray-500">
-                Për siguri dhe privatësi. Nëse menaxhmenti ju ka caktuar fjalëkalim, vendoseni këtu.
-              </p>
-            </div>
-          </div>
-          <p class="mt-4 text-xs text-gray-500">
-            Pas plotësimit të emrit të biznisit dhe numrit fiskal, identifikimi bëhet automatikisht nëse jeni klient i regjistruar.
-          </p>
         </div>
       </div>
 
@@ -291,31 +199,34 @@
               Përmbledhje e Porosisë
             </h2>
 
-            <!-- Info: fill data first to get prices -->
-            <div class="mb-4 p-3 bg-amber-50 border border-amber-200 rounded-lg">
+            <!-- Shfaq vetëm kur klienti NUK është i kyqur -->
+            <div v-if="!cartStore.client" class="mb-4 p-3 bg-amber-50 border border-amber-200 rounded-lg">
               <p class="text-sm text-amber-900">
-                <strong>Para se të ruani ose dërgoni porosinë</strong>, plotësoni të dhënat e porositësit më poshtë. Nëse jeni klient i regjistruar (me çmime të caktuara), pas plotësimit të <strong>Emrit të Biznisit</strong> dhe <strong>Numrit Fiskal</strong> do të shfaqen automatikisht çmimet tuaja për këtë porosi.
+                <strong>Për të parë çmimet tuaja</strong>, identifikohu me <strong>email</strong> dhe <strong>fjalëkalim</strong> në faqen Kyçu.
               </p>
-              <p class="text-xs text-amber-800/80 mt-2">
-                Çmimet vendosen nga kompania GastroTrade, jo nga klientët.
+              <p class="text-xs text-amber-800/90 mt-2 pt-2 border-t border-amber-200/50">
+                Nuk keni llogari? Regjistrohuni vetëm me email dhe fjalëkalim.
               </p>
-              <template v-if="!hasClientPrices">
-                <p class="text-xs text-amber-800/90 mt-2 pt-2 border-t border-amber-200/50">
-                  <strong>Klient i ri?</strong> Nëse dëshironi çmime të personalizuara, kontaktoni menaxhmentin e GastroTrade; pas kontaktit do t'ju vendosen çmimet përkatëse.
-                </p>
+              <div class="flex flex-wrap gap-2 mt-2">
                 <router-link
-                  to="/kontakt"
-                  class="inline-flex items-center gap-2 mt-2 px-3 py-1.5 bg-amber-600 text-white text-xs font-medium rounded-md hover:bg-amber-700 transition-colors"
+                  to="/kycu"
+                  class="inline-flex items-center gap-2 px-3 py-1.5 bg-primary-600 text-white text-xs font-medium rounded-md hover:bg-primary-700 transition-colors"
                 >
-                  Kontakto menaxhmentin
+                  Kyçu
                 </router-link>
-              </template>
+                <router-link
+                  to="/regjistrohu"
+                  class="inline-flex items-center gap-2 px-3 py-1.5 bg-amber-600 text-white text-xs font-medium rounded-md hover:bg-amber-700 transition-colors"
+                >
+                  Regjistrohu
+                </router-link>
+              </div>
             </div>
             
             <!-- Client Identification Notice -->
             <div v-if="hasClientPrices" class="mb-4 p-3 bg-green-50 border border-green-200 rounded-lg flex flex-wrap items-center justify-between gap-3">
               <p class="text-sm text-green-800">
-                ✅ Klienti i identifikuar: <strong>{{ cartStore.client.name }}</strong><br>
+                ✅ I identifikuar: <strong>{{ cartStore.client.name || cartStore.client.store_name || cartStore.client.email }}</strong><br>
                 Çmimet e personalizuara janë të aplikuara
               </p>
               <button
@@ -362,58 +273,29 @@
               </div>
             </transition>
 
-            <!-- Customer Information Form - fill first so order is informed with correct prices -->
+            <!-- Të dhënat e klientit: vetëm informacion (plotësohen te Kyçu/Regjistrohu) -->
             <div class="mb-6 pb-6 border-b border-gray-200">
               <h3 class="text-lg font-semibold text-gray-900 mb-4">
                 Të Dhënat e Porositësit
               </h3>
-              <div class="space-y-3">
-                <div>
-                  <label for="customerName" class="block text-sm font-medium text-gray-700 mb-1">
-                    Emri i Porositësit <span class="text-red-500">*</span>
-                  </label>
-                  <input 
-                    type="text" 
-                    id="customerName"
-                    v-model="customerData.name"
-                    @input="persistCustomerData"
-                    required
-                    placeholder="Shkruani emrin tuaj"
-                    class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
-                  />
+              <div v-if="!cartStore.client" class="p-4 bg-gray-50 border border-gray-200 rounded-lg">
+                <p class="text-sm text-gray-600 mb-2">
+                  Të dhënat plotësohen kur identifikoheni me email dhe fjalëkalim.
+                </p>
+                <router-link to="/kycu" class="inline-flex items-center gap-2 px-3 py-2 bg-primary-600 text-white text-sm font-medium rounded-lg hover:bg-primary-700 transition-colors">
+                  Kyçu
+                </router-link>
+              </div>
+              <div v-else class="space-y-3">
+                <div class="p-4 bg-gray-50 border border-gray-200 rounded-lg space-y-2 text-sm">
+                  <p><span class="text-gray-500 font-medium">Emri:</span> {{ cartStore.client.name || cartStore.client.email || '–' }}</p>
+                  <p v-if="cartStore.client.store_name"><span class="text-gray-500 font-medium">Emri i biznesit:</span> {{ cartStore.client.store_name }}</p>
+                  <p v-if="cartStore.client.fiscal_number"><span class="text-gray-500 font-medium">Nr. fiskal:</span> {{ cartStore.client.fiscal_number }}</p>
+                  <p v-if="cartStore.client.city"><span class="text-gray-500 font-medium">Qyteti:</span> {{ cartStore.client.city }}</p>
+                  <p v-if="cartStore.client.phone || cartStore.client.viber"><span class="text-gray-500 font-medium">Telefon/Viber:</span> {{ cartStore.client.phone || cartStore.client.viber }}</p>
                 </div>
-                <div>
-                  <label for="storeName" class="block text-sm font-medium text-gray-700 mb-1">
-                    Emri i Biznisit <span class="text-red-500">*</span>
-                  </label>
-                  <input 
-                    type="text" 
-                    id="storeName"
-                    v-model="customerData.storeName"
-                    required
-                    placeholder="Shkruani emrin e biznisit"
-                    class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
-                  />
-                </div>
-                <div>
-                  <label for="fiscalNumber" class="block text-sm font-medium text-gray-700 mb-1">
-                    Numri Fiskal <span class="text-red-500">*</span>
-                  </label>
-                  <input 
-                    type="text" 
-                    id="fiscalNumber"
-                    v-model="customerData.fiscalNumber"
-                    required
-                    placeholder="Shkruani numrin fiskal të biznesit"
-                    class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 uppercase tracking-wide"
-                  />
-                  <p class="mt-1 text-xs text-gray-500">
-                    Numri fiskal duhet të përputhet me të dhënat e regjistruara nga administratori për të shfaqur çmimet e personalizuara.
-                  </p>
-                </div>
-                
-                <!-- Location Selection - Only show if client has multiple locations -->
-                <div v-if="cartStore.client && clientLocations.length > 1">
+                <!-- Zgjedhja e pikës/njësisë nëse ka më shumë se një -->
+                <div v-if="clientLocations.length > 1">
                   <label for="locationSelect" class="block text-sm font-medium text-gray-700 mb-1">
                     Zgjidhni Pikën/Njësinë <span class="text-red-500">*</span>
                   </label>
@@ -431,92 +313,19 @@
                       :value="location.id"
                     >
                       {{ location.unit_name }}
-                      <template v-if="location.street_number">
-                        - {{ location.street_number }}
-                      </template>
-                      <template v-if="location.notes">
-                        ({{ location.notes }})
-                      </template>
+                      <template v-if="location.street_number"> – {{ location.street_number }}</template>
+                      <template v-if="location.notes"> ({{ location.notes }})</template>
                     </option>
                   </select>
                   <p class="mt-1 text-xs text-gray-500">
-                    Kompania ka {{ clientLocations.length }} pika/njësi. Ju lutem zgjidhni pikën/njësinë për këtë porosi.
+                    Kompania ka {{ clientLocations.length }} pika/njësi. Zgjidhni pikën për këtë porosi.
                   </p>
                 </div>
-                <!-- Show single location info if only one location exists -->
-                <div v-else-if="cartStore.client && clientLocations.length === 1" class="mt-2 p-2 bg-gray-50 border border-gray-200 rounded-lg">
+                <div v-else-if="clientLocations.length === 1" class="p-2 bg-gray-50 border border-gray-200 rounded-lg">
                   <p class="text-xs text-gray-600">
                     📍 Pika/Njësia: <strong>{{ clientLocations[0].unit_name }}</strong>
-                    <template v-if="clientLocations[0].street_number">
-                      - {{ clientLocations[0].street_number }}
-                    </template>
-                    <template v-if="clientLocations[0].notes">
-                      ({{ clientLocations[0].notes }})
-                    </template>
-                  </p>
-                </div>
-                
-                <div>
-                  <label for="city" class="block text-sm font-medium text-gray-700 mb-1">
-                    Qyteti <span class="text-red-500">*</span>
-                  </label>
-                  <input 
-                    type="text" 
-                    id="city"
-                    v-model="customerData.city"
-                    @input="persistCustomerData"
-                    required
-                    placeholder="Shkruani qytetin"
-                    class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
-                  />
-                </div>
-                <div>
-                  <label for="phone" class="block text-sm font-medium text-gray-700 mb-1">
-                    Numri i Telefonit/Viber
-                  </label>
-                  <input 
-                    type="tel" 
-                    id="phone"
-                    v-model="customerData.phone"
-                    @input="persistCustomerData"
-                    placeholder="+383 XX XXX XXX ose 0XX XXX XXX"
-                    class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
-                  />
-                  <p class="mt-1 text-xs text-gray-500">
-                    Numri juaj për komunikim në Viber (opsional)
-                  </p>
-                </div>
-                <div>
-                  <label for="password" class="block text-sm font-medium text-gray-700 mb-1">
-                    Fjalëkalimi
-                  </label>
-                  <div class="relative">
-                    <input
-                      id="password"
-                      :type="showPassword ? 'text' : 'password'"
-                      v-model="customerData.password"
-                      @input="scheduleClientIdentification"
-                      placeholder="Vendosni fjalëkalimin (nëse ju është caktuar nga menaxhmenti)"
-                      autocomplete="current-password"
-                      class="w-full px-3 py-2 pr-10 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
-                    />
-                    <button
-                      type="button"
-                      @click="showPassword = !showPassword"
-                      class="absolute right-2 top-1/2 -translate-y-1/2 p-1.5 text-gray-500 hover:text-gray-700 rounded focus:outline-none focus:ring-2 focus:ring-primary-500/30"
-                      :aria-label="showPassword ? 'Fshih fjalëkalimin' : 'Shfaq fjalëkalimin'"
-                    >
-                      <svg v-if="showPassword" xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21" />
-                      </svg>
-                      <svg v-else xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-                      </svg>
-                    </button>
-                  </div>
-                  <p class="mt-1 text-xs text-gray-500">
-                    Për siguri dhe privatësi. Nëse menaxhmenti ju ka caktuar fjalëkalim, vendoseni këtu.
+                    <template v-if="clientLocations[0].street_number"> – {{ clientLocations[0].street_number }}</template>
+                    <template v-if="clientLocations[0].notes"> ({{ clientLocations[0].notes }})</template>
                   </p>
                 </div>
               </div>
@@ -592,8 +401,11 @@
               <!-- Show message if no prices available -->
               <div v-else class="text-gray-600 text-sm">
                 <p>Çmimi sipas kërkesës për të gjitha produktet</p>
-                <p class="text-xs mt-2 text-gray-500">
-                  Plotësoni <strong>Emrin e Biznisit</strong> dhe <strong>Numrin Fiskal</strong> më sipër. Nëse jeni klient i regjistruar, çmimet e personalizuara do të aplikohen automatikisht dhe vlera totale do të përditësohet.
+                <p v-if="!cartStore.client" class="text-xs mt-2 text-gray-500">
+                  <router-link to="/kycu" class="text-primary-600 hover:underline font-medium">Identifikohu</router-link> me email dhe fjalëkalim për të parë çmimet tuaja.
+                </p>
+                <p v-else class="text-xs mt-2 text-gray-500">
+                  Çmimet për ju nuk janë akoma të caktuara nga administratori.
                 </p>
               </div>
             </div>
@@ -671,8 +483,8 @@
               <h3 class="text-lg font-semibold text-gray-900 mb-3">
                 Historia e Porosive
               </h3>
-              <div v-if="!customerData.storeName" class="text-sm text-gray-600">
-                Shkruani emrin e biznisit për të parë porositë e ruajtura.
+              <div v-if="!cartStore.client" class="text-sm text-gray-600">
+                <router-link to="/kycu" class="text-primary-600 hover:underline">Identifikohu</router-link> për të parë porositë e ruajtura.
               </div>
               <div v-else>
                 <div v-if="historyLoading" class="flex items-center gap-2 text-sm text-gray-600">
@@ -777,10 +589,10 @@ export default {
       return !!localStorage.getItem('admin_token')
     },
     isFormValid() {
-      return this.customerData.name.trim() !== '' && 
-             this.customerData.storeName.trim() !== '' && 
-             this.customerData.fiscalNumber.trim() !== '' &&
-             this.customerData.city.trim() !== ''
+      if (!this.cartStore.client) return false
+      const c = this.cartStore.client
+      const hasLocation = this.clientLocations.length <= 1 || (this.clientLocations.length > 1 && this.selectedLocationId)
+      return (c.name || c.email) && (c.city || c.store_name) && hasLocation
     },
     hasClientPrices() {
       return this.cartStore.client && Object.keys(this.cartStore.clientPrices).length > 0
@@ -830,18 +642,11 @@ export default {
     }
   },
   watch: {
-    'customerData.storeName'(newBusinessName) {
-      this.scheduleClientIdentification()
-    },
     'customerData.fiscalNumber'(newFiscal) {
       if (typeof newFiscal === 'string') {
         const normalized = newFiscal.toUpperCase().replace(/\s+/g, '')
-        if (normalized !== newFiscal) {
-          this.customerData.fiscalNumber = normalized
-          return
-        }
+        if (normalized !== newFiscal) this.customerData.fiscalNumber = normalized
       }
-      this.scheduleClientIdentification()
     }
   },
   mounted() {
@@ -865,24 +670,20 @@ export default {
       }
     }
 
-    // Plotëso vetëm fushat bosh nga klienti i kyqur (e njëjta logjikë si te Kyçu), që të dhënat të jenë konsistente
+    // Plotëso nga klienti i identifikuar (email + fjalëkalim në Kyçu)
     if (this.cartStore.client) {
       const c = this.cartStore.client
-      if (!this.customerData.name?.trim()) this.customerData.name = c.name || ''
+      if (!this.customerData.name?.trim()) this.customerData.name = c.name || c.store_name || c.email || ''
       if (!this.customerData.storeName?.trim()) this.customerData.storeName = c.store_name || ''
       if (!this.customerData.fiscalNumber?.trim()) this.customerData.fiscalNumber = c.fiscal_number || ''
       if (!this.customerData.city?.trim()) this.customerData.city = c.city || ''
-      if (!this.customerData.phone?.trim()) this.customerData.phone = c.phone || ''
+      if (!this.customerData.phone?.trim()) this.customerData.phone = c.phone || c.viber || ''
       this.persistCustomerData()
-      // Ngarko lokacionet e klientit nëse ekzistojnë
       if (c.locations && Array.isArray(c.locations) && c.locations.length > 0) {
         this.clientLocations = c.locations.filter(loc => loc && (loc.is_active !== false && loc.is_active !== 0))
         if (this.clientLocations.length === 1) this.selectedLocationId = this.clientLocations[0].id
       }
-    }
-
-    if (this.customerData.storeName && this.customerData.fiscalNumber) {
-      this.identifyClient(this.customerData.storeName, this.customerData.fiscalNumber)
+      if (!this.historyLoading) this.loadOrderHistory(null, c.id)
     }
   },
   beforeUnmount() {

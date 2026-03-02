@@ -7,13 +7,15 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Schema;
+use Laravel\Sanctum\HasApiTokens;
 
 class Client extends Model
 {
-    use SoftDeletes;
+    use HasApiTokens, SoftDeletes;
 
     protected $fillable = [
         'name',
+        'email',
         'store_name',
         'fiscal_number',
         'city',

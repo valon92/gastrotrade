@@ -509,6 +509,24 @@
                       </option>
                     </select>
                   </div>
+                  <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Statusi i pagesës *</label>
+                    <select 
+                      v-model="newInvoiceForm.status"
+                      class="w-full px-3 py-2 border border-gray-300 rounded-md"
+                    >
+                      <option value="pending">E papaguar</option>
+                      <option value="paid">E paguar</option>
+                    </select>
+                  </div>
+                  <div v-if="newInvoiceForm.status === 'paid'">
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Data e pagesës</label>
+                    <input 
+                      v-model="newInvoiceForm.paid_date"
+                      type="date"
+                      class="w-full px-3 py-2 border border-gray-300 rounded-md"
+                    >
+                  </div>
                 </div>
 
                 <div class="mb-6">
@@ -816,6 +834,8 @@ export default {
         invoice_date: new Date().toISOString().split('T')[0],
         due_date: '',
         stock_receipt_id: '',
+        status: 'pending',
+        paid_date: new Date().toISOString().split('T')[0],
         has_vat: false,
         vat_rate: 18.00,
         notes: '',
@@ -1065,6 +1085,8 @@ export default {
         invoice_date: new Date().toISOString().split('T')[0],
         due_date: '',
         stock_receipt_id: '',
+        status: 'pending',
+        paid_date: new Date().toISOString().split('T')[0],
         has_vat: false,
         vat_rate: 18.00,
         notes: '',
@@ -1111,6 +1133,8 @@ export default {
           invoice_date: this.newInvoiceForm.invoice_date,
           due_date: this.newInvoiceForm.due_date || null,
           stock_receipt_id: this.newInvoiceForm.stock_receipt_id || null,
+          status: this.newInvoiceForm.status || 'pending',
+          paid_date: this.newInvoiceForm.status === 'paid' ? (this.newInvoiceForm.paid_date || new Date().toISOString().split('T')[0]) : null,
           has_vat: this.newInvoiceForm.has_vat || false,
           vat_rate: this.newInvoiceForm.has_vat ? (this.newInvoiceForm.vat_rate || 18.00) : 0,
           notes: this.newInvoiceForm.notes || null,
@@ -1179,60 +1203,115 @@ export default {
       printWindow.print()
     },
     generateInvoiceHtml(invoice) {
+      const supplier = invoice.supplier || {}
+      const supplierAddress = [supplier.address, supplier.phone, supplier.email].filter(Boolean).join(' | ') || '-'
+      const supplierContact = supplier.contact_person ? `Kontakt: ${supplier.contact_person}` : ''
+      const paymentStatus = invoice.status === 'paid'
+        ? `E PAGUAR${invoice.paid_date ? ' – Data e pagesës: ' + this.formatDate(invoice.paid_date) : ''}`
+        : 'JO E PAGUAR'
+      const paymentClass = invoice.status === 'paid' ? 'status-paid' : 'status-unpaid'
+      const vatRate = invoice.has_vat ? (invoice.vat_rate || 18) : 0
       return `
         <!DOCTYPE html>
-        <html>
+        <html lang="sq">
         <head>
+          <meta charset="UTF-8">
           <title>Fatura ${invoice.invoice_number}</title>
           <style>
-            body { font-family: Arial, sans-serif; padding: 20px; }
-            .header { text-align: center; margin-bottom: 30px; }
-            .info { margin-bottom: 20px; }
-            table { width: 100%; border-collapse: collapse; margin-bottom: 20px; }
-            th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
-            th { background-color: #f2f2f2; }
-            .total { text-align: right; font-weight: bold; }
-            .status-paid { color: green; font-weight: bold; }
-            .status-unpaid { color: red; font-weight: bold; }
+            @media print { body { -webkit-print-color-adjust: exact; print-color-adjust: exact; } }
+            body { font-family: Arial, Helvetica, sans-serif; font-size: 12px; color: #1f2937; padding: 24px; max-width: 210mm; margin: 0 auto; }
+            .doc-title { text-align: center; font-size: 18px; font-weight: bold; margin-bottom: 4px; text-transform: uppercase; }
+            .doc-subtitle { text-align: center; font-size: 11px; color: #6b7280; margin-bottom: 20px; }
+            .parties { display: table; width: 100%; margin-bottom: 20px; border: 1px solid #e5e7eb; }
+            .party { display: table-cell; width: 50%; padding: 12px; vertical-align: top; }
+            .party:first-child { border-right: 1px solid #e5e7eb; }
+            .party-label { font-size: 10px; text-transform: uppercase; letter-spacing: 0.5px; color: #6b7280; margin-bottom: 4px; }
+            .party-name { font-weight: bold; font-size: 13px; margin-bottom: 6px; }
+            .party-details { font-size: 11px; line-height: 1.5; color: #374151; }
+            .meta { margin-bottom: 16px; font-size: 11px; }
+            .meta span { margin-right: 16px; }
+            table { width: 100%; border-collapse: collapse; margin-bottom: 16px; font-size: 11px; }
+            th, td { border: 1px solid #d1d5db; padding: 6px 8px; text-align: left; }
+            th { background-color: #f3f4f6; font-weight: 600; }
+            td.num { text-align: right; }
+            .totals { margin-left: auto; width: 280px; font-size: 12px; }
+            .totals-row { display: flex; justify-content: space-between; padding: 4px 0; }
+            .totals-row.total-final { font-weight: bold; font-size: 14px; border-top: 2px solid #1f2937; margin-top: 6px; padding-top: 8px; }
+            .payment-status { margin: 12px 0; padding: 8px 12px; font-weight: bold; font-size: 12px; display: inline-block; }
+            .status-paid { background-color: #d1fae5; color: #065f46; }
+            .status-unpaid { background-color: #fee2e2; color: #991b1b; }
+            .legal { margin-top: 24px; font-size: 10px; color: #6b7280; text-align: center; line-height: 1.5; }
+            .signatures { display: table; width: 100%; margin-top: 40px; }
+            .sig-block { display: table-cell; width: 50%; text-align: center; padding-top: 40px; }
+            .sig-line { border-top: 1px solid #1f2937; margin: 0 auto 4px; width: 180px; }
+            .sig-label { font-size: 10px; color: #6b7280; }
           </style>
         </head>
         <body>
-          <div class="header">
-            <h1>FATURA E PRODHUESIT</h1>
-            <p>Nr. Faturës: ${invoice.invoice_number}</p>
+          <div class="doc-title">FATURA</div>
+          <div class="doc-subtitle">Faturë e lëshuar në bazë të ligjeve të Republikës së Kosovës (Ligji për TVSH-në)</div>
+          <div class="parties">
+            <div class="party">
+              <div class="party-label">Dërguar nga (Furnitor / Prodhues)</div>
+              <div class="party-name">${supplier.name || '-'}</div>
+              <div class="party-details">${supplierAddress}</div>
+              ${supplierContact ? `<div class="party-details">${supplierContact}</div>` : ''}
+            </div>
+            <div class="party">
+              <div class="party-label">Pranuar nga (Blerësi)</div>
+              <div class="party-name">GastroTrade</div>
+              <div class="party-details">Republika e Kosovës</div>
+            </div>
           </div>
-          <div class="info">
-            <p><strong>Prodhuesi:</strong> ${invoice.supplier?.name || '-'}</p>
-            <p><strong>Data:</strong> ${this.formatDate(invoice.invoice_date)}</p>
-            ${invoice.due_date ? `<p><strong>Data e Maturimit:</strong> ${this.formatDate(invoice.due_date)}</p>` : ''}
-            <p><strong>Statusi:</strong> ${this.getStatusLabel(invoice.status)}</p>
-            ${invoice.status === 'paid' && invoice.paid_date ? `<p class="status-paid"><strong>✅ E Paguar:</strong> ${this.formatDate(invoice.paid_date)}</p>` : ''}
-            ${invoice.status !== 'paid' ? `<p class="status-unpaid"><strong>❌ E Papaguar</strong></p>` : ''}
+          <div class="meta">
+            <span><strong>Nr. i faturës:</strong> ${invoice.invoice_number}</span>
+            <span><strong>Data e lëshimit:</strong> ${this.formatDate(invoice.invoice_date)}</span>
+            ${invoice.due_date ? `<span><strong>Data e maturimit:</strong> ${this.formatDate(invoice.due_date)}</span>` : ''}
           </div>
           <table>
             <thead>
               <tr>
-                <th>Produkti</th>
-                <th>Sasia</th>
-                <th>Çmimi Njësi</th>
-                <th>Totali</th>
+                <th style="width:28px">Nr.</th>
+                <th>Përshkrimi i mallit / shërbimit</th>
+                <th style="width:70px" class="num">Sasia</th>
+                <th style="width:60px">Njësia</th>
+                <th style="width:80px" class="num">Çmimi njësi</th>
+                <th style="width:85px" class="num">Vlera pa TVSH</th>
+                ${invoice.has_vat ? '<th style="width:50px" class="num">TVSH %</th><th style="width:75px" class="num">TVSH</th>' : ''}
+                <th style="width:85px" class="num">Totali</th>
               </tr>
             </thead>
             <tbody>
-              ${(invoice.items || []).map(item => `
-                <tr>
-                  <td>${item.product_name}</td>
-                  <td>${item.quantity}</td>
-                  <td>${this.formatPrice(item.unit_price)}</td>
-                  <td>${this.formatPrice(item.total_price)}</td>
-                </tr>
-              `).join('')}
+              ${(invoice.items || []).map((item, i) => {
+                const rowNet = item.total_price != null ? parseFloat(item.total_price) : (item.quantity * item.unit_price)
+                const rowVat = invoice.has_vat ? rowNet * (vatRate / 100) : 0
+                const rowTotal = rowNet + rowVat
+                return `<tr>
+                  <td>${i + 1}</td>
+                  <td>${(item.product_name || '-').replace(/</g, '&lt;')}</td>
+                  <td class="num">${Number(item.quantity)}</td>
+                  <td>copë</td>
+                  <td class="num">${this.formatPrice(item.unit_price)}</td>
+                  <td class="num">${this.formatPrice(rowNet)}</td>
+                  ${invoice.has_vat ? `<td class="num">${vatRate}%</td><td class="num">${this.formatPrice(rowVat)}</td>` : ''}
+                  <td class="num">${this.formatPrice(rowTotal)}</td>
+                </tr>`
+              }).join('')}
             </tbody>
           </table>
-          <div class="total">
-            <p>Nëntotali: ${this.formatPrice(invoice.subtotal)}</p>
-            ${invoice.has_vat ? `<p>TVSH (${invoice.vat_rate}%): ${this.formatPrice(invoice.vat_amount)}</p>` : ''}
-            <p style="font-size: 1.2em;">Totali: ${this.formatPrice(invoice.total_amount)}</p>
+          <div class="totals">
+            <div class="totals-row"><span>Nëntotali (pa TVSH):</span><span>${this.formatPrice(invoice.subtotal)}</span></div>
+            ${invoice.has_vat ? `<div class="totals-row"><span>TVSH (${vatRate}%):</span><span>${this.formatPrice(invoice.vat_amount)}</span></div>` : ''}
+            <div class="totals-row total-final"><span>Totali për të paguar:</span><span>${this.formatPrice(invoice.total_amount)}</span></div>
+          </div>
+          <div class="payment-status ${paymentClass}">Statusi i pagesës: ${paymentStatus}</div>
+          ${invoice.notes ? `<p style="font-size:11px; margin-top:12px;"><strong>Shënime:</strong> ${String(invoice.notes).replace(/</g, '&lt;')}</p>` : ''}
+          <div class="legal">
+            Kjo faturë është e lëshuar në përputhje me ligjet e Republikës së Kosovës. Fatura përmban të dhënat e nevojshme për qëllime tatimore.
+          </div>
+          <div class="signatures">
+            <div class="sig-block"><div class="sig-line"></div><div class="sig-label">Nënshkrimi i dërguarit (Furnitor)</div></div>
+            <div class="sig-block"><div class="sig-line"></div><div class="sig-label">Nënshkrimi i pranuesit (Blerës)</div></div>
           </div>
         </body>
         </html>

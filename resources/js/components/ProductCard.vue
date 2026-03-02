@@ -244,6 +244,9 @@
 import cartStore from '../store/cart'
 import BarcodeDisplay from './BarcodeDisplay.vue'
 
+// Placeholder si data URL që të mos bëhen kërkesa HTTP (nuk mbushet terminali i PHP)
+const PLACEHOLDER_IMAGE_DATA_URL = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200' viewBox='0 0 200 200'%3E%3Crect fill='%23e5e7eb' width='200' height='200'/%3E%3C/svg%3E"
+
 export default {
   name: 'ProductCard',
   components: { BarcodeDisplay },
@@ -364,7 +367,12 @@ export default {
       }).format(price)
     },
     getProductImage() {
-      // Rregullo fotot për kese mbeturinash 300L, 270L, 240L, 200L, 170L, 150L, 120L, 70L dhe 40L
+      // Foto e regjistruar në admin ka përparësi – e njëjta foto shfaqet në ballinë dhe kudo
+      const path = this.product.image_path
+      if (path && String(path).trim()) {
+        return path
+      }
+      // Fallback: rrugë të fiksuara për produkte pa image_path në bazë
       const slug = this.product.slug || ''
       const name = (this.product.name || '').toLowerCase()
       
@@ -388,9 +396,17 @@ export default {
         return '/Images/Kese Mbeturina/40L/foto1.png'
       } else if (slug === 'leter-kuzhine-nush-2-shtresa' || name.includes('leter kuzhine nush 2 shtresa')) {
         return '/images/Pallomat/XL/foto1.png'
+      } else if (slug === 'leter-salvete' || name.includes('leter salvete')) {
+        return '/images/Pallomat/Salvete/foto1.jpg'
+      } else if (slug === 'gota-plastike' || name.includes('gota plastike')) {
+        return '/images/Gota Plastike/foto1.jpg'
+      } else if (slug === 'pipeza-te-zi-per-pije-100cp-kompleti-20cp' || (name.includes('pipëza') && name.includes('zi') && name.includes('100cp'))) {
+        return '/images/Pipat/Pipa-100cp/Black/foto1.jpg'
+      } else if (slug === 'pipeza-color-per-pije-100cp-kompleti-20cp' || slug === 'pipeza-transparente-per-pije-100cp-kompleti-20cp' || (name.includes('pipëza') && (name.includes('color') || name.includes('transparente')) && name.includes('100cp'))) {
+        return '/images/Pipat/Pipa-100cp/Color/foto1.jpg'
       }
       
-      return this.product.image_path || '/images/placeholder.jpg'
+      return this.product.image_path || PLACEHOLDER_IMAGE_DATA_URL
     },
     handleImageError(event) {
       // Nëse është një nga këto tre produkte, provoni rrugët alternative
@@ -470,8 +486,16 @@ export default {
         } else {
           event.target.src = '/images/Pallomat/XL/foto1.png'
         }
+      } else if (slug === 'leter-salvete' || name.includes('leter salvete')) {
+        event.target.src = '/images/Pallomat/Salvete/foto1.jpg'
+      } else if (slug === 'gota-plastike' || name.includes('gota plastike')) {
+        event.target.src = '/images/Gota Plastike/foto1.jpg'
+      } else if (slug === 'pipeza-te-zi-per-pije-100cp-kompleti-20cp' || (name.includes('zi') && name.includes('100cp'))) {
+        event.target.src = '/images/Pipat/Pipa-100cp/Black/foto1.jpg'
+      } else if (slug === 'pipeza-color-per-pije-100cp-kompleti-20cp' || slug === 'pipeza-transparente-per-pije-100cp-kompleti-20cp') {
+        event.target.src = '/images/Pipat/Pipa-100cp/Color/foto1.jpg'
       } else {
-        event.target.src = '/images/placeholder.jpg'
+        event.target.src = PLACEHOLDER_IMAGE_DATA_URL
       }
     },
     onMainButtonClick() {

@@ -52,6 +52,8 @@ class SupplierInvoiceController extends Controller
             'due_date' => ['nullable', 'date'],
             'has_vat' => ['nullable', 'boolean'],
             'vat_rate' => ['nullable', 'numeric', 'min:0', 'max:100'],
+            'status' => ['nullable', 'string', 'in:pending,paid,overdue,cancelled'],
+            'paid_date' => ['nullable', 'date'],
             'notes' => ['nullable', 'string'],
             'items' => ['required', 'array', 'min:1'],
             'items.*.product_id' => ['nullable', 'exists:products,id'],
@@ -84,7 +86,10 @@ class SupplierInvoiceController extends Controller
                 'vat_amount' => $vatAmount,
                 'total_amount' => $totalAmount,
                 'notes' => $validated['notes'] ?? null,
-                'status' => 'pending',
+                'status' => $validated['status'] ?? 'pending',
+                'paid_date' => (isset($validated['status']) && $validated['status'] === 'paid')
+                    ? ($validated['paid_date'] ?? now()->toDateString())
+                    : null,
             ]);
 
             foreach ($validated['items'] as $item) {

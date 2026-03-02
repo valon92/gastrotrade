@@ -340,30 +340,45 @@
 
               <div>
                 <label class="block text-sm font-medium text-gray-700 mb-2">Foto e produktit</label>
-                <div class="flex items-center gap-4">
+                <div class="flex items-center gap-4 flex-wrap">
                   <img
                     v-if="productForm.preview"
                     :src="productForm.preview"
-                    alt="Foto aktuale"
+                    alt="Foto e zgjedhur"
                     class="w-24 h-24 object-cover rounded-lg border"
                   >
-                  <label class="flex-1">
-                    <span class="sr-only">Ngarko foto</span>
-                    <input
-                      type="file"
-                      accept="image/*"
-                      @change="handleImageUpload"
-                      class="block w-full text-sm text-gray-500
-                             file:me-4 file:py-2 file:px-4
-                             file:rounded-full file:border-0
-                             file:text-sm file:font-semibold
-                             file:bg-primary-50 file:text-primary-700
-                             hover:file:bg-primary-100"
-                    >
-                  </label>
+                  <div class="flex flex-col gap-2">
+                    <label class="cursor-pointer">
+                      <span class="inline-flex items-center px-3 py-2 rounded-lg border border-gray-300 bg-white text-sm font-medium text-gray-700 hover:bg-gray-50">Ngarko skedar të ri</span>
+                      <input
+                        ref="productImageInput"
+                        type="file"
+                        accept="image/png,image/jpeg,image/jpg,image/gif,image/webp"
+                        @change="handleImageUpload"
+                        class="hidden"
+                      >
+                    </label>
+                    <p class="text-xs text-gray-500">ose zgjidhni nga fotot e projektit më poshtë.</p>
+                  </div>
                 </div>
-                <p class="text-xs text-gray-500 mt-1">
-                  Formate të lejuara: JPG, PNG, WEBP. Maksimumi 4MB.
+                <div class="mt-4">
+                  <p class="text-sm font-medium text-gray-700 mb-2">Foto nga projekti (public/images)</p>
+                  <div v-if="projectImagesLoading" class="text-sm text-gray-500">Duke ngarkuar...</div>
+                  <div v-else-if="projectImages.length" class="grid grid-cols-4 sm:grid-cols-6 md:grid-cols-8 gap-2 max-h-48 overflow-y-auto">
+                    <button
+                      v-for="path in projectImages"
+                      :key="path"
+                      type="button"
+                      :class="['rounded-lg border-2 overflow-hidden flex-shrink-0 focus:outline-none focus:ring-2 focus:ring-primary-500', productForm.existingImagePath === path ? 'border-primary-600 ring-2 ring-primary-400' : 'border-gray-200 hover:border-primary-300']"
+                      @click="selectProjectImage(path)"
+                    >
+                      <img :src="path" :alt="path" class="w-full aspect-square object-cover" @error="$event.target.style.display='none'">
+                    </button>
+                  </div>
+                  <p v-else class="text-xs text-gray-500">Nuk u gjetën foto në public/images.</p>
+                </div>
+                <p class="text-xs text-gray-500 mt-2">
+                  Formate: JPG, PNG, GIF, WEBP. Ose zgjidhni një foto nga lista e mësipërme.
                 </p>
               </div>
             </div>
@@ -415,7 +430,9 @@ export default {
       showModal: false,
       editingProduct: null,
       productForm: this.defaultForm(),
-      savingProduct: false
+      savingProduct: false,
+      projectImages: [],
+      projectImagesLoading: false
     }
   },
   computed: {
@@ -463,7 +480,8 @@ export default {
         sold_by_package: false,
         pieces_per_package: '',
         image: null,
-        preview: null
+        preview: null,
+        existingImagePath: null
       }
     },
     async checkAuth() {
@@ -503,6 +521,10 @@ export default {
       this.editingProduct = null
       this.productForm = this.defaultForm()
       this.showModal = true
+      this.loadProjectImages()
+      this.$nextTick(() => {
+        if (this.$refs.productImageInput) this.$refs.productImageInput.value = ''
+      })
     },
     openEditModal(product) {
       this.editingProduct = product
@@ -519,9 +541,14 @@ export default {
         sold_by_package: Boolean(product.sold_by_package),
         pieces_per_package: product.pieces_per_package,
         image: null,
-        preview: product.image_path
+        preview: product.image_path,
+        existingImagePath: product.image_path && product.image_path.startsWith('/images/') ? product.image_path : null
       }
       this.showModal = true
+      this.loadProjectImages()
+      this.$nextTick(() => {
+        if (this.$refs.productImageInput) this.$refs.productImageInput.value = ''
+      })
     },
     generateBarcode() {
       // EAN-13: 13 shifra, shifra e 13-të është checksum (format standard p.sh. 3904481760132)
@@ -547,11 +574,29 @@ export default {
       this.productForm = this.defaultForm()
       this.savingProduct = false
     },
+    async loadProjectImages() {
+      this.projectImagesLoading = true
+      try {
+        const res = await axios.get('/api/admin/project-images')
+        this.projectImages = res.data.data || []
+      } catch (e) {
+        this.projectImages = []
+      } finally {
+        this.projectImagesLoading = false
+      }
+    },
+    selectProjectImage(path) {
+      this.productForm.existingImagePath = path
+      this.productForm.preview = path
+      this.productForm.image = null
+      if (this.$refs.productImageInput) this.$refs.productImageInput.value = ''
+    },
     handleImageUpload(event) {
       const file = event.target.files[0]
       if (!file) return
 
       this.productForm.image = file
+      this.productForm.existingImagePath = null
       const reader = new FileReader()
       reader.onload = e => {
         this.productForm.preview = e.target.result
@@ -590,19 +635,16 @@ export default {
           formData.append('pieces_per_package', this.productForm.pieces_per_package)
         }
         if (this.productForm.image) {
-          formData.append('image', this.productForm.image)
+          formData.append('image', this.productForm.image, this.productForm.image.name || 'image.jpg')
+        } else if (this.productForm.existingImagePath) {
+          formData.append('image_path', this.productForm.existingImagePath)
         }
 
         if (this.editingProduct) {
-          formData.append('_method', 'PUT')
-          await axios.post(`/api/admin/products/${this.editingProduct.id}`, formData, {
-            headers: { 'Content-Type': 'multipart/form-data' }
-          })
+          await axios.post(`/api/admin/products/${this.editingProduct.id}`, formData)
           alert('Produkti u përditësua me sukses!')
         } else {
-          await axios.post('/api/admin/products', formData, {
-            headers: { 'Content-Type': 'multipart/form-data' }
-          })
+          await axios.post('/api/admin/products', formData)
           alert('Produkti u shtua me sukses!')
         }
 
