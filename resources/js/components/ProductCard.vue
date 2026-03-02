@@ -1,7 +1,7 @@
 <template>
   <div class="rounded-2xl border border-gray-200 bg-white overflow-hidden shadow-sm hover:shadow-md hover:border-primary-200 transition-all duration-300 h-full flex flex-col">
     <!-- Imazhi me çmim mbi të (overlay) – i klikueshëm për zmadhim -->
-    <div class="relative aspect-w-16 aspect-h-12 bg-gray-200">
+    <div class="relative w-full aspect-[4/3] min-h-[220px] bg-gray-100">
       <button
         type="button"
         @click="showImageLightbox = true"
@@ -11,7 +11,7 @@
         <img 
           :src="getProductImage()" 
           :alt="product.name"
-          class="w-full h-48 object-cover hover:opacity-95 transition-opacity"
+          class="w-full h-full object-cover object-center hover:scale-[1.02] transition-transform duration-300"
           @error="handleImageError"
         />
       </button>

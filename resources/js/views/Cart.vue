@@ -1240,6 +1240,11 @@ export default {
       const hasVat = order.has_vat === true || order.has_vat === 1
       const vatRate = 18
       const fmtNum = (n) => (n != null && !isNaN(n) ? Number(n).toFixed(2) : '-')
+      const fmtQty = (n) => {
+        if (n == null || isNaN(n)) return '-'
+        const num = Number(n)
+        return Number.isInteger(num) ? String(num) : num.toFixed(2)
+      }
       const amountBeforeVat = hasVat && order.total_amount ? parseFloat(order.total_amount) / 1.18 : (order.amount_before_vat != null ? parseFloat(order.amount_before_vat) : (order.total_amount ? parseFloat(order.total_amount) : null))
       const vatAmount = hasVat && order.total_amount ? parseFloat(order.total_amount) - (parseFloat(order.total_amount) / 1.18) : (order.vat_amount != null ? parseFloat(order.vat_amount) : 0)
       const totalItemDiscounts = (order.items || []).reduce((sum, item) => sum + (parseFloat(item.discount_amount) || 0), 0)
@@ -1256,8 +1261,8 @@ export default {
           return '<tr>' +
             '<td class="inv-num">' + (idx + 1) + '</td>' +
             '<td class="inv-code">' + (barcode || '-') + '</td>' +
-            '<td class="inv-desc">' + (item.product_name || '') + (barcode ? ' - Barcode: ' + barcode : '') + '</td>' +
-            '<td class="inv-qty">' + fmtNum(qty) + '</td>' +
+            '<td class="inv-desc">' + (item.product_name || '') + '</td>' +
+            '<td class="inv-qty">' + fmtQty(qty) + '</td>' +
             '<td class="inv-unit">Copë</td>' +
             '<td class="inv-num">' + (unitPriceNoVat != null ? fmtNum(unitPriceNoVat) : '-') + '</td>' +
             '<td class="inv-num">' + fmtNum(discountPct) + '</td>' +
