@@ -13,10 +13,10 @@
         <div class="flex items-center justify-between h-16 px-5 border-b border-white/10">
           <div class="flex items-center gap-3 min-w-0">
             <div class="w-10 h-10 flex-shrink-0 rounded-xl bg-primary-500 flex items-center justify-center shadow-lg">
-              <span class="text-white font-bold text-sm">GT</span>
+              <span class="text-white font-bold text-sm">AT</span>
             </div>
             <div class="min-w-0">
-              <h1 class="text-base font-bold text-white truncate">GastroTrade</h1>
+              <h1 class="text-base font-bold text-white truncate">AronTrade</h1>
               <p class="text-xs text-white/60">Paneli i administrimit</p>
             </div>
           </div>

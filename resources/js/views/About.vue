@@ -4,7 +4,7 @@
     <section class="bg-gradient-to-r from-primary-600 to-primary-800 text-white py-20">
       <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
         <h1 class="text-4xl md:text-6xl font-bold mb-6">
-          Rreth GastroTrade
+          Rreth AronTrade
         </h1>
               <p class="text-xl md:text-2xl text-primary-100">
                 Partneri juaj i besueshëm për furnizimet profesionale të kuzhinës dhe biznesit
@@ -21,7 +21,7 @@
               Misioni Ynë
             </h2>
                   <p class="text-lg text-gray-700 mb-6 leading-relaxed">
-                    GastroTrade është i përkushtuar të ofrojë produkte të cilësisë së lartë
+                    AronTrade është i përkushtuar të ofrojë produkte të cilësisë së lartë
                     për të gjitha llojet e bizneseve të ushqimit dhe shërbimit. Ne shërbejmë një gamë të gjerë klientësh duke përfshirë:
                   </p>
                   <div class="grid grid-cols-2 md:grid-cols-3 gap-4 mb-6">

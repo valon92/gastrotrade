@@ -1,6 +1,6 @@
 # 🚀 Udhëzues për Deployment në Production
 
-Ky dokument përmban udhëzime të detajuara për publikimin e projektit GastroTrade në production.
+Ky dokument përmban udhëzime të detajuara për publikimin e projektit AronTrade në production.
 
 ## 📋 Kërkesat e Serverit
 
@@ -103,7 +103,7 @@ nano .env
 
 #### Konfigurimi i .env:
 ```env
-APP_NAME="GastroTrade"
+APP_NAME="AronTrade"
 APP_ENV=production
 APP_KEY=
 APP_DEBUG=false
@@ -139,7 +139,7 @@ MAIL_USERNAME=svalon95@gmail.com
 MAIL_PASSWORD=app_password_këtu
 MAIL_ENCRYPTION=tls
 MAIL_FROM_ADDRESS="svalon95@gmail.com"
-MAIL_FROM_NAME="GastroTrade"
+MAIL_FROM_NAME="AronTrade"
 ```
 
 #### Gjenerimi i APP_KEY:

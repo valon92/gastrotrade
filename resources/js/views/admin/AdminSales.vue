@@ -896,7 +896,7 @@ export default {
         '</div>' +
         '<div>' +
         '<p><strong>Nënshkrimi i Shitësit</strong></p>' +
-        '<p>GastroTrade</p>' +
+        '<p>Aron Trade</p>' +
         '</div>' +
         '</div>' +
         '<p style="margin-top: 20px; font-size: 12px; color: #6b7280;">' +

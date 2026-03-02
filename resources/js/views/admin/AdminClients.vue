@@ -65,7 +65,7 @@
           <input 
             v-model.trim="searchFilters.business"
             type="text"
-            placeholder="p.sh. GastroTrade"
+            placeholder="p.sh. AronTrade"
             class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
           >
         </div>
@@ -1494,7 +1494,7 @@ export default {
         '</div>' +
         '<div style="width: 45%; text-align: center;">' +
         '<p style="font-weight: bold; margin-bottom: 40px; border-top: 1px solid #111827; padding-top: 4px; display: inline-block; min-width: 200px;">Nënshkrimi i Shitësit</p>' +
-        '<p style="font-size: 12px; color: #6b7280; margin-top: 8px;">GastroTrade</p>' +
+        '<p style="font-size: 12px; color: #6b7280; margin-top: 8px;">AronTrade</p>' +
         '</div>' +
         '</div>' +
         '<div style="text-align: center; margin-top: 24px; font-size: 12px; color: #6b7280;">' +

@@ -1,4 +1,4 @@
-# GastroTrade
+# AronTrade
 
 Platform moderne e-commerce për menaxhimin e produkteve, klientëve dhe porosive, e ndërtuar me Laravel 10 dhe Vue.js 3.
 

@@ -2944,7 +2944,7 @@ export default {
         '</div>' +
         '<div class="signature-box">' +
         '<p class="signature-line"><strong>Nënshkrimi i Blerësit</strong></p>' +
-        '<p style="font-size: 12px; color: #6b7280;">GastroTrade</p>' +
+        '<p style="font-size: 12px; color: #6b7280;">AronTrade</p>' +
         '</div>' +
         '</div>' +
         '<div class="footer">' +

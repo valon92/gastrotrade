@@ -17,7 +17,7 @@
       </button>
       <div
         v-if="displayPrice != null"
-        class="absolute top-3 left-3 z-10 flex flex-wrap items-center gap-2 max-w-[90%]"
+        class="absolute top-3 left-3 z-10 flex flex-nowrap items-center gap-2 max-w-[90%]"
       >
         <div class="inline-flex items-center gap-1.5 font-bold text-white bg-red-600 rounded-lg px-3 py-1.5 text-sm shadow-lg ring-1 ring-red-700/40 backdrop-blur-sm shrink-0">
           <span>{{ formatPrice(displayPrice) }}</span>
@@ -50,10 +50,11 @@
             </div>
           </div>
         </div>
-        <span 
+        <span
           v-if="cartStore.client"
-          class="text-[10px] sm:text-xs font-medium text-white drop-shadow-md whitespace-nowrap" 
-          style="text-shadow: 0 0 2px rgba(0,0,0,0.8), 0 1px 2px rgba(0,0,0,0.9);"
+          class="inline-flex items-center px-2 py-0.5 rounded-full bg-black/55 text-[9px] sm:text-[10px] font-semibold text-amber-100 min-w-0 max-w-[150px] sm:max-w-[220px] truncate"
+          style="text-shadow: 0 0 1px rgba(0,0,0,0.6);"
+          :title="'Çmimet vetëm për ' + clientDisplayName"
         >
           Çmimet vetëm për {{ clientDisplayName }}
         </span>

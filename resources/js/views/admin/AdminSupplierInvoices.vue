@@ -1259,7 +1259,7 @@ export default {
             </div>
             <div class="party">
               <div class="party-label">Pranuar nga (Blerësi)</div>
-              <div class="party-name">GastroTrade</div>
+              <div class="party-name">AronTrade</div>
               <div class="party-details">Republika e Kosovës</div>
             </div>
           </div>

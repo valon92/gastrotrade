@@ -601,7 +601,7 @@ class OrderController extends Controller
             $totalItems = $request->total_items;
             $totalPrice = $request->total_price ?? 0;
 
-            // Email zyrtar i GastroTrade
+            // Email zyrtar i AronTrade
             $officialEmail = env('MAIL_FROM_ADDRESS', 'svalon95@gmail.com');
 
             // Dërgo emailin
@@ -617,7 +617,7 @@ class OrderController extends Controller
 
             return response()->json([
                 'success' => true,
-                'message' => 'Porosia u dërgua me sukses në emailin zyrtar të GastroTrade.'
+                'message' => 'Porosia u dërgua me sukses në emailin zyrtar të AronTrade.'
             ]);
         } catch (\Exception $e) {
             \Log::error('Error sending order email: ' . $e->getMessage());

@@ -33,7 +33,7 @@
           Keni llogari? <router-link to="/kycu" class="underline hover:no-underline">Kyçuni</router-link> me email dhe fjalëkalim për të parë çmimet tuaja.
         </p>
         <p class="mt-2 text-primary-200/90 text-xs max-w-xl mx-auto">
-          Çmimet për klientët e regjistruar vendosen nga kompania GastroTrade, jo nga klientët.
+          Çmimet për klientët e regjistruar vendosen nga kompania AronTrade, jo nga klientët.
         </p>
       </div>
     </section>
@@ -212,7 +212,12 @@ export default {
     async loadCategories() {
       try {
         const response = await axios.get('/api/categories')
-        this.categories = response.data.data
+        const list = response.data.data || []
+        this.categories = list.slice().sort((a, b) => {
+          const an = (a.name || '').toString().trim()
+          const bn = (b.name || '').toString().trim()
+          return an.localeCompare(bn, 'sq', { sensitivity: 'base' })
+        })
       } catch (error) {
         console.error('Error loading categories:', error)
       } finally {

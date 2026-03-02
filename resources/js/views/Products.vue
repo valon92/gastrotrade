@@ -23,7 +23,7 @@
           Kyçu për çmimet tuaja
         </router-link>
         <p class="mt-3 text-primary-200 text-sm">
-          Çmimet vendosen nga GastroTrade për klientët e regjistruar.
+          Çmimet vendosen nga AronTrade për klientët e regjistruar.
         </p>
       </div>
     </section>
@@ -250,7 +250,13 @@ export default {
     async loadCategories() {
       try {
         const { data } = await axios.get('/api/categories')
-        this.categories = data.data || []
+        const list = data.data || []
+        // Rendit kategoritë alfabetikisht sipas emrit
+        this.categories = list.slice().sort((a, b) => {
+          const an = (a.name || '').toString().trim()
+          const bn = (b.name || '').toString().trim()
+          return an.localeCompare(bn, 'sq', { sensitivity: 'base' })
+        })
       } catch (e) {
         console.error('Error loading categories:', e)
         this.categories = []

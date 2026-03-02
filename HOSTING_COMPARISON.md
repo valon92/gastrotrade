@@ -1,6 +1,6 @@
-# 🏗️ Krahasimi: cPanel vs AWS për GastroTrade
+# 🏗️ Krahasimi: cPanel vs AWS për AronTrade
 
-Ky dokument ofron një krahasim të detajuar midis cPanel dhe AWS për deployment të projektit GastroTrade.
+Ky dokument ofron një krahasim të detajuar midis cPanel dhe AWS për deployment të projektit AronTrade.
 
 ---
 
@@ -171,7 +171,7 @@ Ky dokument ofron një krahasim të detajuar midis cPanel dhe AWS për deploymen
 
 ---
 
-## 🏆 Rekomandimi për GastroTrade
+## 🏆 Rekomandimi për AronTrade
 
 ### Për fillim: **cPanel Shared Hosting** ✅
 
@@ -273,7 +273,7 @@ Kur të jesh gati të migrosh:
 
 ## 🎯 Konkluzioni
 
-**Për GastroTrade, rekomandoj cPanel për fillim:**
+**Për AronTrade, rekomandoj cPanel për fillim:**
 
 1. ✅ Kosto më e ulët
 2. ✅ Setup më i shpejtë

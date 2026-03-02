@@ -1343,7 +1343,7 @@ export default {
         '</style></head><body>' +
         '<div class="inv-header">' +
         '<div class="inv-seller">' +
-        '<h2 class="inv-company">Gastro Trade</h2>' +
+        '<h2 class="inv-company">Aron Trade</h2>' +
         '<div class="inv-title">Nrf / NIPT</div><div>' + (order.company_nrf || '—') + '</div>' +
         '<div class="inv-title">tel</div><div>+383 48 75 66 46 / +383 44 82 43 14</div>' +
         '<div class="inv-title">email</div><div>svalon95@gmail.com</div>' +
@@ -1391,8 +1391,8 @@ export default {
         '<div class="row"><span>Mbetja</span><span>' + (order.total_amount ? (isPaid ? '0.00' : fmtNum(parseFloat(order.total_amount))) : '-') + '</span></div>' +
         '</div>' +
         '<div class="inv-footer">' +
-        '<div class="inv-sig"><div class="line">Faturoi</div><div class="sub">Gastro Trade</div></div>' +
-        '<div class="inv-sig"><div class="line">Dergoi</div><div class="sub">Gastro Trade</div></div>' +
+        '<div class="inv-sig"><div class="line">Faturoi</div><div class="sub">Aron Trade</div></div>' +
+        '<div class="inv-sig"><div class="line">Dergoi</div><div class="sub">Aron Trade</div></div>' +
         '<div class="inv-sig"><div class="line">Pranoi</div><div class="sub">' + buyerName + '</div></div>' +
         '</div>' +
         '<div class="inv-bank">Llogaria bankare: (vendosni nëse keni)</div>' +

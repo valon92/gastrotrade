@@ -1,5 +1,5 @@
 <x-mail::message>
-# 📦 Porosi e Re - GastroTrade
+# 📦 Porosi e Re - AronTrade
 
 **Numri i Porosisë:** #{{ $orderData['order_number'] ?? 'N/A' }}
 

@@ -137,7 +137,7 @@
           Dërgo Porosinë
         </h3>
         <p class="text-sm text-gray-600 mb-6 text-center">
-          Dërgo porosinë në emailin zyrtar të GastroTrade dhe në Viber
+          Dërgo porosinë në emailin zyrtar të AronTrade dhe në Viber
         </p>
         
         <div class="space-y-3">
@@ -540,7 +540,7 @@ export default {
 
         if (response.data.success) {
           this.emailSent = true
-          alert('✅ Porosia u dërgua me sukses në emailin zyrtar të GastroTrade!\n\nEmail: svalon95@gmail.com')
+          alert('✅ Porosia u dërgua me sukses në emailin zyrtar të AronTrade!\n\nEmail: svalon95@gmail.com')
         } else {
           throw new Error(response.data.message || 'Gabim i panjohur')
         }

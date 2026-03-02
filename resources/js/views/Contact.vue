@@ -262,7 +262,7 @@ export default {
       })
       window.L.marker([42.3702, 21.1553], { icon })
         .addTo(this.map)
-        .bindPopup('<strong>GastroTrade</strong><br>Ferizaj, Rruga Lidhja E Prizerent')
+        .bindPopup('<strong>AronTrade</strong><br>Ferizaj, Rruga Lidhja E Prizerent')
         .openPopup()
     },
     async submitForm() {

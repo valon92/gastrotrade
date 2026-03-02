@@ -38,7 +38,7 @@ class OrderConfirmationMail extends Mailable
     {
         $orderNumber = $this->orderData['order_number'] ?? 'N/A';
         return new Envelope(
-            subject: "Porosi e Re #{$orderNumber} - GastroTrade",
+            subject: "Porosi e Re #{$orderNumber} - AronTrade",
         );
     }
 
