@@ -1,0 +1,17 @@
+---
+# cPanel Deploy: kur klikon "Deploy" pas Pull, kopjon nga arontrade_git në public_html.
+# Mos mbishkruaj .env në server (nuk është në repo). Build (public/build) duhet ngarkuar me dorë pas ndryshimesh Vue/JS.
+deployment:
+  tasks:
+    - export DEPLOYPATH=/home/aronqbxm/public_html/
+    - /bin/cp -R app $DEPLOYPATH
+    - /bin/cp -R bootstrap $DEPLOYPATH
+    - /bin/cp -R config $DEPLOYPATH
+    - /bin/cp -R database $DEPLOYPATH
+    - /bin/cp -R resources $DEPLOYPATH
+    - /bin/cp -R routes $DEPLOYPATH
+    - /bin/cp -R public/. $DEPLOYPATH
+    - /bin/cp artisan composer.json composer.lock $DEPLOYPATH
+    - /bin/cp package.json package-lock.json vite.config.js tailwind.config.js postcss.config.js $DEPLOYPATH 2>/dev/null || true
+    - /bin/rm -f $DEPLOYPATH/bootstrap/cache/config.php
+    - /bin/rm -f $DEPLOYPATH/bootstrap/cache/routes*.php 2>/dev/null || true
