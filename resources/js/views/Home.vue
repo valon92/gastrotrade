@@ -9,22 +9,22 @@
         <p class="text-xl md:text-2xl mb-8 text-primary-100">
           Cilësi e lartë, shërbim i besueshëm dhe produkte të zgjedhura me kujdes për biznesin tuaj
         </p>
-        <div class="flex flex-col sm:flex-row gap-4 justify-center items-center">
+        <div class="flex flex-col sm:flex-row gap-3 sm:gap-4 justify-center items-stretch sm:items-center max-w-md mx-auto">
           <router-link 
             to="/produktet" 
-            class="inline-block bg-white text-primary-600 font-semibold py-3 px-8 rounded-lg hover:bg-gray-100 transition-colors duration-200 text-lg"
+            class="w-full sm:w-auto inline-flex justify-center bg-white text-primary-600 font-semibold py-3 px-8 rounded-lg hover:bg-gray-100 transition-colors duration-200 text-lg sm:text-sm"
           >
             Shiko Produktet
           </router-link>
           <router-link 
             to="/kycu" 
-            class="inline-block bg-primary-500/90 text-white font-semibold py-3 px-8 rounded-lg hover:bg-primary-400 border-2 border-white/50 transition-colors duration-200 text-lg"
+            class="w-full sm:w-auto inline-flex justify-center bg-primary-500/90 text-white font-semibold py-3 px-8 rounded-lg hover:bg-primary-400 border-2 border-white/50 transition-colors duration-200 text-lg"
           >
             Kyçu
           </router-link>
           <router-link 
             to="/shporta" 
-            class="inline-block border-2 border-white/70 text-white font-semibold py-3 px-8 rounded-lg hover:bg-white/10 transition-colors duration-200 text-lg"
+            class="w-full sm:w-auto inline-flex justify-center border-2 border-white/70 text-white font-semibold py-3 px-8 rounded-lg hover:bg-white/10 transition-colors duration-200 text-lg"
           >
             Shporta
           </router-link>

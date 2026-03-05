@@ -50,9 +50,18 @@
             </div>
           </div>
         </div>
+        <!-- Mobile: tekst i plotë, font pak më i madh -->
         <span
           v-if="cartStore.client"
-          class="inline-flex items-center px-2 py-0.5 rounded-full bg-black/55 text-[9px] sm:text-[10px] font-semibold text-amber-100 min-w-0 max-w-[150px] sm:max-w-[220px] truncate"
+          class="inline-flex sm:hidden items-center px-2 py-0.5 rounded-full bg-black/65 text-[11px] font-semibold text-amber-100"
+          style="text-shadow: 0 0 1px rgba(0,0,0,0.6);"
+        >
+          Çmimet vetëm për {{ clientDisplayName }}
+        </span>
+        <!-- Desktop: variant i shkurtuar me truncate -->
+        <span
+          v-if="cartStore.client"
+          class="hidden sm:inline-flex items-center px-2 py-0.5 rounded-full bg-black/55 text-[10px] font-semibold text-amber-100 min-w-0 max-w-[220px] truncate"
           style="text-shadow: 0 0 1px rgba(0,0,0,0.6);"
           :title="'Çmimet vetëm për ' + clientDisplayName"
         >
