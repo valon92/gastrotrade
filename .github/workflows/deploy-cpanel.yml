@@ -1,0 +1,61 @@
+# Kur push-on në main, bën build dhe ngarkon në cPanel (FTP).
+# Ndryshimet pasqyrohen automatikisht në arontrade.net.
+#
+# Konfigurim i nevojshëm:
+# 1. Krijo llogari FTP në cPanel (ose përdor kredencialet e hostingut).
+# 2. Shto në GitHub: Settings → Secrets and variables → Actions → Secrets:
+#    FTP_SERVER   = adresa FTP (p.sh. ftp.arontrade.net ose premium132.web-hosting.com)
+#    FTP_USERNAME = përdoruesi FTP
+#    FTP_PASSWORD = fjalëkalimi FTP
+
+name: Deploy to cPanel (arontrade.net)
+
+on:
+  push:
+    branches: [main]
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build frontend
+        run: npm run build
+
+      - name: Use correct index.php for document root
+        run: cp public/index_for_document_root.php public/index.php
+
+      - name: Prepare deploy folder (structure like public_html)
+        run: |
+          mkdir -p deploy
+          cp -r app bootstrap config database resources routes deploy/
+          cp -r public/. deploy/
+          cp artisan composer.json composer.lock package.json package-lock.json deploy/ 2>/dev/null || true
+          cp vite.config.js tailwind.config.js postcss.config.js deploy/ 2>/dev/null || true
+
+      - name: Deploy to cPanel via FTP
+        uses: SamKirkland/FTP-Deploy-Action@v4.3.5
+        with:
+          server: ${{ secrets.FTP_SERVER }}
+          username: ${{ secrets.FTP_USERNAME }}
+          password: ${{ secrets.FTP_PASSWORD }}
+          server-dir: public_html/
+          local-dir: ./deploy/
+          exclude: |
+            **/.git*
+            **/.env*
+            **/node_modules
+            **/vendor
+            **/storage/logs/*
+            **/*.md
