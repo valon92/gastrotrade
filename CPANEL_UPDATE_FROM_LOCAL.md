@@ -4,6 +4,34 @@ Kur ndryshon diçka në projekt **lokalisht** dhe do që **www.arontrade.net** t
 
 ---
 
+## Deploy automatik: push në GitHub → ndryshimet në arontrade.net
+
+Nëse ke konfiguruar **GitHub Actions** me FTP (shiko më poshtë), mjafton:
+
+1. **Terminal (lokalisht):** bëj ndryshimet, pastaj  
+   `git add .` → `git commit -m "Përshkrim"` → `git push origin main`
+2. **GitHub** ekzekuton automatikisht workflow-in: bën **build** (npm run build), përdor **index.php** të saktë për document root, dhe **ngarkon** në **public_html** në cPanel përmes FTP.
+3. Pas 1–2 minutash **https://www.arontrade.net/** pasqyron ndryshimet (përfshirë footer, Vue, PHP). Nuk ke nevojë të bësh Pull/Deploy ose ngarkim manual në cPanel.
+
+### Konfigurim një herë (FTP + GitHub Secrets)
+
+1. **Krijo llogari FTP në cPanel** (opsional por i rekomanduar): cPanel → **FTP Accounts** → **Add FTP Account**:
+   - **Log In:** p.sh. `deploy` (do të bëhet `deploy@arontrade.net`; ky është përdoruesi FTP).
+   - **Password:** vendos një fjalëkalim të fortë dhe ruaje (do ta përdorësh në GitHub si `FTP_PASSWORD`).
+   - **Directory:** lërë **/home/aronqbxm/** (që llogaria të ketë qasje në `public_html`). Mos e kufizosh vetëm në një nënfolder nëse do të ngarkosh në `public_html`.
+   - Kliko **Create FTP Account**. Ose përdor llogarinë kryesore **aronqbxm** (Special FTP Account) me fjalëkalimin e cPanel; atëherë në GitHub vendos `FTP_USERNAME` = `aronqbxm` dhe `FTP_PASSWORD` = fjalëkalimi i cPanel.
+   - **Adresa e serverit FTP** zakonisht është **ftp.arontrade.net** ose **arontrade.net** (për FTP); për disa hoste është emri i serverit (p.sh. `premium132.web-hosting.com`). Mund ta provosh me një klient FTP (FileZilla) për të konfirmuar.
+   - **Nëse GitHub Actions jep "530 Login authentication failed":** provo me **FileZilla** nga kompjuteri yt: Host = adresa FTP, User = përdoruesi, Password = fjalëkalimi. Çfarë funksionon atje (saktësisht) vendose në GitHub Secrets. Për llogarinë kryesore shumë hoste duan vetëm **aronqbxm**; për llogari shtesë **deploy@arontrade.net**. Fjalëkalimi pa hapësira. Ruaj Secrets dhe bëj push.
+2. **Shto Secrets në GitHub:** hap repozitorin **valon92/gastrotrade** → **Settings** → **Secrets and variables** → **Actions** → **New repository secret**. Krijo tre secrets:
+   - **FTP_SERVER** = adresa e serverit FTP (p.sh. `ftp.arontrade.net` ose `premium132.web-hosting.com`, pa `ftp://`)
+   - **FTP_USERNAME** = përdoruesi FTP
+   - **FTP_PASSWORD** = fjalëkalimi FTP
+3. Ruaj. Workflow-i `.github/workflows/deploy-cpanel.yml` ekzekutohet çdo herë që bën **push** në **main**; ai bën build dhe ngarkon në **public_html** (pa prekur **.env** ose **vendor** në server).
+
+Nëse nuk ke FTP ose do të përdorësh vetëm Pull + Deploy/kopjim manual, përdor udhëzimet më poshtë.
+
+---
+
 ## Përmbledhje e shpejtë
 
 | Hapi | Ku e bën | Çfarë bën |
@@ -196,6 +224,18 @@ Kur kodi i përditësuar është tashmë në **GitHub** dhe do ta nxjerrësh në
 
 **Me skedarin `.cpanel.yml` (në repo):** pas çdo **Pull** në cPanel, kliko **Deploy** — cPanel kopjon automatikisht nga `arontrade_git` në `public_html`. Nuk ke nevojë të kopjosh me dorë. Për ndryshime në Vue/JS/CSS duhet gjithashtu të ngarkosh **public/build/** nga lokali (pas `npm run build`).
 
+**Ku ndodhet Deploy në cPanel?**  
+cPanel → **Tools** (ose **Files**) → **Git™ Version Control** → kliko mbi repozitorin **arontrade** (ose **Manage**) → në faqen **Manage Repository** shikon seksionin **"Pull or Deploy"**; aty janë butonat **Pull** dhe **Deploy**. Fillimisht bëj **Pull**, pastaj **Deploy**.
+
+**Pas Deploy del HTTP 500?** Nëse document root është **public_html** (jo public_html/public), Deploy mbishkruan **index.php** me versionin standard të Laravel (që pret folderin `public/`). Duhet të përdorësh **index_for_document_root.php** si **index.php**. Në cPanel File Manager: hap **public_html** → hap **index_for_document_root.php**, kopjo të gjithë përmbajtjen → hap **index.php** → zëvendësoje të gjithë përmbajtjen me atë të kopjuar → Ruaj. Ose riemërto **index_for_document_root.php** në **index.php** (pas backup të index.php aktual). Pas kësaj faqja duhet të ngarkojë përsëri.
+
+**Përse ndryshimet nuk duken në www.arontrade.net pas Pull?**  
+Pull përditëson vetëm **arontrade_git**. Faqja e gjallë xhiron nga **public_html**, prandaj duhet të **kopjosh** kodin nga arontrade_git në public_html (me dorë ose me deploy-from-git.php). Për ndryshime në Vue/CSS (p.sh. ngjyra e footerit) duhet edhe **public/build/** i ri në server (build lokalisht + ngarkim në public_html/build/).
+
+**Nëse "Deploy" nuk klikohet ose thotë "The system cannot deploy":** Përdor njërën nga këto:
+- **Alternativa 1 – Deploy me një klik:** pas **një herë** kopjimi manual (që të ketë deploy-from-git.php në public_html), ndrysho në skedar `public_html/deploy-from-git.php` rreshtin `$DEPLOY_KEY = '...'` me një fjalë sekrete, ruaj; pastaj çdo herë pas Pull hap në shfletues: **https://www.arontrade.net/deploy-from-git.php?key=JEKODI** (zëvendëso JEKODI me atë fjalë). Skedari kopjon nga `arontrade_git` në `public_html`.
+- **Alternativa 2 – Kopjim manual:** pas Pull, **File Manager** → hap **arontrade_git** → zgjidh të gjitha folderat dhe skedarët (app, bootstrap, config, database, public, resources, routes, artisan, composer.json, etj.; mund të lësh .git) → **Copy** → shko te **public_html** → **Paste** (mbishkruaj). Mos mbishkrua **.env** në public_html (nëse të pyet, jo).
+
 ---
 
 ## Mënyra 1 – cPanel Git Version Control (nëse e ofron hostingu)
@@ -233,11 +273,15 @@ Shumë hoste me cPanel kanë **Git™ Version Control**. Kjo mënyrë është m�
 
 ### B. Çdo përditësim (Pull + Deploy nga GitHub)
 
-1. Hyr në **cPanel → Git™ Version Control**.
-2. Zgjidh repozitorin **arontrade** (ose emrin që ke dhënë).
-3. Kliko **Manage** / **Update** ose **Pull** që të tërhiqen ndryshimet e fundit nga GitHub. Prit derisa të mbarojë.
-4. Kliko **Deploy** (Pull or Deploy). Nëse repozitoriu ka skedarin **`.cpanel.yml`**, cPanel do të ekzekutojë detyrat e deployment-it dhe do të kopjojë automatikisht kodin nga `arontrade_git` në `public_html`. **`.env`** në server nuk mbishkruhet (nuk është në repo).
-5. Nëse **Deploy** nuk ofrohet ose jep gabim, kopjo me dorë: **File Manager** → **arontrade_git** → zgjidh të gjitha → **Copy** → **public_html** → **Paste** (mbishkruaj).
+1. Hyr në **cPanel** (p.sh. https://premium132.web-hosting.com:2083/).
+2. Në menynë e majtë (ose në kërkim) gjej **Git™ Version Control** dhe kliko mbi të.
+3. Në listën **List Repositories** do të shikosh repozitorin **arontrade** (path: `/home/aronqbxm/arontrade_git`). Kliko mbi emrin e repozitorit **arontrade** (ose butonin **Manage** pranë tij) që të hapet faqja e menaxhimit.
+4. Në faqen **Manage Repository** ke seksionin **"Pull or Deploy"**. Atje:
+   - Së pari kliko **Pull** (ose **Update**) që të tërhiqen ndryshimet e fundit nga GitHub. Prit derisa të mbarojë.
+   - Pastaj, **në të njëjtin seksion "Pull or Deploy"**, kliko **Deploy**. Kjo ekzekuton skedarin **`.cpanel.yml`** dhe kopjon automatikisht kodin nga `arontrade_git` në `public_html`. **`.env`** në server nuk mbishkruhet.
+5. Nëse **Deploy** nuk shfaqet ose **nuk klikohet** (butoni është i çaktivizuar):
+   - **Opsioni A:** Pas Pull, hap në shfletues **https://www.arontrade.net/deploy-from-git.php?key=JEKODI**. Në File Manager hap **public_html/deploy-from-git.php**, ndrysho rreshtin `$DEPLOY_KEY = 'NdryshojeKeteFjalen';` dhe vendos një fjalë sekrete (p.sh. `$DEPLOY_KEY = 'FjaleSekrete123';`), ruaj; pastaj në URL përdor `?key=FjaleSekrete123`. Skedari kopjon nga `arontrade_git` në `public_html`. Për siguri, fshije `deploy-from-git.php` nga serveri kur nuk e përdor më.
+   - **Opsioni B:** Kopjim manual: **File Manager** → **arontrade_git** → zgjidh të gjitha → **Copy** → **public_html** → **Paste** (mbishkruaj).
 
 Pas çdo Pull + Deploy:
 - **Build i frontend:** në cPanel zakonisht **nuk** ka Node/npm. Prandaj:

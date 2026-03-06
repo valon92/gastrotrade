@@ -432,10 +432,33 @@
                   <p><strong>Totali me TVSH:</strong> {{ formatPrice(totalWithVat) }}</p>
                 </div>
               </div>
+
+              <!-- Pse butonat nuk punojnë? -->
+              <div 
+                v-if="(!isFormValid || cartStore.items.length === 0) && !savingOrder && !submittingOrder" 
+                class="mb-4 p-3 bg-amber-50 border border-amber-200 rounded-lg text-sm text-amber-800"
+              >
+                <p class="font-medium mb-1">Për të aktivizuar butonat më poshtë:</p>
+                <ul class="list-disc list-inside space-y-0.5 text-xs">
+                  <li v-if="!cartStore.client">
+                    <router-link to="/kycu" class="underline font-medium">Identifikohu</router-link> me email dhe fjalëkalim (faqja Kyçu).
+                  </li>
+                  <li v-else-if="!((cartStore.client.name || cartStore.client.email || customerData.name?.trim()) && (cartStore.client.city || cartStore.client.store_name || customerData.city?.trim() || customerData.storeName?.trim()))">
+                    Plotëso <strong>Qyteti</strong> dhe/ose <strong>Emri i biznesit</strong> në fushat «Të dhënat e porositësit» më sipër (mjafton njëra).
+                  </li>
+                  <li v-else-if="clientLocations.length > 1 && !selectedLocationId">
+                    Zgjidh pikën / njësinë e dërgimit nga lista.
+                  </li>
+                  <li v-if="cartStore.items.length === 0">
+                    Shto të paktën një produkt në shportë.
+                  </li>
+                </ul>
+              </div>
               
               <button 
                 @click="printCurrentOrder"
                 :disabled="!isFormValid || cartStore.items.length === 0"
+                :title="(!isFormValid || cartStore.items.length === 0) ? 'Identifikohu, plotëso të dhënat dhe shto produkte në shportë' : 'Printo faturën'"
                 :class="[
                   'w-full font-medium py-3 px-4 rounded-lg transition-colors duration-200 flex items-center justify-center gap-2',
                   (!isFormValid || cartStore.items.length === 0)
@@ -448,6 +471,7 @@
               <button 
                 @click="submitOrder"
                 :disabled="!isFormValid || savingOrder || submittingOrder || cartStore.items.length === 0"
+                :title="(!isFormValid || cartStore.items.length === 0) ? 'Identifikohu, plotëso të dhënat dhe shto produkte në shportë' : 'Ruaj dhe shko te dërgimi (Viber/email)'"
                 :class="[
                   'w-full font-medium py-3 px-4 rounded-lg transition-colors duration-200 flex items-center justify-center gap-2',
                   (!isFormValid || savingOrder || submittingOrder || cartStore.items.length === 0)
@@ -461,6 +485,7 @@
               <button 
                 @click="saveOrder"
                 :disabled="!isFormValid || savingOrder || submittingOrder || cartStore.items.length === 0"
+                :title="(!isFormValid || cartStore.items.length === 0) ? 'Identifikohu, plotëso të dhënat dhe shto produkte në shportë' : 'Ruaj porosinë në sistem'"
                 :class="[
                   'w-full font-medium py-3 px-4 rounded-lg transition-colors duration-200 flex items-center justify-center gap-2',
                   (!isFormValid || savingOrder || submittingOrder || cartStore.items.length === 0)
@@ -592,7 +617,10 @@ export default {
       if (!this.cartStore.client) return false
       const c = this.cartStore.client
       const hasLocation = this.clientLocations.length <= 1 || (this.clientLocations.length > 1 && this.selectedLocationId)
-      return (c.name || c.email) && (c.city || c.store_name) && hasLocation
+      // Pranojmë edhe të dhënat e formës (customerData) që përdoruesi plotëson, jo vetëm të API
+      const hasName = !!(c.name || c.email || (this.customerData.name && this.customerData.name.trim()))
+      const hasCityOrBusiness = !!(c.city || c.store_name || (this.customerData.city && this.customerData.city.trim()) || (this.customerData.storeName && this.customerData.storeName.trim()))
+      return hasName && hasCityOrBusiness && hasLocation
     },
     hasClientPrices() {
       return this.cartStore.client && Object.keys(this.cartStore.clientPrices).length > 0
