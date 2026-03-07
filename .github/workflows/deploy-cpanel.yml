@@ -8,6 +8,7 @@
 #    FTP_SERVER   = adresa FTP (p.sh. ftp.arontrade.net ose premium132.web-hosting.com)
 #    FTP_USERNAME = përdoruesi FTP
 #    FTP_PASSWORD = fjalëkalimi FTP
+#    CACHE_CLEAR_KEY = i njëjti si CACHE_CLEAR_KEY në .env në server (për fshirje cache pas deploy)
 
 name: Deploy to cPanel (arontrade.net)
 

@@ -15,6 +15,7 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->alias([
             'admin.role' => \App\Http\Middleware\CheckAdminRole::class,
             'admin.user' => \App\Http\Middleware\EnsureAdminUser::class,
+            'no-cache-spa' => \App\Http\Middleware\NoCacheForSPA::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {

@@ -23,4 +23,4 @@ Route::get('/install', function (Request $request) {
 
 Route::get('/{any}', function () {
     return view('welcome');
-})->where('any', '.*');
+})->where('any', '.*')->middleware('no-cache-spa');
