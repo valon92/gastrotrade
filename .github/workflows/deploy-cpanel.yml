@@ -1,5 +1,6 @@
 # Kur push-on në main, bën build dhe ngarkon në cPanel (FTP).
 # Ndryshimet pasqyrohen automatikisht në arontrade.net.
+# Vite përdor timestamp në emrat e aseteve (vite.config.js) që çdo deploy të shfaqë përditësimet (cache-busting).
 #
 # Konfigurim i nevojshëm:
 # 1. Krijo llogari FTP në cPanel (ose përdor kredencialet e hostingut).
