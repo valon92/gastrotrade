@@ -19,8 +19,18 @@
 
         <!-- Styles / Scripts -->
             @vite(['resources/css/app.css', 'resources/js/app.js'])
-        <!-- Footer i zi - garantuar në production -->
-        <style>footer{background-color:#000!important;color:#fff!important;}footer a{color:#9ca3af;}footer a:hover{color:#fff;}</style>
+        <!-- Footer: ngjyrë e zezë + layout mobile (garantuar në production) -->
+        <style>
+          footer{background-color:#000!important;color:#fff!important;}
+          footer a{color:#9ca3af;}
+          footer a:hover{color:#fff;}
+          @media (max-width:767px){
+            footer ul{display:flex!important;flex-direction:row!important;flex-wrap:wrap!important;gap:.5rem .75rem!important;font-size:12px!important;}
+            footer ul li{white-space:nowrap!important;}
+            footer .space-y-2>div{display:flex!important;flex-direction:row!important;flex-wrap:wrap!important;gap:.5rem .75rem!important;font-size:12px!important;}
+            footer .space-y-2>div span{white-space:nowrap!important;}
+          }
+        </style>
     </head>
 <body class="font-sans antialiased">
     <div id="app"></div>
