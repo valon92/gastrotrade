@@ -17,8 +17,22 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 
-        <!-- Styles / Scripts -->
+        <!-- Styles / Scripts: në server (manifest në public_html/build/) nxjerr tag-et nga manifest; përndryshe @vite -->
+        @php
+            $manifestPath = base_path('build/manifest.json');
+            $manifest = (file_exists($manifestPath)) ? json_decode(file_get_contents($manifestPath), true) : null;
+        @endphp
+        @if($manifest && isset($manifest['resources/js/app.js']['file']))
+            @foreach($manifest['resources/js/app.js']['css'] ?? [] as $cssFile)
+                <link rel="stylesheet" href="/build/{{ $cssFile }}" />
+            @endforeach
+            @if(isset($manifest['resources/css/app.css']['file']) && !in_array($manifest['resources/css/app.css']['file'], $manifest['resources/js/app.js']['css'] ?? []))
+                <link rel="stylesheet" href="/build/{{ $manifest['resources/css/app.css']['file'] }}" />
+            @endif
+            <script type="module" src="/build/{{ $manifest['resources/js/app.js']['file'] }}"></script>
+        @else
             @vite(['resources/css/app.css', 'resources/js/app.js'])
+        @endif
         <!-- Footer: ngjyrë e zezë + layout mobile (garantuar në production) -->
         <style>
           footer{background-color:#000!important;color:#fff!important;}
