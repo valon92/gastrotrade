@@ -19,6 +19,8 @@
 
         <!-- Styles / Scripts -->
             @vite(['resources/css/app.css', 'resources/js/app.js'])
+        <!-- Footer i zi - garantuar në production -->
+        <style>footer{background-color:#000!important;color:#fff!important;}footer a{color:#9ca3af;}footer a:hover{color:#fff;}</style>
     </head>
 <body class="font-sans antialiased">
     <div id="app"></div>
