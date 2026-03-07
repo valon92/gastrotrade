@@ -1,8 +1,8 @@
 <template>
-  <nav class="bg-white shadow-lg sticky top-0 z-50">
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-      <div class="flex justify-between h-16">
-        <div class="flex items-center">
+  <nav class="bg-white shadow-lg sticky top-0 z-50 overflow-x-hidden">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full min-w-0">
+      <div class="flex justify-between items-center h-16 gap-2 min-w-0">
+        <div class="flex items-center min-w-0 flex-shrink-0">
           <router-link to="/" class="flex-shrink-0 flex items-center gap-3">
             <!-- AT Logo - Aron Trade -->
             <svg class="w-10 h-10 flex-shrink-0 text-primary-600" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
@@ -64,8 +64,8 @@
           </router-link>
         </div>
         
-        <!-- Mobile: shporta jashtë burger + butoni i menysë -->
-        <div class="md:hidden flex items-center gap-3">
+        <!-- Mobile: shporta në navbar, brenda margjinave -->
+        <div class="md:hidden flex items-center gap-2 flex-shrink-0 min-w-0">
           <router-link
             to="/shporta"
             class="relative p-2 rounded-full text-gray-700 hover:text-primary-600 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 transition-colors"
