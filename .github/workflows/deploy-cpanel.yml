@@ -46,6 +46,8 @@ jobs:
           cp artisan composer.json composer.lock package.json package-lock.json deploy/ 2>/dev/null || true
           cp vite.config.js tailwind.config.js postcss.config.js deploy/ 2>/dev/null || true
           echo "deploy=$(date -u +%Y-%m-%dT%H:%M:%SZ) commit=${{ github.sha }}" > deploy/deploy-version.txt
+          echo "Build assets që do të ngarkohen:"
+          ls -la deploy/build/assets/ 2>/dev/null || true
 
       - name: Deploy to cPanel via FTP
         uses: SamKirkland/FTP-Deploy-Action@v4.3.5
