@@ -15,24 +15,24 @@
         <!-- Quick Links -->
         <div>
           <h3 class="text-lg font-semibold mb-4">Lidhje të Shpejta</h3>
-          <ul class="space-y-2">
+          <ul class="flex flex-row flex-wrap gap-x-3 gap-y-1 text-xs sm:text-sm md:flex-col md:space-y-2 md:gap-0 md:text-sm">
             <li>
-              <router-link to="/" class="text-gray-400 hover:text-white transition-colors duration-200">
+              <router-link to="/" class="text-gray-400 hover:text-white transition-colors duration-200 whitespace-nowrap">
                 Ballina
               </router-link>
             </li>
             <li>
-              <router-link to="/produktet" class="text-gray-400 hover:text-white transition-colors duration-200">
+              <router-link to="/produktet" class="text-gray-400 hover:text-white transition-colors duration-200 whitespace-nowrap">
                 Produktet
               </router-link>
             </li>
             <li>
-              <router-link to="/rreth-nesh" class="text-gray-400 hover:text-white transition-colors duration-200">
+              <router-link to="/rreth-nesh" class="text-gray-400 hover:text-white transition-colors duration-200 whitespace-nowrap">
                 Rreth Nesh
               </router-link>
             </li>
             <li>
-              <router-link to="/kontakt" class="text-gray-400 hover:text-white transition-colors duration-200">
+              <router-link to="/kontakt" class="text-gray-400 hover:text-white transition-colors duration-200 whitespace-nowrap">
                 Kontakt
               </router-link>
             </li>
@@ -42,12 +42,16 @@
         <!-- Contact Info -->
         <div>
           <h3 class="text-lg font-semibold mb-4">Kontakt</h3>
-          <div class="space-y-2 text-gray-400">
+          <div class="space-y-2 text-gray-400 text-sm">
             <p>📧 svalon95@gmail.com</p>
-            <p>📞 048 75 66 46</p>
-            <p>📞 044 82 43 14</p>
-            <p>📍 Ferizaj, Kosovë</p>
-            <p>📍 Rruga Lidhja E Prizerent</p>
+            <div class="flex flex-row flex-wrap gap-x-3 gap-y-1 text-xs sm:text-sm">
+              <span class="whitespace-nowrap">📞 048 75 66 46</span>
+              <span class="whitespace-nowrap">📞 044 82 43 14</span>
+            </div>
+            <div class="flex flex-row flex-wrap gap-x-3 gap-y-1 text-xs sm:text-sm">
+              <span class="whitespace-nowrap">📍 Ferizaj, Kosovë</span>
+              <span class="whitespace-nowrap">📍 Rruga Lidhja E Prizerent</span>
+            </div>
           </div>
         </div>
       </div>
