@@ -59,3 +59,7 @@ jobs:
             **/vendor
             **/storage/logs/*
             **/*.md
+
+      - name: Clear Laravel cache on server (optional)
+        run: |
+          [ -n "${{ secrets.CACHE_CLEAR_KEY }}" ] && curl -s -o /dev/null "https://www.arontrade.net/clear-cache.php?key=${{ secrets.CACHE_CLEAR_KEY }}" || true
