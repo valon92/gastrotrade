@@ -64,7 +64,7 @@
           </router-link>
         </div>
         
-        <!-- Mobile: shporta në navbar, brenda margjinave -->
+        <!-- Mobile: shporta + burger (i njëjti layout si localhost; server duhet të marrë këtë build pas deploy) -->
         <div class="md:hidden flex items-center gap-2 flex-shrink-0 min-w-0">
           <router-link
             to="/shporta"

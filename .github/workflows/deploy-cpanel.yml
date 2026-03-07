@@ -64,12 +64,13 @@ jobs:
             **/storage/logs/*
             **/*.md
 
-      - name: Clear Laravel + OPcache on server (duhet CACHE_CLEAR_KEY)
+      - name: Clear Laravel + OPcache on server (shporta në navbar = localhost)
         run: |
+          sleep 3
           if [ -n "${{ secrets.CACHE_CLEAR_KEY }}" ]; then
             echo "Duke thirrur clear-cache.php..."
             curl -s "https://www.arontrade.net/clear-cache.php?key=${{ secrets.CACHE_CLEAR_KEY }}"
             echo ""
           else
-            echo "::warning::CACHE_CLEAR_KEY nuk është vendosur në GitHub Secrets. Vendose (dhe në .env në server) që pas deploy të pastrohet cache/OPcache dhe ndryshimet të shfaqen."
+            echo "::warning::Vendos CACHE_CLEAR_KEY në GitHub Secrets (dhe në .env në server) që serveri në mobile të shfaqë shportën në navbar njësoj si localhost."
           fi
