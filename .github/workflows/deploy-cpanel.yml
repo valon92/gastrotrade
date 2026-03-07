@@ -45,6 +45,7 @@ jobs:
           cp -r public/. deploy/
           cp artisan composer.json composer.lock package.json package-lock.json deploy/ 2>/dev/null || true
           cp vite.config.js tailwind.config.js postcss.config.js deploy/ 2>/dev/null || true
+          echo "deploy=$(date -u +%Y-%m-%dT%H:%M:%SZ) commit=${{ github.sha }}" > deploy/deploy-version.txt
 
       - name: Deploy to cPanel via FTP
         uses: SamKirkland/FTP-Deploy-Action@v4.3.5
@@ -62,6 +63,12 @@ jobs:
             **/storage/logs/*
             **/*.md
 
-      - name: Clear Laravel cache on server (optional)
+      - name: Clear Laravel + OPcache on server (duhet CACHE_CLEAR_KEY)
         run: |
-          [ -n "${{ secrets.CACHE_CLEAR_KEY }}" ] && curl -s -o /dev/null "https://www.arontrade.net/clear-cache.php?key=${{ secrets.CACHE_CLEAR_KEY }}" || true
+          if [ -n "${{ secrets.CACHE_CLEAR_KEY }}" ]; then
+            echo "Duke thirrur clear-cache.php..."
+            curl -s "https://www.arontrade.net/clear-cache.php?key=${{ secrets.CACHE_CLEAR_KEY }}"
+            echo ""
+          else
+            echo "::warning::CACHE_CLEAR_KEY nuk është vendosur në GitHub Secrets. Vendose (dhe në .env në server) që pas deploy të pastrohet cache/OPcache dhe ndryshimet të shfaqen."
+          fi

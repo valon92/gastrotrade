@@ -34,5 +34,10 @@ foreach ($dirs as $dir) {
         }
     }
 }
+// Fshij OPcache që serveri të ngarkojë kodin e ri PHP (middleware, routes) pas deploy
+$opcacheReset = false;
+if (function_exists('opcache_reset')) {
+    $opcacheReset = @opcache_reset();
+}
 header('Content-Type: application/json');
-echo json_encode(['ok' => true, 'cleared' => count($cleared)], JSON_PRETTY_PRINT);
+echo json_encode(['ok' => true, 'cleared' => count($cleared), 'opcache_reset' => $opcacheReset], JSON_PRETTY_PRINT);

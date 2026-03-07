@@ -26,7 +26,8 @@ Nëse ke konfiguruar **GitHub Actions** me FTP (shiko më poshtë), mjafton:
    - **FTP_SERVER** = adresa e serverit FTP (p.sh. `ftp.arontrade.net` ose `premium132.web-hosting.com`, pa `ftp://`)
    - **FTP_USERNAME** = përdoruesi FTP
    - **FTP_PASSWORD** = fjalëkalimi FTP
-3. Ruaj. Workflow-i `.github/workflows/deploy-cpanel.yml` ekzekutohet çdo herë që bën **push** në **main**; ai bën build dhe ngarkon në **public_html** (pa prekur **.env** ose **vendor** në server).
+   - **CACHE_CLEAR_KEY** = një fjalë sekrete (p.sh. `JemiFjaleSekrete123`). Duhet **të njëjtën** vlerë të vendosësh edhe në **.env** në server: `CACHE_CLEAR_KEY=JemiFjaleSekrete123`. Pas çdo deploy, workflow-i thërret `clear-cache.php` me këtë çelës; pastrohet cache-i Laravel dhe OPcache, që ndryshimet (navbar, shporta, etj.) të shfaqen menjëherë në arontrade.net.
+3. Ruaj. Workflow-i `.github/workflows/deploy-cpanel.yml` ekzekutohet çdo herë që bën **push** në **main**; ai bën build dhe ngarkon në **public_html** (pa prekur **.env** ose **vendor** në server). **Nëse CACHE_CLEAR_KEY nuk është vendosur**, ndryshimet mund të mos duken në faqe (serveri mban cache të vjetër).
 
 Nëse nuk ke FTP ose do të përdorësh vetëm Pull + Deploy/kopjim manual, përdor udhëzimet më poshtë.
 
