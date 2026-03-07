@@ -6,19 +6,21 @@
  * Vendos CACHE_CLEAR_KEY në .env në server (dhe në GitHub Secrets nëse e përdor në workflow).
  */
 $key = $_GET['key'] ?? '';
-$envFile = dirname(__DIR__) . '/.env';
+// Në deploy, app/bootstrap janë në të njëjtin folder si clear-cache.php (public_html)
+$base = __DIR__;
+$envFile = (is_file($base . '/.env') ? $base . '/.env' : dirname($base) . '/.env');
 $expected = 'NdryshojeKeteFjalen';
 if (is_file($envFile)) {
     $env = file_get_contents($envFile);
-    if (preg_match('/CACHE_CLEAR_KEY\s*=\s*(\S+)/', $env, $m)) {
-        $expected = trim($m[1], '"\'');
+    if (preg_match('/CACHE_CLEAR_KEY\s*=\s*([^\s"\']+|"[^"]*"|\'[^\']*\')/', $env, $m)) {
+        $expected = trim(trim($m[1], '"\''));
     }
 }
-if ($key !== $expected || $expected === 'NdryshojeKeteFjalen') {
+if ($key === '' || $expected === 'NdryshojeKeteFjalen' || $key !== $expected) {
     http_response_code(403);
+    header('Content-Type: text/plain');
     exit('Forbidden');
 }
-$base = dirname(__DIR__);
 $dirs = [
     $base . '/bootstrap/cache',
     $base . '/storage/framework/views',
