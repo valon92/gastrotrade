@@ -17,21 +17,30 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 
-        <!-- Styles / Scripts: në server (manifest në public_html/build/) nxjerr tag-et nga manifest; përndryshe @vite -->
+        <!-- Styles / Scripts: server = manifest base_path; localhost = manifest public_path ose vite dev -->
         @php
-            $manifestPath = base_path('build/manifest.json');
-            $manifest = (file_exists($manifestPath)) ? json_decode(file_get_contents($manifestPath), true) : null;
+            $serverManifestPath = base_path('build/manifest.json');
+            $serverManifest = (file_exists($serverManifestPath)) ? json_decode(file_get_contents($serverManifestPath), true) : null;
+            $publicManifest = !$serverManifest && file_exists(public_path('build/manifest.json')) ? json_decode(file_get_contents(public_path('build/manifest.json')), true) : null;
         @endphp
-        @if($manifest && isset($manifest['resources/js/app.js']['file']))
-            @foreach($manifest['resources/js/app.js']['css'] ?? [] as $cssFile)
+        @if($serverManifest && isset($serverManifest['resources/js/app.js']['file']))
+            @foreach($serverManifest['resources/js/app.js']['css'] ?? [] as $cssFile)
                 <link rel="stylesheet" href="/build/{{ $cssFile }}" />
             @endforeach
-            @if(isset($manifest['resources/css/app.css']['file']) && !in_array($manifest['resources/css/app.css']['file'], $manifest['resources/js/app.js']['css'] ?? []))
-                <link rel="stylesheet" href="/build/{{ $manifest['resources/css/app.css']['file'] }}" />
+            @if(isset($serverManifest['resources/css/app.css']['file']) && !in_array($serverManifest['resources/css/app.css']['file'], $serverManifest['resources/js/app.js']['css'] ?? []))
+                <link rel="stylesheet" href="/build/{{ $serverManifest['resources/css/app.css']['file'] }}" />
             @endif
-            <script type="module" src="/build/{{ $manifest['resources/js/app.js']['file'] }}"></script>
+            <script type="module" src="/build/{{ $serverManifest['resources/js/app.js']['file'] }}"></script>
+        @elseif($publicManifest && isset($publicManifest['resources/js/app.js']['file']))
+            @foreach($publicManifest['resources/js/app.js']['css'] ?? [] as $cssFile)
+                <link rel="stylesheet" href="/build/{{ $cssFile }}" />
+            @endforeach
+            @if(isset($publicManifest['resources/css/app.css']['file']) && !in_array($publicManifest['resources/css/app.css']['file'], $publicManifest['resources/js/app.js']['css'] ?? []))
+                <link rel="stylesheet" href="/build/{{ $publicManifest['resources/css/app.css']['file'] }}" />
+            @endif
+            <script type="module" src="/build/{{ $publicManifest['resources/js/app.js']['file'] }}"></script>
         @else
-            @vite(['resources/css/app.css', 'resources/js/app.js'])
+            @include('partials.vite')
         @endif
         <!-- Footer: ngjyrë e zezë + layout mobile (garantuar në production) -->
         <style>
