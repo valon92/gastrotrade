@@ -23,6 +23,11 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
+        // Kur document root = public_html (deploy cPanel), build/ është në public_html/build/, jo public_html/public/
+        if (file_exists(base_path('build/manifest.json'))) {
+            $this->app->usePublicPath(base_path());
+        }
+
         // Register StockMovement observer for automatic stock synchronization
         StockMovement::observe(StockMovementObserver::class);
         
