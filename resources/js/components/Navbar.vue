@@ -133,6 +133,14 @@
         >
           KYÇU
         </router-link>
+        <router-link 
+          to="/shporta" 
+          class="flex items-center justify-between text-gray-700 hover:text-primary-600 block px-3 py-2 rounded-md text-base font-medium transition-colors duration-200"
+          @click="closeMobileMenu"
+        >
+          <span>🛒 SHPORTA</span>
+          <span v-if="cartItemCount > 0" class="bg-primary-600 text-white text-xs font-bold rounded-full min-w-[1.25rem] h-5 px-1.5 flex items-center justify-center">{{ cartItemCount > 99 ? '99+' : cartItemCount }}</span>
+        </router-link>
       </div>
     </div>
   </nav>
