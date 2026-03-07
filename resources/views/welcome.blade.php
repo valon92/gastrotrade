@@ -30,17 +30,9 @@
             footer .space-y-2>div{display:flex!important;flex-direction:row!important;flex-wrap:wrap!important;gap:.5rem .75rem!important;font-size:12px!important;}
             footer .space-y-2>div span{white-space:nowrap!important;}
           }
-          .nav-cart-fallback{display:none;background:#fff;box-shadow:0 4px 6px -1px rgba(0,0,0,.1);height:4rem;align-items:center;justify-content:flex-end;max-width:80rem;margin:0 auto;padding:0 1rem;}
-          @media (max-width:767px){ .nav-cart-fallback{display:flex!important;} }
         </style>
     </head>
 <body class="font-sans antialiased">
-    <div id="nav-cart-fallback" class="nav-cart-fallback">
-        <a href="/shporta" style="display:flex;align-items:center;justify-content:center;width:2.5rem;height:2.5rem;border-radius:9999px;color:#374151;text-decoration:none;" aria-label="Shporta">
-            <svg style="width:1.5rem;height:1.5rem;" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"/></svg>
-        </a>
-    </div>
     <div id="app"></div>
-    <script>!function(){setTimeout(function(){if(document.querySelector('#app a[href="/shporta"]')){var e=document.getElementById('nav-cart-fallback');e&&(e.style.display='none');}},300);}();</script>
     </body>
 </html>
