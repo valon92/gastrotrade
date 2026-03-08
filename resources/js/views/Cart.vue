@@ -1569,6 +1569,56 @@ export default {
       const discountVal = totalItemDiscounts > 0 ? fmtNum(totalItemDiscounts) : '0.00'
       const valNoVat = amountBeforeVat != null ? fmtNum(amountBeforeVat) : '0.00'
       const paymentDone = isPaid ? (order.total_amount ? fmtNum(parseFloat(order.total_amount)) : '0.00') : '0.00'
+      const totalForPay = order.total_amount ? fmtNum(parseFloat(order.total_amount)) : '-'
+      const mbetjaVal = order.total_amount ? (isPaid ? '0.00' : fmtNum(parseFloat(order.total_amount))) : '-'
+
+      const itemsTextLines = (order.items || [])
+        .map((item, idx) => {
+          const barcode = (item.barcode != null && item.barcode !== '') ? String(item.barcode) : (item.product && item.product.barcode ? String(item.product.barcode) : '-')
+          const qty = parseFloat(item.quantity) || 1
+          const unitPrice = item.unit_price != null ? parseFloat(item.unit_price) : null
+          const lineTotal = item.total_price != null ? parseFloat(item.total_price) : (unitPrice ? unitPrice * qty : 0)
+          const unitPriceNoVat = hasVat && unitPrice ? unitPrice / 1.18 : unitPrice
+          return (idx + 1) + '\t' + (barcode || '-') + '\t' + (item.product_name || '') + '\t' + fmtQty(qty) + '\tCopë\t' + (unitPriceNoVat != null ? fmtNum(unitPriceNoVat) : '-') + '\t0.00\t' + (hasVat ? 18 : 0) + '\t' + (unitPrice != null ? fmtNum(unitPrice) : '-') + '\t' + (lineTotal > 0 ? fmtNum(lineTotal) : '-')
+        })
+        .join('\n')
+
+      const fullInvoiceText =
+        'ARON TRADE\n' +
+        'Nrf/NIPT: ' + (order.company_nrf || '—') + '\n' +
+        'tel: +383 48 75 66 46 / +383 44 82 43 14\n' +
+        'email: svalon95@gmail.com\n' +
+        'Adresë: Ferizaj, Kosovë, Rruga Lidhja e Prizrenit\n' +
+        'Nrb: ' + (order.company_nrb || '—') + '\n' +
+        'Tvsh: ' + (order.company_tvsh || '—') + '\n\n' +
+        'Nr. Faturës: ' + (order.order_number || 'N/A') + '\n\n' +
+        'BLERESI\n' +
+        buyerName + '\n' +
+        (buyerAddress ? 'Adresa: ' + buyerAddress + '\n' : '') +
+        'Qyteti: ' + buyerCity + '\n' +
+        'No fiskal: ' + buyerFiscal + '\n' +
+        'Numri unik: ' + buyerFiscal + '\n' +
+        (order.phone ? 'Telefon: ' + order.phone + '\n' : '') + '\n' +
+        'Data fatura\tKushtet\tData e skadimit\tUser\tReferenca\tLokacioni\n' +
+        invoiceDateFormatted + '\t\t' + expDate + '\tKlient\t\t' + (order.location_unit_name || '-') + '\n\n' +
+        'No\tBarcode\tEmertimi\tSasia\tNjesia\tCmimi pa TVSH\tRabati %\tTVSH %\tCmimi me TVSH\tVlera me TVSH\n' +
+        itemsTextLines + '\n\n' +
+        'Normat Tatimore\tBaza\tTVSH\tVlera\n' +
+        'TVSH 0%\t0.00\t0.00\t0.00\n' +
+        'TVSH 18%\t' + taxBase18 + '\t' + taxVat18 + '\t' + taxVal18 + '\n\n' +
+        'Vlera para zbritjes\t' + valBeforeDiscount + '\n' +
+        'Rabati\t' + discountVal + '\n' +
+        'Vlera pa TVSH\t' + valNoVat + '\n' +
+        'TVSH\t' + taxVat18 + '\n' +
+        'Vlera për pagesë (EUR)\t' + totalForPay + '\n' +
+        'Pagesa\t' + paymentDone + '\n' +
+        'Mbetja\t' + mbetjaVal + '\n\n' +
+        'Faturoi: Aron Trade\n' +
+        'Dergoi: Aron Trade\n' +
+        'Pranoi: ' + buyerName + '\n\n' +
+        'Llogaria bankare: (vendosni nëse keni)'
+
+      const fullInvoiceTextJson = JSON.stringify(fullInvoiceText)
 
       const htmlContent = '<!DOCTYPE html><html lang="sq">' +
         '<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">' +
@@ -1672,61 +1722,28 @@ export default {
         '</div></div>' +
         scriptTag +
         'const orderData = ' + orderDataJson + ';' +
+        'const fullInvoiceText = JSON.parse(' + fullInvoiceTextJson + ');' +
         'function shareToViber() {' +
-        'let orderText = "📦 Faturë " + orderData.order_number + "\\n\\nKlienti: " + orderData.customer_name + " — " + orderData.business_name + "\\nQyteti: " + orderData.city + "\\nTelefon: " + orderData.phone;' +
-        (order.location_unit_name ? 'orderText += "\\n📍 Pika/Njësia: " + orderData.location_unit_name;' : '') +
-        (order.location_street_number ? 'orderText += "\\nAdresa: " + orderData.location_street_number;' : '') +
-        (order.location_city ? 'orderText += "\\nVendi/Qyteti: " + orderData.location_city;' : '') +
-        (order.location_phone ? 'orderText += "\\nTelefon: " + orderData.location_phone;' : '') +
-        (order.location_viber ? 'orderText += "\\nViber: " + orderData.location_viber;' : '') +
-        'orderText += "\\n\\nTotal: " + (orderData.total_amount ? orderData.total_amount.toFixed(2) + " €" : "Sipas kërkesës");' +
+        'var textToShare = fullInvoiceText;' +
         'if (navigator.share) {' +
-        'navigator.share({' +
-        'title: "Faturë " + orderData.order_number,' +
-        'text: orderText' +
-        '}).catch(function(err) {' +
-        'console.log("Error sharing:", err);' +
-        'fallbackShareViber(orderText);' +
-        '});' +
-        '} else {' +
-        'fallbackShareViber(orderText);' +
-        '}' +
+        'navigator.share({ title: "Faturë " + orderData.order_number, text: textToShare })' +
+        '.catch(function(err) { console.log("Share error:", err); fallbackShareViber(textToShare); });' +
+        '} else { fallbackShareViber(textToShare); }' +
         '}' +
         'function fallbackShareViber(text) {' +
-        'if (navigator.clipboard) {' +
-        'navigator.clipboard.writeText(text).then(function() {' +
-        'alert("Teksti u kopjua në clipboard. Mund ta ngjitni në Viber.");' +
-        '}).catch(function(err) {' +
-        'console.error("Failed to copy:", err);' +
-        'prompt("Kopjoni këtë tekst dhe ngjisni në Viber:", text);' +
-        '});' +
-        '} else {' +
-        'prompt("Kopjoni këtë tekst dhe ngjisni në Viber:", text);' +
-        '}' +
+        'if (navigator.clipboard && navigator.clipboard.writeText) {' +
+        'navigator.clipboard.writeText(text).then(function() { alert("Fatura e plotë u kopjua. Ngjiteni në Viber."); }).catch(function() { prompt("Kopjoni faturën dhe ngjisni në Viber:", text); });' +
+        '} else { prompt("Kopjoni faturën e plotë dhe ngjisni në Viber:", text); }' +
         '}' +
         'function shareToWhatsApp() {' +
-        'let orderText = "📦 Faturë " + orderData.order_number + "\\n\\nKlienti: " + orderData.customer_name + " — " + orderData.business_name + "\\nQyteti: " + orderData.city + "\\nTelefon: " + orderData.phone;' +
-        (order.location_unit_name ? 'orderText += "\\n📍 Pika/Njësia: " + orderData.location_unit_name;' : '') +
-        (order.location_street_number ? 'orderText += "\\nAdresa: " + orderData.location_street_number;' : '') +
-        (order.location_city ? 'orderText += "\\nVendi/Qyteti: " + orderData.location_city;' : '') +
-        (order.location_phone ? 'orderText += "\\nTelefon: " + orderData.location_phone;' : '') +
-        (order.location_viber ? 'orderText += "\\nViber: " + orderData.location_viber;' : '') +
-        'orderText += "\\n\\nTotal: " + (orderData.total_amount ? orderData.total_amount.toFixed(2) + " €" : "Sipas kërkesës");' +
-        'const whatsappUrl = "https://wa.me/?text=" + encodeURIComponent(orderText);' +
-        'window.open(whatsappUrl, "_blank");' +
+        'var textToShare = fullInvoiceText;' +
+        'var url = "https://wa.me/?text=" + encodeURIComponent(textToShare);' +
+        'window.open(url, "_blank");' +
         '}' +
         'function shareToGmail() {' +
-        'const subject = encodeURIComponent("Faturë " + orderData.order_number);' +
-        'let bodyText = "Faturë: " + orderData.order_number + "\\n\\nKlienti: " + orderData.customer_name + " — " + orderData.business_name + "\\nQyteti: " + orderData.city + "\\nTelefon: " + orderData.phone;' +
-        (order.location_unit_name ? 'bodyText += "\\n📍 Pika/Njësia: " + orderData.location_unit_name;' : '') +
-        (order.location_street_number ? 'bodyText += "\\nAdresa: " + orderData.location_street_number;' : '') +
-        (order.location_city ? 'bodyText += "\\nVendi/Qyteti: " + orderData.location_city;' : '') +
-        (order.location_phone ? 'bodyText += "\\nTelefon: " + orderData.location_phone;' : '') +
-        (order.location_viber ? 'bodyText += "\\nViber: " + orderData.location_viber;' : '') +
-        'bodyText += "\\n\\nTotal: " + (orderData.total_amount ? orderData.total_amount.toFixed(2) + " €" : "Sipas kërkesës");' +
-        'const body = encodeURIComponent(bodyText);' +
-        'const gmailUrl = "mailto:svalon95@gmail.com?subject=" + subject + "&body=" + body;' +
-        'window.location.href = gmailUrl;' +
+        'var subject = encodeURIComponent("Faturë " + orderData.order_number);' +
+        'var body = encodeURIComponent(fullInvoiceText);' +
+        'window.location.href = "mailto:svalon95@gmail.com?subject=" + subject + "&body=" + body;' +
         '}' +
         scriptClose +
         '</body>' +
