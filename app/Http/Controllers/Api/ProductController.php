@@ -137,8 +137,12 @@ class ProductController extends Controller
             'sort_order' => ['nullable', 'integer', 'min:0'],
             'sold_by_package' => ['nullable', 'boolean'],
             'pieces_per_package' => ['nullable', 'integer', 'min:1'],
-            'image' => ['nullable', 'file', 'mimes:jpeg,jpg,png,gif,webp', 'mimetypes:image/jpeg,image/png,image/gif,image/webp', 'max:8192'],
+            'image' => ['nullable', 'file', 'mimes:jpeg,jpg,png,gif,webp', 'max:10240'],
             'image_path' => ['nullable', 'string', 'max:500'],
+        ], [
+            'image.file' => 'Skedari i zgjedhur nuk është valid.',
+            'image.mimes' => 'Lejohen vetëm formatet: JPG, PNG, GIF, WEBP.',
+            'image.max' => 'Foto nuk duhet të kalojë 10 MB.',
         ]);
 
         $data = $validated;
@@ -155,8 +159,8 @@ class ProductController extends Controller
         }
 
         if ($request->hasFile('image')) {
-            $data['image_path'] = $this->storeImage($request->file('image'));
-        } elseif ($request->filled('image_path') && str_starts_with($request->input('image_path'), '/images/')) {
+            $data['image_path'] = $this->storeProductImage($request->file('image'));
+        } elseif ($request->filled('image_path') && (str_starts_with($request->input('image_path'), '/images/') || str_starts_with($request->input('image_path'), '/uploads/'))) {
             $data['image_path'] = $request->input('image_path');
         }
 
@@ -197,8 +201,12 @@ class ProductController extends Controller
             'sort_order' => ['nullable', 'integer', 'min:0'],
             'sold_by_package' => ['nullable', 'boolean'],
             'pieces_per_package' => ['nullable', 'integer', 'min:1'],
-            'image' => ['nullable', 'file', 'mimes:jpeg,jpg,png,gif,webp', 'mimetypes:image/jpeg,image/png,image/gif,image/webp', 'max:8192'],
+            'image' => ['nullable', 'file', 'mimes:jpeg,jpg,png,gif,webp', 'max:10240'],
             'image_path' => ['nullable', 'string', 'max:500'],
+        ], [
+            'image.file' => 'Skedari i zgjedhur nuk është valid.',
+            'image.mimes' => 'Lejohen vetëm formatet: JPG, PNG, GIF, WEBP.',
+            'image.max' => 'Foto nuk duhet të kalojë 10 MB.',
         ]);
 
         $data = $validated;
@@ -228,9 +236,9 @@ class ProductController extends Controller
         }
 
         if ($request->hasFile('image')) {
-            $this->deleteImage($product->image_path);
-            $data['image_path'] = $this->storeImage($request->file('image'));
-        } elseif ($request->filled('image_path') && str_starts_with($request->input('image_path'), '/images/')) {
+            $this->deleteProductImage($product->image_path);
+            $data['image_path'] = $this->storeProductImage($request->file('image'));
+        } elseif ($request->filled('image_path') && (str_starts_with($request->input('image_path'), '/images/') || str_starts_with($request->input('image_path'), '/uploads/'))) {
             $data['image_path'] = $request->input('image_path');
         }
 
@@ -247,7 +255,7 @@ class ProductController extends Controller
      */
     public function destroy(Product $product)
     {
-        $this->deleteImage($product->image_path);
+        $this->deleteProductImage($product->image_path);
         $product->images()->delete();
         $product->delete();
 
@@ -257,15 +265,34 @@ class ProductController extends Controller
         ]);
     }
 
-    private function storeImage($file): string
+    /**
+     * Store uploaded image in public/uploads/products (works without storage:link, e.g. cPanel).
+     */
+    private function storeProductImage($file): string
     {
-        $path = $file->store('products', 'public');
-        return Storage::url($path);
+        $dir = public_path('uploads/products');
+        if (!File::isDirectory($dir)) {
+            File::ensureDirectoryExists($dir, 0755, true);
+        }
+        $name = Str::uuid() . '.' . $file->getClientOriginalExtension();
+        $file->move($dir, $name);
+        return '/uploads/products/' . $name;
     }
 
-    private function deleteImage(?string $path): void
+    private function deleteProductImage(?string $path): void
     {
-        if ($path && str_starts_with($path, '/storage/')) {
+        if (!$path) {
+            return;
+        }
+        if (str_starts_with($path, '/uploads/')) {
+            $relativePath = Str::after($path, '/');
+            $fullPath = public_path($relativePath);
+            if (File::exists($fullPath)) {
+                File::delete($fullPath);
+            }
+            return;
+        }
+        if (str_starts_with($path, '/storage/')) {
             $relativePath = Str::after($path, '/storage/');
             if (Storage::disk('public')->exists($relativePath)) {
                 Storage::disk('public')->delete($relativePath);

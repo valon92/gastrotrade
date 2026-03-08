@@ -60,6 +60,7 @@
 
 <script>
 import axios from 'axios'
+import { adminStore } from '../../stores/adminStore'
 
 export default {
   name: 'AdminLogin',
@@ -86,7 +87,6 @@ export default {
           const response = await axios.get('/api/admin/check')
           if (response.data.success) {
             // Load user data with role
-            const { adminStore } = await import('../../stores/adminStore')
             adminStore.setUser(response.data.data.user)
             
             // Redirect based on role
@@ -102,7 +102,6 @@ export default {
         // Not authenticated, stay on login page
         localStorage.removeItem('admin_token')
         delete axios.defaults.headers.common['Authorization']
-        const { adminStore } = await import('../../stores/adminStore')
         adminStore.clearUser()
       }
     },
@@ -120,7 +119,6 @@ export default {
           axios.defaults.headers.common['Authorization'] = `Bearer ${token}`
           
           // Store user data with role
-          const { adminStore } = await import('../../stores/adminStore')
           adminStore.setUser(userData)
           
           // Redirect based on role

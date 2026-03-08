@@ -4,6 +4,18 @@ Kur ndryshon diçka në projekt **lokalisht** dhe do që **www.arontrade.net** t
 
 ---
 
+## Rregull i rëndësishëm: gjithmonë fillimisht në localhost
+
+**Çdo rregullim, detyrë ose zgjidhje duhet bërë dhe kontrolluar fillimisht në localhost.** Vetëm kur gjithçka funksionon si duhet lokalisht, bëhet **push** në server (përmes GitHub ose deploy manual).
+
+1. **Rregullo / implemento** ndryshimin në kodin lokal.
+2. **Testo** në localhost (npm run dev, php artisan serve, etj.) — sigurohu që çdo detaj të funksionojë.
+3. **Vetëm pasi të jetë në rregull në localhost:** bëj `git add` → `git commit` → `git push origin main` (ose ngarkim manual në cPanel).
+
+Kështu shmanget push-i i kodit të paprovuar në server dhe problemet zbulochen dhe rregullohen lokalisht.
+
+---
+
 ## Deploy automatik: push në GitHub → ndryshimet në arontrade.net
 
 Nëse ke konfiguruar **GitHub Actions** me FTP (shiko më poshtë), mjafton:

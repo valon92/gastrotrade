@@ -1462,7 +1462,8 @@ export default {
         }
       }
 
-      const printWindow = window.open('', '_blank', 'width=900,height=650')
+      const isMobile = typeof window !== 'undefined' && window.innerWidth < 768
+      const printWindow = window.open('', '_blank', isMobile ? 'noopener' : 'width=900,height=650')
       if (!printWindow) {
         alert('Lejoni hapjen e dritareve të reja për të printuar porosinë.')
         return
@@ -1547,6 +1548,8 @@ export default {
         '<style>' +
         '*{box-sizing:border-box}' +
         'body{font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;padding:24px 32px;color:#111827;font-size:13px;line-height:1.4;max-width:900px;margin:0 auto}' +
+        '.inv-table-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch;margin-bottom:16px}' +
+        '@media (max-width:768px){body{padding:12px 16px;font-size:12px;max-width:100%}.inv-header{flex-direction:column;gap:16px;align-items:stretch}.inv-seller{min-width:auto}.inv-company{font-size:16px}.inv-header>div:last-child{text-align:left}.inv-nr{text-align:left}.inv-meta{font-size:11px}.inv-meta th,.inv-meta td{padding:6px 8px}.inv-table-wrap{margin-left:-16px;margin-right:-16px;padding:0 16px}.inv-table{font-size:11px;min-width:720px}.inv-table th,.inv-table td{padding:6px 4px}.inv-tax{max-width:100%;font-size:11px}.inv-totals{max-width:100%;font-size:12px}.inv-footer{flex-direction:column;gap:24px;margin-top:24px;align-items:stretch}.inv-sig{min-width:auto;text-align:left}.inv-sig .line{margin-top:16px}.no-print{margin-top:16px;padding:12px}.no-print h3{font-size:13px}.no-print .btns{flex-direction:column;gap:8px}.no-print button{width:100%;padding:12px 18px;font-size:13px}}' +
         '@media print{body{padding:12px 16px}.no-print{display:none !important}}' +
         '.inv-header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:20px;padding-bottom:16px;border-bottom:2px solid #0d9488}' +
         '.inv-title{font-size:11px;color:#6b7280;text-transform:uppercase;letter-spacing:0.05em;margin-bottom:2px}' +
@@ -1602,15 +1605,15 @@ export default {
         '<div>Numri unik: ' + buyerFiscal + '</div>' +
         (order.phone ? '<div>Telefon: ' + order.phone + '</div>' : '') +
         '</div>' +
-        '<table class="inv-meta">' +
+        '<div class="inv-table-wrap"><table class="inv-meta">' +
         '<tr><th>Data fatura</th><th>Kushtet</th><th>Data e skadimit</th><th>User</th><th>Referenca</th><th>Lokacioni</th></tr>' +
         '<tr><td>' + invoiceDateFormatted + '</td><td></td><td>' + expDate + '</td><td>Klient</td><td></td><td>' + (order.location_unit_name || '-') + '</td></tr>' +
-        '</table>' +
-        '<table class="inv-table">' +
+        '</table></div>' +
+        '<div class="inv-table-wrap"><table class="inv-table">' +
         '<thead><tr>' +
         '<th>No</th><th>Barcode</th><th>Emertimi</th><th>Sasia</th><th>Njesia</th>' +
         '<th>Cmimi pa TVSH</th><th>Rabati %</th><th>TVSH %</th><th>Cmimi me TVSH</th><th>Vlera me TVSH</th>' +
-        '</tr></thead><tbody>' + itemsRows + '</tbody></table>' +
+        '</tr></thead><tbody>' + itemsRows + '</tbody></table></div>' +
         '<table class="inv-tax">' +
         '<tr><th>Normat Tatimore</th><th>Baza</th><th>TVSH</th><th>Vlera</th></tr>' +
         '<tr><td>TVSH 0%</td><td>0.00</td><td>0.00</td><td>0.00</td></tr>' +

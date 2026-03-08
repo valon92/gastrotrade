@@ -21,11 +21,17 @@ export default defineConfig({
         }),
     ],
     build: {
+        chunkSizeWarningLimit: 650,
         rollupOptions: {
             output: {
                 entryFileNames: `assets/[name]-[hash]-${buildId}.js`,
                 chunkFileNames: `assets/[name]-[hash]-${buildId}.js`,
                 assetFileNames: `assets/[name]-[hash]-${buildId}.[ext]`,
+                manualChunks(id) {
+                    if (id.includes('node_modules/vue/') || id.includes('node_modules/vue-router/')) {
+                        return 'vue-vendor';
+                    }
+                },
             },
         },
     },

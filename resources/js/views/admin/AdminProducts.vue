@@ -340,16 +340,33 @@
 
               <div>
                 <label class="block text-sm font-medium text-gray-700 mb-2">Foto e produktit</label>
-                <div class="flex items-center gap-4 flex-wrap">
-                  <img
+                <div class="flex flex-col sm:flex-row items-start gap-4 flex-wrap">
+                  <div
                     v-if="productForm.preview"
-                    :src="productForm.preview"
-                    alt="Foto e zgjedhur"
-                    class="w-24 h-24 object-cover rounded-lg border"
+                    class="relative flex-shrink-0"
                   >
-                  <div class="flex flex-col gap-2">
-                    <label class="cursor-pointer">
-                      <span class="inline-flex items-center px-3 py-2 rounded-lg border border-gray-300 bg-white text-sm font-medium text-gray-700 hover:bg-gray-50">Ngarko skedar të ri</span>
+                    <img
+                      :src="productForm.preview"
+                      alt="Foto e zgjedhur"
+                      class="w-28 h-28 sm:w-32 sm:h-32 object-cover rounded-xl border-2 border-gray-200 shadow-sm"
+                    >
+                    <button
+                      type="button"
+                      aria-label="Hiq foton"
+                      class="absolute -top-2 -right-2 w-8 h-8 rounded-full bg-red-500 text-white flex items-center justify-center shadow hover:bg-red-600 transition-colors"
+                      @click="clearProductImage"
+                    >
+                      <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
+                    </button>
+                  </div>
+                  <div class="flex-1 min-w-0">
+                    <div
+                      class="border-2 border-dashed rounded-xl p-6 text-center transition-colors"
+                      :class="dragOver ? 'border-primary-500 bg-primary-50' : 'border-gray-300 hover:border-primary-400 hover:bg-gray-50'"
+                      @dragover.prevent="dragOver = true"
+                      @dragleave.prevent="dragOver = false"
+                      @drop.prevent="handleDrop"
+                    >
                       <input
                         ref="productImageInput"
                         type="file"
@@ -357,9 +374,28 @@
                         @change="handleImageUpload"
                         class="hidden"
                       >
-                    </label>
-                    <p class="text-xs text-gray-500">ose zgjidhni nga fotot e projektit më poshtë.</p>
+                      <p class="text-sm font-medium text-gray-700 mb-1">Ngarko skedar të ri</p>
+                      <p class="text-xs text-gray-500 mb-3">Hidhni foto këtu ose</p>
+                      <button
+                        type="button"
+                        class="inline-flex items-center px-4 py-2 rounded-lg border border-gray-300 bg-white text-sm font-medium text-gray-700 hover:bg-primary-50 hover:border-primary-300 transition-colors"
+                        @click="$refs.productImageInput && $refs.productImageInput.click()"
+                      >
+                        Zgjidhni skedar
+                      </button>
+                      <p class="text-xs text-gray-500 mt-2">JPG, PNG, GIF, WEBP — max 10 MB</p>
+                    </div>
+                    <p class="text-xs text-gray-500 mt-2">ose zgjidhni nga fotot e projektit më poshtë.</p>
                   </div>
+                </div>
+                <div v-if="uploadProgress >= 0 && uploadProgress < 100" class="mt-3">
+                  <div class="h-2 bg-gray-200 rounded-full overflow-hidden">
+                    <div class="h-full bg-primary-600 transition-all duration-300" :style="{ width: uploadProgress + '%' }" />
+                  </div>
+                  <p class="text-xs text-gray-600 mt-1">Duke ruajtur... {{ uploadProgress }}%</p>
+                </div>
+                <div v-if="saveError" class="mt-3 p-3 rounded-lg bg-red-50 border border-red-200 text-sm text-red-700">
+                  {{ saveError }}
                 </div>
                 <div class="mt-4">
                   <p class="text-sm font-medium text-gray-700 mb-2">Foto nga projekti (public/images)</p>
@@ -377,9 +413,6 @@
                   </div>
                   <p v-else class="text-xs text-gray-500">Nuk u gjetën foto në public/images.</p>
                 </div>
-                <p class="text-xs text-gray-500 mt-2">
-                  Formate: JPG, PNG, GIF, WEBP. Ose zgjidhni një foto nga lista e mësipërme.
-                </p>
               </div>
             </div>
 
@@ -432,7 +465,10 @@ export default {
       productForm: this.defaultForm(),
       savingProduct: false,
       projectImages: [],
-      projectImagesLoading: false
+      projectImagesLoading: false,
+      dragOver: false,
+      uploadProgress: -1,
+      saveError: null
     }
   },
   computed: {
@@ -520,6 +556,8 @@ export default {
     openCreateModal() {
       this.editingProduct = null
       this.productForm = this.defaultForm()
+      this.saveError = null
+      this.uploadProgress = -1
       this.showModal = true
       this.loadProjectImages()
       this.$nextTick(() => {
@@ -528,6 +566,7 @@ export default {
     },
     openEditModal(product) {
       this.editingProduct = product
+      const isProjectOrUploadPath = product.image_path && (product.image_path.startsWith('/images/') || product.image_path.startsWith('/uploads/'))
       this.productForm = {
         name: product.name,
         category_id: product.category_id,
@@ -542,8 +581,10 @@ export default {
         pieces_per_package: product.pieces_per_package,
         image: null,
         preview: product.image_path,
-        existingImagePath: product.image_path && product.image_path.startsWith('/images/') ? product.image_path : null
+        existingImagePath: isProjectOrUploadPath ? product.image_path : null
       }
+      this.saveError = null
+      this.uploadProgress = -1
       this.showModal = true
       this.loadProjectImages()
       this.$nextTick(() => {
@@ -573,6 +614,8 @@ export default {
       this.editingProduct = null
       this.productForm = this.defaultForm()
       this.savingProduct = false
+      this.saveError = null
+      this.uploadProgress = -1
     },
     async loadProjectImages() {
       this.projectImagesLoading = true
@@ -592,9 +635,13 @@ export default {
       if (this.$refs.productImageInput) this.$refs.productImageInput.value = ''
     },
     handleImageUpload(event) {
-      const file = event.target.files[0]
+      const file = event.target?.files?.[0]
       if (!file) return
-
+      if (file.size > 10 * 1024 * 1024) {
+        this.saveError = 'Foto nuk duhet të kalojë 10 MB.'
+        return
+      }
+      this.saveError = null
       this.productForm.image = file
       this.productForm.existingImagePath = null
       const reader = new FileReader()
@@ -602,6 +649,30 @@ export default {
         this.productForm.preview = e.target.result
       }
       reader.readAsDataURL(file)
+    },
+    handleDrop(event) {
+      this.dragOver = false
+      const file = event.dataTransfer?.files?.[0]
+      if (!file || !file.type.startsWith('image/')) return
+      if (file.size > 10 * 1024 * 1024) {
+        this.saveError = 'Foto nuk duhet të kalojë 10 MB.'
+        return
+      }
+      this.saveError = null
+      this.productForm.image = file
+      this.productForm.existingImagePath = null
+      const reader = new FileReader()
+      reader.onload = e => {
+        this.productForm.preview = e.target.result
+      }
+      reader.readAsDataURL(file)
+      if (this.$refs.productImageInput) this.$refs.productImageInput.value = ''
+    },
+    clearProductImage() {
+      this.productForm.image = null
+      this.productForm.preview = null
+      this.productForm.existingImagePath = null
+      if (this.$refs.productImageInput) this.$refs.productImageInput.value = ''
     },
     async saveProduct() {
       if (!this.productForm.name || !this.productForm.category_id) {
@@ -614,37 +685,42 @@ export default {
       }
 
       this.savingProduct = true
+      this.saveError = null
+      this.uploadProgress = 0
       try {
         const formData = new FormData()
         formData.append('name', this.productForm.name)
-        formData.append('category_id', this.productForm.category_id)
-        if (this.productForm.description) formData.append('description', this.productForm.description)
+        formData.append('category_id', String(this.productForm.category_id))
+        formData.append('description', this.productForm.description || '')
         formData.append('size', this.productForm.size || '')
         formData.append('liters', this.productForm.liters || '')
         formData.append('barcode', this.productForm.barcode || '')
-        // Gjithmonë dërgo çmimin kur përditësohet produkti, që backend ta ruajë (edhe kur bosh = null)
         const priceVal = this.productForm.price
         const hasPrice = priceVal !== '' && priceVal !== null && priceVal !== undefined && !Number.isNaN(Number(priceVal))
         formData.append('price', hasPrice ? String(priceVal) : '')
-        if (this.productForm.sort_order !== '' && this.productForm.sort_order !== null && this.productForm.sort_order !== undefined) {
-          formData.append('sort_order', this.productForm.sort_order)
-        }
+        formData.append('sort_order', this.productForm.sort_order !== '' && this.productForm.sort_order != null ? String(this.productForm.sort_order) : '')
         formData.append('is_featured', this.productForm.is_featured ? '1' : '0')
         formData.append('sold_by_package', this.productForm.sold_by_package ? '1' : '0')
-        if (this.productForm.sold_by_package && this.productForm.pieces_per_package) {
-          formData.append('pieces_per_package', this.productForm.pieces_per_package)
-        }
+        formData.append('pieces_per_package', this.productForm.sold_by_package && this.productForm.pieces_per_package ? String(this.productForm.pieces_per_package) : '')
         if (this.productForm.image) {
           formData.append('image', this.productForm.image, this.productForm.image.name || 'image.jpg')
         } else if (this.productForm.existingImagePath) {
           formData.append('image_path', this.productForm.existingImagePath)
         }
 
+        const config = {
+          headers: { 'Accept': 'application/json' },
+          onUploadProgress: (e) => {
+            if (e.total) this.uploadProgress = Math.round((e.loaded / e.total) * 100)
+            else this.uploadProgress = 50
+          }
+        }
+
         if (this.editingProduct) {
-          await axios.post(`/api/admin/products/${this.editingProduct.id}`, formData)
+          await axios.post(`/api/admin/products/${this.editingProduct.id}`, formData, config)
           alert('Produkti u përditësua me sukses!')
         } else {
-          await axios.post('/api/admin/products', formData)
+          await axios.post('/api/admin/products', formData, config)
           alert('Produkti u shtua me sukses!')
         }
 
@@ -653,19 +729,17 @@ export default {
       } catch (error) {
         console.error('Error saving product:', error)
         let message = 'Gabim në ruajtjen e produktit.'
-        if (error.response && error.response.data) {
-          if (error.response.data.message) {
-            message = error.response.data.message
-          } else if (error.response.data.errors) {
+        if (error.response?.data) {
+          if (error.response.data.message) message = error.response.data.message
+          else if (error.response.data.errors) {
             const errors = Object.values(error.response.data.errors).flat()
-            if (errors.length) {
-              message = errors.join('\n')
-            }
+            if (errors.length) message = errors.join('\n')
           }
         }
-        alert(message)
+        this.saveError = message
       } finally {
         this.savingProduct = false
+        this.uploadProgress = -1
       }
     },
     async deleteProduct(product) {

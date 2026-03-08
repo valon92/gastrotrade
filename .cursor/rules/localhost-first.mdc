@@ -1,0 +1,15 @@
+---
+description: Rregulli i punës për AronTrade — gjithmonë fillimisht localhost, pastaj server
+globs:
+alwaysApply: true
+---
+
+# Localhost fillimisht, pastaj server
+
+Kur përdoruesi kërkon ndonjë **rregullim**, **zgjidhje** ose **detyrë** për projektin AronTrade:
+
+1. **Implemento dhe rregullo gjithçka në kontekstin lokal (localhost).** Bëj ndryshimet në kodin e projektit që të funksionojnë në mjedisin lokal.
+2. **Mos sugjero ose bëj push në server** përpara se të jetë e qartë (ose e testuar) që ndryshimet funksionojnë lokalisht.
+3. **Kur përdoruesi konfirmon që gjithçka është në rregull në localhost**, atëherë mund të bëhet push në GitHub (dhe deploy në arontrade.net) ose të jepen udhëzimet për deploy.
+
+Për çdo detaj që kërkohet: së pari rregullo në localhost, pastaj (kur është gati) bëhet deploy në server.
