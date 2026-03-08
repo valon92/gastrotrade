@@ -104,6 +104,7 @@
 
 <script>
 import axios from 'axios'
+import cartStore from '../store/cart'
 
 export default {
   name: 'Regjistrohu',
@@ -129,11 +130,15 @@ export default {
       try {
         const res = await axios.post('/api/client/register', this.form)
         if (res.data.success && res.data.data?.token) {
-          localStorage.setItem('client_token', res.data.data.token)
-          if (window.axios && window.axios.defaults?.headers?.common) {
-            window.axios.defaults.headers.common['Authorization'] = `Bearer ${res.data.data.token}`
+          const token = res.data.data.token
+          const client = res.data.data.client
+          localStorage.setItem('client_token', token)
+          if (window.axios?.defaults?.headers?.common) {
+            window.axios.defaults.headers.common['Authorization'] = `Bearer ${token}`
           }
+          if (client) await cartStore.setClient(client)
           this.success = res.data.message || 'U regjistruat me sukses.'
+          this.$router.push('/shporta')
         }
       } catch (e) {
         if (e.response?.data?.errors) {
@@ -142,7 +147,7 @@ export default {
         if (e.response?.data?.message) {
           this.error = e.response.data.message
         }
-        if (!this.error && e.message) {
+        if (!this.error && Object.keys(this.errors).length === 0 && e.message) {
           this.error = 'Regjistrimi dështoi. Provoni përsëri.'
         }
       } finally {

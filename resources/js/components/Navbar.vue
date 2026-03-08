@@ -42,26 +42,55 @@
           >
             KONTAKT
           </router-link>
-          <router-link 
-            to="/kycu" 
-            class="text-gray-700 hover:text-primary-600 px-3 py-2 rounded-md text-sm font-medium transition-colors duration-200"
-            active-class="text-primary-600"
-          >
-            KYÇU
-          </router-link>
-          <router-link 
-            to="/shporta" 
-            class="relative text-gray-700 hover:text-primary-600 px-3 py-2 rounded-md text-sm font-medium transition-colors duration-200"
-            active-class="text-primary-600"
-          >
-            🛒 SHPORTA
-            <span 
-              v-if="cartItemCount > 0"
-              class="absolute -top-1 -right-1 bg-primary-600 text-white text-xs font-bold rounded-full h-5 w-5 flex items-center justify-center"
+          <!-- Kur klienti është i identifikuar: shfaq menynë e llogarisë -->
+          <div v-if="isClientIdentified" ref="clientMenuRef" class="relative flex items-center gap-2">
+            <button
+              type="button"
+              @click="clientMenuOpen = !clientMenuOpen"
+              class="flex items-center gap-2 text-gray-700 hover:text-primary-600 px-3 py-2 rounded-md text-sm font-medium transition-colors duration-200 border border-green-200 bg-green-50/80"
             >
-              {{ cartItemCount }}
-            </span>
-          </router-link>
+              <span class="text-green-700">✓</span>
+              <span>{{ clientDisplayName }}</span>
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" /></svg>
+            </button>
+            <div
+              v-show="clientMenuOpen"
+              class="absolute right-0 top-full mt-1 py-1 w-48 bg-white rounded-lg shadow-lg border border-gray-200 z-50"
+            >
+              <router-link to="/shporta" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100" @click="clientMenuOpen = false">
+                🛒 Shporta
+                <span v-if="cartItemCount > 0" class="ml-1 text-primary-600 font-medium">({{ cartItemCount }})</span>
+              </router-link>
+              <router-link to="/shporta" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100" @click="openChangePasswordThenGoToCart">
+                Ndrysho fjalëkalimin
+              </router-link>
+              <button type="button" @click="logoutClient" class="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50">
+                Dil
+              </button>
+            </div>
+          </div>
+          <template v-else>
+            <router-link 
+              to="/kycu" 
+              class="text-gray-700 hover:text-primary-600 px-3 py-2 rounded-md text-sm font-medium transition-colors duration-200"
+              active-class="text-primary-600"
+            >
+              KYÇU
+            </router-link>
+            <router-link 
+              to="/shporta" 
+              class="relative text-gray-700 hover:text-primary-600 px-3 py-2 rounded-md text-sm font-medium transition-colors duration-200"
+              active-class="text-primary-600"
+            >
+              🛒 SHPORTA
+              <span 
+                v-if="cartItemCount > 0"
+                class="absolute -top-1 -right-1 bg-primary-600 text-white text-xs font-bold rounded-full h-5 w-5 flex items-center justify-center"
+              >
+                {{ cartItemCount }}
+              </span>
+            </router-link>
+          </template>
         </div>
         
         <!-- Mobile: shporta + burger (i njëjti layout si localhost; server duhet të marrë këtë build pas deploy) -->
@@ -126,21 +155,38 @@
         >
           KONTAKT
         </router-link>
-        <router-link 
-          to="/kycu" 
-          class="text-gray-700 hover:text-primary-600 block px-3 py-2 rounded-md text-base font-medium transition-colors duration-200"
-          @click="closeMobileMenu"
-        >
-          KYÇU
-        </router-link>
-        <router-link 
-          to="/shporta" 
-          class="flex items-center justify-between text-gray-700 hover:text-primary-600 block px-3 py-2 rounded-md text-base font-medium transition-colors duration-200"
-          @click="closeMobileMenu"
-        >
-          <span>🛒 SHPORTA</span>
-          <span v-if="cartItemCount > 0" class="bg-primary-600 text-white text-xs font-bold rounded-full min-w-[1.25rem] h-5 px-1.5 flex items-center justify-center">{{ cartItemCount > 99 ? '99+' : cartItemCount }}</span>
-        </router-link>
+        <template v-if="isClientIdentified">
+          <div class="px-3 py-2 text-sm text-green-700 font-medium border-b border-green-100">
+            ✓ I identifikuar: {{ clientDisplayName }}
+          </div>
+          <router-link to="/shporta" class="flex items-center justify-between text-gray-700 hover:text-primary-600 block px-3 py-2 rounded-md text-base font-medium" @click="closeMobileMenu">
+            <span>🛒 Shporta</span>
+            <span v-if="cartItemCount > 0" class="bg-primary-600 text-white text-xs font-bold rounded-full min-w-[1.25rem] h-5 px-1.5 flex items-center justify-center">{{ cartItemCount > 99 ? '99+' : cartItemCount }}</span>
+          </router-link>
+          <router-link to="/shporta" class="text-gray-700 hover:text-primary-600 block px-3 py-2 rounded-md text-base font-medium" @click="openChangePasswordThenGoToCart">
+            Ndrysho fjalëkalimin
+          </router-link>
+          <button type="button" @click="logoutClientMobile" class="w-full text-left text-red-600 hover:bg-red-50 block px-3 py-2 rounded-md text-base font-medium">
+            Dil
+          </button>
+        </template>
+        <template v-else>
+          <router-link 
+            to="/kycu" 
+            class="text-gray-700 hover:text-primary-600 block px-3 py-2 rounded-md text-base font-medium transition-colors duration-200"
+            @click="closeMobileMenu"
+          >
+            KYÇU
+          </router-link>
+          <router-link 
+            to="/shporta" 
+            class="flex items-center justify-between text-gray-700 hover:text-primary-600 block px-3 py-2 rounded-md text-base font-medium transition-colors duration-200"
+            @click="closeMobileMenu"
+          >
+            <span>🛒 SHPORTA</span>
+            <span v-if="cartItemCount > 0" class="bg-primary-600 text-white text-xs font-bold rounded-full min-w-[1.25rem] h-5 px-1.5 flex items-center justify-center">{{ cartItemCount > 99 ? '99+' : cartItemCount }}</span>
+          </router-link>
+        </template>
       </div>
     </div>
   </nav>
@@ -148,26 +194,61 @@
 
 <script>
 import cartStore from '../store/cart'
+import axios from 'axios'
 
 export default {
   name: 'Navbar',
   data() {
     return {
       mobileMenuOpen: false,
+      clientMenuOpen: false,
       cartStore: cartStore
     }
   },
   computed: {
     cartItemCount() {
       return this.cartStore.totalItems
+    },
+    isClientIdentified() {
+      return !!this.cartStore.client
+    },
+    clientDisplayName() {
+      if (!this.cartStore.client) return ''
+      const c = this.cartStore.client
+      return c.name || c.store_name || c.email || 'Klient'
     }
   },
+  mounted() {
+    document.addEventListener('click', this.handleClickOutsideClientMenu)
+  },
+  beforeUnmount() {
+    document.removeEventListener('click', this.handleClickOutsideClientMenu)
+  },
   methods: {
+    handleClickOutsideClientMenu(e) {
+      if (this.clientMenuOpen && this.$refs.clientMenuRef && !this.$refs.clientMenuRef.contains(e.target)) {
+        this.clientMenuOpen = false
+      }
+    },
     toggleMobileMenu() {
       this.mobileMenuOpen = !this.mobileMenuOpen
     },
     closeMobileMenu() {
       this.mobileMenuOpen = false
+      this.clientMenuOpen = false
+    },
+    openChangePasswordThenGoToCart() {
+      this.clientMenuOpen = false
+      this.mobileMenuOpen = false
+      this.$router.push({ path: '/shporta', query: { ndrysho: '1' } })
+    },
+    logoutClient() {
+      this.clientMenuOpen = false
+      this.cartStore.logoutSession()
+    },
+    logoutClientMobile() {
+      this.logoutClient()
+      this.closeMobileMenu()
     }
   }
 }

@@ -7,18 +7,21 @@ const cartStore = reactive({
   clientPrices: {},
   clientPieceSales: {}, // Store allow_piece_sales for each product
   
-  // Load cart from localStorage on initialization
+  _cartKey: 'arontrade_cart',
+  _clientKey: 'arontrade_client',
+
+  // Load cart from localStorage on initialization (AronTrade; fallback për gastrotrade)
   init() {
-    const savedCart = localStorage.getItem('gastrotrade_cart')
+    let savedCart = typeof localStorage !== 'undefined' && (localStorage.getItem(this._cartKey) || localStorage.getItem('gastrotrade_cart'))
     if (savedCart) {
       try {
         this.items = JSON.parse(savedCart)
       } catch (e) {
         this.items = []
       }
+      if (typeof localStorage !== 'undefined') localStorage.setItem(this._cartKey, JSON.stringify(this.items))
     }
-    
-    const savedClient = localStorage.getItem('gastrotrade_client')
+    let savedClient = typeof localStorage !== 'undefined' && (localStorage.getItem(this._clientKey) || localStorage.getItem('gastrotrade_client'))
     if (savedClient) {
       try {
         const client = JSON.parse(savedClient)
@@ -43,13 +46,19 @@ const cartStore = reactive({
       } catch (e) {
         this.client = null
       }
+      if (typeof localStorage !== 'undefined') {
+        if (this.client) localStorage.setItem(this._clientKey, JSON.stringify(this.client))
+        try { localStorage.removeItem('gastrotrade_client') } catch (_) {}
+      }
     }
   },
-  
+
   // Set client and load prices
   async setClient(client) {
     this.client = client
-    localStorage.setItem('gastrotrade_client', JSON.stringify(client))
+    if (typeof localStorage !== 'undefined') {
+      localStorage.setItem(this._clientKey, JSON.stringify(client))
+    }
     
     // Load client prices and piece sales settings
     if (client && client.prices && Array.isArray(client.prices)) {
@@ -81,18 +90,28 @@ const cartStore = reactive({
     }
   },
   
-  // Clear client
+  // Clear client (të dhënat lokale)
   clearClient() {
     this.client = null
     this.clientPrices = {}
     this.clientPieceSales = {}
-    localStorage.removeItem('gastrotrade_client')
-    
-    // Remove all prices from cart items (set to null)
+    if (typeof localStorage !== 'undefined') {
+      localStorage.removeItem(this._clientKey)
+      try { localStorage.removeItem('gastrotrade_client') } catch (_) {}
+    }
     this.items.forEach(item => {
       item.price = null
     })
     this.save()
+  },
+
+  /** Dil nga llogaria – i njëjti sistem për të gjithë klientët: pastron klientin dhe tokenin. */
+  logoutSession() {
+    this.clearClient()
+    localStorage.removeItem('client_token')
+    if (typeof window !== 'undefined' && window.axios?.defaults?.headers?.common && !localStorage.getItem('admin_token')) {
+      delete window.axios.defaults.headers.common['Authorization']
+    }
   },
   
   // Add product to cart (quantity = numër kompletesh; actualPieces = optional, kur blerja është me copa)
@@ -232,7 +251,9 @@ const cartStore = reactive({
   
   // Save cart to localStorage
   save() {
-    localStorage.setItem('gastrotrade_cart', JSON.stringify(this.items))
+    if (typeof localStorage !== 'undefined') {
+      localStorage.setItem(this._cartKey, JSON.stringify(this.items))
+    }
   },
   
     // Generate order message for Viber

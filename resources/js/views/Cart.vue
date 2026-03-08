@@ -47,13 +47,22 @@
             <p class="text-sm text-green-800">
               ✅ I identifikuar: <strong>{{ cartStore.client.name || cartStore.client.store_name || cartStore.client.email }}</strong>
             </p>
-            <button
-              type="button"
-              @click="logoutClient"
-              class="shrink-0 px-3 py-1.5 text-sm font-medium text-green-800 bg-white border border-green-300 rounded-lg hover:bg-green-100 transition-colors"
-            >
-              Dil
-            </button>
+            <div class="flex items-center gap-2 shrink-0">
+              <button
+                type="button"
+                @click="openChangePasswordModal"
+                class="px-3 py-1.5 text-sm font-medium text-primary-600 bg-white border border-primary-300 rounded-lg hover:bg-primary-50 transition-colors"
+              >
+                Ndrysho fjalëkalimin
+              </button>
+              <button
+                type="button"
+                @click="logoutClient"
+                class="px-3 py-1.5 text-sm font-medium text-green-800 bg-white border border-green-300 rounded-lg hover:bg-green-100 transition-colors"
+              >
+                Dil
+              </button>
+            </div>
           </div>
         </div>
       </div>
@@ -229,13 +238,22 @@
                 ✅ I identifikuar: <strong>{{ cartStore.client.name || cartStore.client.store_name || cartStore.client.email }}</strong><br>
                 Çmimet e personalizuara janë të aplikuara
               </p>
-              <button
-                type="button"
-                @click="logoutClient"
-                class="shrink-0 px-3 py-1.5 text-sm font-medium text-green-800 bg-white border border-green-300 rounded-lg hover:bg-green-100 transition-colors"
-              >
-                Dil nga llogaria
-              </button>
+              <div class="flex items-center gap-2 shrink-0">
+                <button
+                  type="button"
+                  @click="openChangePasswordModal"
+                  class="px-3 py-1.5 text-sm font-medium text-primary-600 bg-white border border-primary-300 rounded-lg hover:bg-primary-50 transition-colors"
+                >
+                  Ndrysho fjalëkalimin
+                </button>
+                <button
+                  type="button"
+                  @click="logoutClient"
+                  class="px-3 py-1.5 text-sm font-medium text-green-800 bg-white border border-green-300 rounded-lg hover:bg-green-100 transition-colors"
+                >
+                  Dil nga llogaria
+                </button>
+              </div>
             </div>
             
             <div v-else-if="identifyingClient" class="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
@@ -288,7 +306,9 @@
               </div>
               <div v-else class="space-y-3">
                 <div class="p-4 bg-gray-50 border border-gray-200 rounded-lg space-y-2 text-sm">
-                  <p><span class="text-gray-500 font-medium">Emri:</span> {{ cartStore.client.name || cartStore.client.email || '–' }}</p>
+                  <p v-if="cartStore.client.email"><span class="text-gray-500 font-medium">Email:</span> {{ cartStore.client.email }}</p>
+                  <p v-if="displayNameForOrder && displayNameForOrder !== cartStore.client.email"><span class="text-gray-500 font-medium">Emri:</span> {{ displayNameForOrder }}</p>
+                  <p v-else-if="!cartStore.client.email"><span class="text-gray-500 font-medium">Emri:</span> {{ cartStore.client.name || '–' }}</p>
                   <p v-if="cartStore.client.store_name"><span class="text-gray-500 font-medium">Emri i biznesit:</span> {{ cartStore.client.store_name }}</p>
                   <p v-if="cartStore.client.fiscal_number"><span class="text-gray-500 font-medium">Nr. fiskal:</span> {{ cartStore.client.fiscal_number }}</p>
                   <p v-if="cartStore.client.city"><span class="text-gray-500 font-medium">Qyteti:</span> {{ cartStore.client.city }}</p>
@@ -571,6 +591,85 @@
         </div>
       </div>
     </div>
+
+    <!-- Modal: Ndrysho fjalëkalimin (vetëm për klientët e kyqur me email) -->
+    <div
+      v-if="showChangePasswordModal"
+      class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50"
+      @click.self="closeChangePasswordModal"
+    >
+      <div class="bg-white rounded-xl shadow-xl max-w-md w-full p-6 border border-gray-200">
+        <h3 class="text-lg font-semibold text-gray-900 mb-4">Ndrysho fjalëkalimin</h3>
+        <form @submit.prevent="submitChangePassword" class="space-y-4">
+          <div v-if="changePasswordError" class="p-3 bg-red-50 border border-red-200 rounded-lg text-sm text-red-800">
+            {{ changePasswordError }}
+          </div>
+          <div v-if="Object.keys(changePasswordErrors).length" class="p-3 bg-amber-50 border border-amber-200 rounded-lg text-sm text-amber-800">
+            <ul class="list-disc list-inside space-y-1">
+              <li v-for="(msgs, field) in changePasswordErrors" :key="field">
+                {{ Array.isArray(msgs) ? msgs[0] : msgs }}
+              </li>
+            </ul>
+          </div>
+          <div v-if="changePasswordSuccess" class="p-3 bg-green-50 border border-green-200 rounded-lg text-sm text-green-800">
+            Fjalëkalimi u ndryshua me sukses.
+          </div>
+          <div>
+            <label for="cp-current" class="block text-sm font-medium text-gray-700 mb-1">Fjalëkalimi aktual <span class="text-red-500">*</span></label>
+            <input
+              id="cp-current"
+              v-model="changePasswordForm.current_password"
+              type="password"
+              required
+              autocomplete="current-password"
+              class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+              placeholder="Fjalëkalimi aktual"
+            />
+          </div>
+          <div>
+            <label for="cp-new" class="block text-sm font-medium text-gray-700 mb-1">Fjalëkalimi i ri <span class="text-red-500">*</span></label>
+            <input
+              id="cp-new"
+              v-model="changePasswordForm.password"
+              type="password"
+              required
+              minlength="6"
+              autocomplete="new-password"
+              class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+              placeholder="Të paktën 6 karaktere"
+            />
+          </div>
+          <div>
+            <label for="cp-confirm" class="block text-sm font-medium text-gray-700 mb-1">Konfirmo fjalëkalimin e ri <span class="text-red-500">*</span></label>
+            <input
+              id="cp-confirm"
+              v-model="changePasswordForm.password_confirmation"
+              type="password"
+              required
+              autocomplete="new-password"
+              class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+              placeholder="Përsëritni fjalëkalimin e ri"
+            />
+          </div>
+          <div class="flex gap-3 pt-2">
+            <button
+              type="button"
+              @click="closeChangePasswordModal"
+              class="flex-1 px-4 py-2 border border-gray-300 text-gray-700 font-medium rounded-lg hover:bg-gray-50 transition-colors"
+            >
+              Anulo
+            </button>
+            <button
+              type="submit"
+              :disabled="changePasswordLoading"
+              class="flex-1 px-4 py-2 bg-primary-600 text-white font-medium rounded-lg hover:bg-primary-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            >
+              {{ changePasswordLoading ? 'Duke ruajtur...' : 'Ruaj' }}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
   </div>
 </template>
 
@@ -606,7 +705,17 @@ export default {
       phoneDebounce: null,
       orderHistoryLoaded: false,
       searchQuery: '',
-      pendingOrderNumber: null // Store order number before saving
+      pendingOrderNumber: null,
+      showChangePasswordModal: false,
+      changePasswordForm: {
+        current_password: '',
+        password: '',
+        password_confirmation: ''
+      },
+      changePasswordError: '',
+      changePasswordErrors: {},
+      changePasswordSuccess: false,
+      changePasswordLoading: false
     }
   },
   computed: {
@@ -624,6 +733,14 @@ export default {
     },
     hasClientPrices() {
       return this.cartStore.client && Object.keys(this.cartStore.clientPrices).length > 0
+    },
+    /** Emri për të shfaqur te "Të dhënat e porositësit" (jo email-in, që shfaqet veç) */
+    displayNameForOrder() {
+      if (!this.cartStore.client) return ''
+      const c = this.cartStore.client
+      const fromForm = this.customerData.name && String(this.customerData.name).trim()
+      if (fromForm) return this.customerData.name.trim()
+      return c.name || c.store_name || ''
     },
     vatAmount() {
       if (!this.hasVat || !this.cartStore.totalPrice || this.cartStore.totalPrice <= 0) {
@@ -712,6 +829,14 @@ export default {
         if (this.clientLocations.length === 1) this.selectedLocationId = this.clientLocations[0].id
       }
       if (!this.historyLoading) this.loadOrderHistory(null, c.id)
+    }
+
+    // Hap modal "Ndrysho fjalëkalimin" nëse erdhi nga Navbar (link me ?ndrysho=1)
+    if (this.$route.query.ndrysho === '1' && this.cartStore.client) {
+      this.$nextTick(() => {
+        this.openChangePasswordModal()
+      })
+      this.$router.replace({ path: '/shporta', query: {} })
     }
   },
   beforeUnmount() {
@@ -853,9 +978,51 @@ export default {
         localStorage.removeItem('gastrotrade_order_data')
       }
     },
-    /** Dil nga llogaria e klientit: çmimet nuk shfaqen më; klienti nuk mund të ndryshojë asgjë, vetëm të shohë çmimet kur është i kyqur. */
+    openChangePasswordModal() {
+      this.showChangePasswordModal = true
+      this.changePasswordError = ''
+      this.changePasswordErrors = {}
+      this.changePasswordSuccess = false
+      this.changePasswordForm = { current_password: '', password: '', password_confirmation: '' }
+    },
+    closeChangePasswordModal() {
+      this.showChangePasswordModal = false
+      this.changePasswordError = ''
+      this.changePasswordErrors = {}
+      this.changePasswordForm = { current_password: '', password: '', password_confirmation: '' }
+    },
+    async submitChangePassword() {
+      this.changePasswordError = ''
+      this.changePasswordErrors = {}
+      this.changePasswordSuccess = false
+      this.changePasswordLoading = true
+      const token = localStorage.getItem('client_token')
+      if (!token) {
+        this.changePasswordError = 'Duhet të jeni i kyqur.'
+        this.changePasswordLoading = false
+        return
+      }
+      try {
+        const res = await axios.put('/api/client/password', this.changePasswordForm, {
+          headers: { Authorization: `Bearer ${token}` }
+        })
+        if (res.data.success) {
+          this.changePasswordSuccess = true
+          setTimeout(() => {
+            this.closeChangePasswordModal()
+          }, 1500)
+        }
+      } catch (e) {
+        if (e.response?.data?.errors) this.changePasswordErrors = e.response.data.errors
+        if (e.response?.data?.message) this.changePasswordError = e.response.data.message
+        if (!this.changePasswordError && e.message) this.changePasswordError = 'Nuk u ndryshua fjalëkalimi. Provoni përsëri.'
+      } finally {
+        this.changePasswordLoading = false
+      }
+    },
+    /** Dil nga llogaria e klientit – i njëjti sistem për të gjithë klientët. */
     logoutClient() {
-      this.cartStore.clearClient()
+      this.cartStore.logoutSession()
       this.clientLocations = []
       this.selectedLocationId = null
       this.customerData = {

@@ -31,6 +31,7 @@ Route::post('/client/register', [ClientAuthController::class, 'register'])->midd
 Route::post('/client/login', [ClientAuthController::class, 'login'])->middleware('throttle:10,1');
 Route::get('/client/me', [ClientAuthController::class, 'me'])->middleware('auth:sanctum');
 Route::post('/client/logout', [ClientAuthController::class, 'logout'])->middleware('auth:sanctum');
+Route::put('/client/password', [ClientAuthController::class, 'changePassword'])->middleware('auth:sanctum');
 
 // Auth routes
 Route::post('/admin/login', [AuthController::class, 'login']);

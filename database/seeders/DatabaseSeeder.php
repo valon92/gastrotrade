@@ -21,6 +21,7 @@ class DatabaseSeeder extends Seeder
             KeseMbeturinashSpecsSeeder::class,
             GotaLetreSpecsSeeder::class,
             AllProductsBarcodeSeeder::class,
+            ClientSeeder::class,
         ]);
 
         // Create admin user

@@ -353,6 +353,13 @@ INSERT INTO `categories` (`name`,`slug`,`description`,`created_at`,`updated_at`)
 INSERT INTO `users` (`name`,`email`,`password`,`is_admin`,`role`,`created_at`,`updated_at`) VALUES
 ('Admin','svalon95@gmail.com','$2y$12$pCzTTr3C/wOmbzilbcUewe368Se1YC5fc5MmnqDZJIStIz1bR4DNq',1,'admin',NOW(),NOW());
 
+-- ========== SEED: KLIENTË TEST (kyçje në faqe) ==========
+-- svalon95@gmail.com / Valon123  |  klient1@test.com / password  |  klient2@test.com / password
+INSERT INTO `clients` (`name`,`store_name`,`email`,`password`,`is_active`,`created_at`,`updated_at`) VALUES
+('Valon Test','Dyqani Valon','svalon95@gmail.com','$2y$12$pCzTTr3C/wOmbzilbcUewe368Se1YC5fc5MmnqDZJIStIz1bR4DNq',1,NOW(),NOW()),
+('Klient Test 1','Biznesi 1','klient1@test.com','$2y$12$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi',1,NOW(),NOW()),
+('Klient Test 2','Biznesi 2','klient2@test.com','$2y$12$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi',1,NOW(),NOW());
+
 -- ========== SEED: PRODUCTS (të gjitha si në ProductSeeder) ==========
 INSERT INTO `products` (`category_id`,`name`,`slug`,`description`,`image_path`,`is_featured`,`sort_order`,`sold_by_package`,`pieces_per_package`,`created_at`,`updated_at`) VALUES
 (2,'Luga Kafe E Bardh 10cp Kompleti','luga-kafe-e-bardh-10cp-kompleti','Luga kafe e bardhë profesionale 10cp për përzierjen e kafesë. Materiali i sigurt dhe i qëndrueshëm. 1 kompleti = 10 copa.','/images/lugakafe.jpeg',0,0,1,10,NOW(),NOW()),

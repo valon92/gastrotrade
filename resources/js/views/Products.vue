@@ -16,12 +16,24 @@
           <span class="hidden sm:inline text-primary-300">·</span>
           <span class="inline-flex items-center gap-2">💬 Viber në dispozicion</span>
         </div>
-        <router-link
-          to="/kycu"
-          class="inline-flex items-center gap-2 mt-6 px-5 py-2.5 bg-white text-primary-700 font-semibold rounded-xl hover:bg-primary-50 shadow-lg hover:shadow-xl transition-all duration-200"
-        >
-          Kyçu për çmimet tuaja
-        </router-link>
+        <template v-if="isClientIdentified">
+          <p class="mt-4 text-primary-100 text-sm">✓ I identifikuar: <strong>{{ clientDisplayName }}</strong></p>
+          <button
+            type="button"
+            @click="logoutClient"
+            class="inline-flex items-center gap-2 mt-3 px-5 py-2.5 bg-white/20 text-white font-semibold rounded-xl hover:bg-white/30 border border-white/40 transition-all duration-200"
+          >
+            Dil
+          </button>
+        </template>
+        <template v-else>
+          <router-link
+            to="/kycu"
+            class="inline-flex items-center gap-2 mt-6 px-5 py-2.5 bg-white text-primary-700 font-semibold rounded-xl hover:bg-primary-50 shadow-lg hover:shadow-xl transition-all duration-200"
+          >
+            Kyçu për çmimet tuaja
+          </router-link>
+        </template>
         <p class="mt-3 text-primary-200 text-sm">
           Çmimet vendosen nga AronTrade për klientët e regjistruar.
         </p>
@@ -164,6 +176,7 @@
 
 <script>
 import ProductCard from '../components/ProductCard.vue'
+import cartStore from '../store/cart'
 import axios from 'axios'
 
 export default {
@@ -179,6 +192,14 @@ export default {
     }
   },
   computed: {
+    isClientIdentified() {
+      return !!cartStore.client
+    },
+    clientDisplayName() {
+      if (!cartStore.client) return ''
+      const c = cartStore.client
+      return c.name || c.store_name || c.email || 'Klient'
+    },
     filteredProducts() {
       if (!this.searchQuery.trim()) return this.products
       const q = this.searchQuery.toLowerCase().trim()
@@ -232,6 +253,9 @@ export default {
     await this.loadProducts()
   },
   methods: {
+    logoutClient() {
+      cartStore.logoutSession()
+    },
     toggleSection(slug) {
       this.expandedSections = { ...this.expandedSections, [slug]: !this.expandedSections[slug] }
     },

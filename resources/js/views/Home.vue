@@ -16,20 +16,40 @@
           >
             Shiko Produktet
           </router-link>
-          <router-link 
-            to="/kycu" 
-            class="w-full sm:w-auto inline-flex justify-center bg-primary-500/90 text-white font-semibold py-3 px-8 rounded-lg hover:bg-primary-400 border-2 border-white/50 transition-colors duration-200 text-lg"
-          >
-            Kyçu
-          </router-link>
-          <router-link 
-            to="/shporta" 
-            class="w-full sm:w-auto inline-flex justify-center border-2 border-white/70 text-white font-semibold py-3 px-8 rounded-lg hover:bg-white/10 transition-colors duration-200 text-lg"
-          >
-            Shporta
-          </router-link>
+          <template v-if="isClientIdentified">
+            <router-link 
+              to="/shporta" 
+              class="w-full sm:w-auto inline-flex justify-center bg-primary-500/90 text-white font-semibold py-3 px-8 rounded-lg hover:bg-primary-400 border-2 border-white/50 transition-colors duration-200 text-lg"
+            >
+              Shporta
+            </router-link>
+            <button
+              type="button"
+              @click="logoutClient"
+              class="w-full sm:w-auto inline-flex justify-center border-2 border-white/70 text-white font-semibold py-3 px-8 rounded-lg hover:bg-white/10 transition-colors duration-200 text-lg"
+            >
+              Dil
+            </button>
+          </template>
+          <template v-else>
+            <router-link 
+              to="/kycu" 
+              class="w-full sm:w-auto inline-flex justify-center bg-primary-500/90 text-white font-semibold py-3 px-8 rounded-lg hover:bg-primary-400 border-2 border-white/50 transition-colors duration-200 text-lg"
+            >
+              Kyçu
+            </router-link>
+            <router-link 
+              to="/shporta" 
+              class="w-full sm:w-auto inline-flex justify-center border-2 border-white/70 text-white font-semibold py-3 px-8 rounded-lg hover:bg-white/10 transition-colors duration-200 text-lg"
+            >
+              Shporta
+            </router-link>
+          </template>
         </div>
-        <p class="mt-4 text-primary-100 text-sm">
+        <p class="mt-4 text-primary-100 text-sm" v-if="isClientIdentified">
+          ✓ I identifikuar: <strong>{{ clientDisplayName }}</strong>
+        </p>
+        <p class="mt-4 text-primary-100 text-sm" v-else>
           Keni llogari? <router-link to="/kycu" class="underline hover:no-underline">Kyçuni</router-link> me email dhe fjalëkalim për të parë çmimet tuaja.
         </p>
         <p class="mt-2 text-primary-200/90 text-xs max-w-xl mx-auto">
@@ -149,6 +169,7 @@
 
 <script>
 import ProductCard from '../components/ProductCard.vue'
+import cartStore from '../store/cart'
 import axios from 'axios'
 
 export default {
@@ -168,6 +189,14 @@ export default {
     }
   },
   computed: {
+    isClientIdentified() {
+      return !!cartStore.client
+    },
+    clientDisplayName() {
+      if (!cartStore.client) return ''
+      const c = cartStore.client
+      return c.name || c.store_name || c.email || 'Klient'
+    },
     filteredFeaturedProducts() {
       if (!this.searchQuery) {
         return this.featuredProducts
@@ -226,6 +255,9 @@ export default {
     },
     goToCategory(slug) {
       this.$router.push(`/produktet?kategoria=${slug}`)
+    },
+    logoutClient() {
+      cartStore.logoutSession()
     },
     getCategoryIcon(slug) {
       const icons = {

@@ -21,9 +21,9 @@
           </router-link>
         </div>
 
-        <div v-if="hasClientPrices" class="mb-6 p-4 bg-green-50 border border-green-200 rounded-lg flex flex-wrap items-center justify-between gap-3">
+        <div v-if="isClientIdentified" class="mb-6 p-4 bg-green-50 border border-green-200 rounded-lg flex flex-wrap items-center justify-between gap-3">
           <p class="text-sm text-green-800">
-            ✅ I identifikuar: <strong>{{ displayName }}</strong>. Çmimet tuaja aplikohen në shportë.
+            ✅ I identifikuar: <strong>{{ displayName }}</strong>.<span v-if="hasClientPrices"> Çmimet tuaja aplikohen në shportë.</span>
           </p>
           <button
             type="button"
@@ -40,7 +40,7 @@
           <p class="text-sm text-red-800">{{ loginError }}</p>
         </div>
 
-        <form v-else @submit.prevent="loginWithEmail" class="space-y-4">
+        <form v-if="!isClientIdentified" @submit.prevent="loginWithEmail" class="space-y-4">
           <div>
             <label for="kycuEmail" class="block text-sm font-medium text-gray-700 mb-1">Email <span class="text-red-500">*</span></label>
             <input
@@ -120,6 +120,9 @@ export default {
     }
   },
   computed: {
+    isClientIdentified() {
+      return !!this.cartStore.client
+    },
     hasClientPrices() {
       return this.cartStore.client && Object.keys(this.cartStore.clientPrices).length > 0
     },
@@ -143,7 +146,7 @@ export default {
       try {
         const res = await axios.post('/api/client/login', {
           email: this.email.trim(),
-          password: this.password
+          password: (this.password || '').trim()
         })
         if (res.data.success && res.data.data?.client) {
           await this.cartStore.setClient(res.data.data.client)
@@ -161,14 +164,10 @@ export default {
       }
     },
     logoutClient() {
-      this.cartStore.clearClient()
+      this.cartStore.logoutSession()
       this.loginError = null
       this.email = ''
       this.password = ''
-      localStorage.removeItem('client_token')
-      if (window.axios?.defaults?.headers?.common && !localStorage.getItem('admin_token')) {
-        delete window.axios.defaults.headers.common['Authorization']
-      }
     }
   }
 }
