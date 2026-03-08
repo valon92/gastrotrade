@@ -154,6 +154,8 @@ class ProductController extends Controller
         $data['size'] = isset($validated['size']) && $validated['size'] !== '' ? $validated['size'] : null;
         $data['liters'] = isset($validated['liters']) && $validated['liters'] !== '' ? $validated['liters'] : null;
         $data['barcode'] = isset($validated['barcode']) && $validated['barcode'] !== '' ? $validated['barcode'] : null;
+        $sortOrder = $validated['sort_order'] ?? null;
+        $data['sort_order'] = (isset($sortOrder) && $sortOrder !== '' && $sortOrder !== null) ? (int) $sortOrder : 0;
 
         if (!$data['sold_by_package']) {
             $data['pieces_per_package'] = null;
