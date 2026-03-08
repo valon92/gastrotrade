@@ -694,6 +694,37 @@
         </form>
       </div>
     </div>
+
+    <!-- Faturë në faqe për mobile (hapet kur window.open bllokohet ose për UX më të mirë) -->
+    <Teleport to="body">
+      <Transition name="invoice-modal">
+        <div
+          v-if="showInvoiceModal"
+          class="fixed inset-0 z-[9999] flex flex-col bg-white"
+          role="dialog"
+          aria-label="Faturë"
+        >
+          <div class="flex items-center justify-between flex-shrink-0 px-4 py-3 border-b border-gray-200 bg-gray-50">
+            <h2 class="text-lg font-semibold text-gray-900">Faturë</h2>
+            <button
+              type="button"
+              @click="closeInvoiceModal"
+              class="p-2 rounded-lg text-gray-600 hover:bg-gray-200 transition-colors"
+              aria-label="Mbyll"
+            >
+              <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
+            </button>
+          </div>
+          <iframe
+            v-if="invoiceHtml"
+            :srcdoc="invoiceHtml"
+            class="flex-1 w-full border-0 min-h-0"
+            title="Faturë"
+            sandbox="allow-scripts allow-same-origin allow-popups"
+          />
+        </div>
+      </Transition>
+    </Teleport>
   </div>
 </template>
 
@@ -739,7 +770,9 @@ export default {
       changePasswordError: '',
       changePasswordErrors: {},
       changePasswordSuccess: false,
-      changePasswordLoading: false
+      changePasswordLoading: false,
+      showInvoiceModal: false,
+      invoiceHtml: ''
     }
   },
   computed: {
@@ -1463,11 +1496,6 @@ export default {
       }
 
       const isMobile = typeof window !== 'undefined' && window.innerWidth < 768
-      const printWindow = window.open('', '_blank', isMobile ? 'noopener' : 'width=900,height=650')
-      if (!printWindow) {
-        alert('Lejoni hapjen e dritareve të reja për të printuar porosinë.')
-        return
-      }
 
       const totalAmount = order.total_amount ? this.formatPrice(order.total_amount) : 'Sipas kërkesës'
       const createdAt = this.formatDate(order.created_at)
@@ -1617,7 +1645,6 @@ export default {
         '<table class="inv-tax">' +
         '<tr><th>Normat Tatimore</th><th>Baza</th><th>TVSH</th><th>Vlera</th></tr>' +
         '<tr><td>TVSH 0%</td><td>0.00</td><td>0.00</td><td>0.00</td></tr>' +
-        '<tr><td>TVSH 8%</td><td>0.00</td><td>0.00</td><td>0.00</td></tr>' +
         '<tr><td>TVSH 18%</td><td>' + taxBase18 + '</td><td>' + taxVat18 + '</td><td>' + taxVal18 + '</td></tr>' +
         '</table>' +
         '<div class="inv-totals">' +
@@ -1705,9 +1732,24 @@ export default {
         '</body>' +
         '</html>'
 
-      printWindow.document.write(htmlContent)
+      if (isMobile) {
+        this.invoiceHtml = htmlContent
+        this.showInvoiceModal = true
+        return
+      }
 
+      const printWindow = window.open('', '_blank', 'width=900,height=650')
+      if (!printWindow) {
+        this.invoiceHtml = htmlContent
+        this.showInvoiceModal = true
+        return
+      }
+      printWindow.document.write(htmlContent)
       printWindow.document.close()
+    },
+    closeInvoiceModal() {
+      this.showInvoiceModal = false
+      this.invoiceHtml = ''
     },
     printCurrentOrder() {
       if (!this.isFormValid) {
@@ -1971,6 +2013,15 @@ export default {
 
 .fade-enter-from,
 .fade-leave-to {
+  opacity: 0;
+}
+
+.invoice-modal-enter-active,
+.invoice-modal-leave-active {
+  transition: opacity 0.2s ease;
+}
+.invoice-modal-enter-from,
+.invoice-modal-leave-to {
   opacity: 0;
 }
 </style>
