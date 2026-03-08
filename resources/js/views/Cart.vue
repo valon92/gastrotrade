@@ -121,7 +121,7 @@
                       /copë
                     </span>
                     <span v-if="item.sold_by_package && item.pieces_per_package" class="text-xs text-gray-500">
-                      ({{ item.pieces_per_package }} copa/kompleti)
+                      ({{ item.pieces_per_package }} copa/Komplete)
                     </span>
                   </p>
                   <p class="text-lg font-bold text-primary-600">
@@ -179,7 +179,7 @@
                       ({{ getPiecesQuantity(item) }} copa)
                     </span>
                     <span v-else>
-                      ({{ item.quantity }} kompleti = {{ item.quantity * item.pieces_per_package }} copa)
+                      ({{ item.quantity }} Komplete = {{ item.quantity * item.pieces_per_package }} copa)
                     </span>
                   </div>
                   <button 

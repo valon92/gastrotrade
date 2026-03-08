@@ -45,7 +45,7 @@
               <div class="flex-1">
                 <p class="font-bold mb-1.5 text-blue-900">Total Kompleti:</p>
                 <p class="text-blue-800 font-medium mb-2">{{ packageCalculationText }}</p>
-                <p class="text-blue-700 text-[10px] leading-relaxed">{{ packageTotalPrice }} është çmimi për një kompleti.</p>
+                <p class="text-blue-700 text-[10px] leading-relaxed">{{ packageTotalPrice }} është çmimi për një Komplete.</p>
               </div>
             </div>
           </div>
@@ -197,7 +197,7 @@
                   min="1"
                   class="w-full px-4 py-2.5 border border-gray-300 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
                 >
-                <p class="text-xs text-gray-500 mt-1">1 kompleti = {{ product.pieces_per_package }} copa</p>
+                <p class="text-xs text-gray-500 mt-1">1 Komplete = {{ product.pieces_per_package }} copa</p>
               </div>
               <div v-else>
                 <label class="block text-sm font-medium text-gray-700 mb-1">Numri i copave</label>
@@ -220,7 +220,7 @@
                   class="w-full px-4 py-2.5 border border-gray-300 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
                 >
                 <p v-if="product.sold_by_package && product.pieces_per_package" class="text-xs text-gray-500 mt-1">
-                  1 kompleti = {{ product.pieces_per_package }} copa
+                  1 Komplete = {{ product.pieces_per_package }} copa
                 </p>
                 <p v-if="totalPiecesFromPackages !== null" class="text-sm font-semibold text-gray-700 mt-2">
                   Gjithsej: {{ totalPiecesFromPackages }} copa

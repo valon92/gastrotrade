@@ -387,7 +387,7 @@
                         <td class="px-3 py-2 text-sm">
                           <div class="font-medium">{{ item.product_name }}</div>
                           <span v-if="getItemProduct(item) && getItemProduct(item).sold_by_package && getItemProduct(item).pieces_per_package && (!isKeseMbeturinash(getItemProduct(item)) || (isKeseMbeturinash(getItemProduct(item)) && item.unit_type === 'package'))" class="text-xs text-gray-500 mt-1 block">
-                            ({{ getItemProduct(item).pieces_per_package }}cp/kompleti)
+                            ({{ getItemProduct(item).pieces_per_package }}cp/Komplete)
                           </span>
                           <span v-else-if="isKeseMbeturinash(getItemProduct(item)) && item.unit_type === 'kg'" class="text-xs text-gray-500 mt-1 block">
                             (në kg)

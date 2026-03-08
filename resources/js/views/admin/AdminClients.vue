@@ -741,7 +741,7 @@
                       Zbritje e aplikuar: -{{ formatPrice(item.discount_amount) }}
                     </p>
                     <div v-if="item.sold_by_package && item.pieces_per_package" class="mt-2 text-xs text-gray-500">
-                      {{ item.quantity }} kompleti × {{ item.pieces_per_package }}cp = {{ item.quantity * item.pieces_per_package }} copa
+                      {{ item.quantity }} Komplete × {{ item.pieces_per_package }}cp = {{ item.quantity * item.pieces_per_package }} copa
                     </div>
                   </div>
                 </div>

@@ -93,7 +93,7 @@
                   <span v-if="item.price" class="text-primary-600 font-semibold">
                     <strong>Çmimi:</strong> {{ formatPrice(item.price) }}/copë
                     <span v-if="item.sold_by_package && item.pieces_per_package" class="text-gray-500 text-xs">
-                      ({{ item.pieces_per_package }} copa/kompleti)
+                      ({{ item.pieces_per_package }} copa/Komplete)
                     </span>
                   </span>
                   <span v-else class="text-gray-600">

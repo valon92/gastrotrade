@@ -108,7 +108,7 @@
               </div>
               <div v-if="product.sold_by_package && product.pieces_per_package" class="flex justify-between">
                 <span class="text-gray-600">Paketimi:</span>
-                <span class="font-medium">Shitet në komplete (1 kompleti = {{ product.pieces_per_package }} copa)</span>
+                <span class="font-medium">Shitet në komplete (1 Komplete = {{ product.pieces_per_package }} copa)</span>
               </div>
             </div>
           </div>

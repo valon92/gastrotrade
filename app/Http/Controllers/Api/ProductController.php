@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\Product;
+use App\Models\ProductImage;
 use App\Models\Category;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\File;
@@ -166,9 +167,13 @@ class ProductController extends Controller
 
         $product = Product::create($data);
 
+        if (!empty($product->image_path)) {
+            $this->syncProductFeaturedImage($product, $product->image_path);
+        }
+
         return response()->json([
             'success' => true,
-            'data' => $product->load('category'),
+            'data' => $product->load(['category', 'images']),
         ], 201);
     }
 
@@ -244,9 +249,13 @@ class ProductController extends Controller
 
         $product->update($data);
 
+        if (array_key_exists('image_path', $data) && !empty($data['image_path'])) {
+            $this->syncProductFeaturedImage($product, $data['image_path']);
+        }
+
         return response()->json([
             'success' => true,
-            'data' => $product->refresh()->load('category'),
+            'data' => $product->refresh()->load(['category', 'images']),
         ]);
     }
 
@@ -263,6 +272,25 @@ class ProductController extends Controller
             'success' => true,
             'message' => 'Product deleted successfully',
         ]);
+    }
+
+    /**
+     * Sync product_images: one featured record for the main image (created/updated automatically).
+     */
+    private function syncProductFeaturedImage(Product $product, string $imagePath): void
+    {
+        $fileName = basename($imagePath);
+        $existing = $product->images()->where('is_featured', true)->first();
+        if ($existing) {
+            $existing->update(['file_name' => $fileName, 'file_path' => $imagePath]);
+        } else {
+            $product->images()->create([
+                'file_name' => $fileName,
+                'file_path' => $imagePath,
+                'is_featured' => true,
+                'sort_order' => 0,
+            ]);
+        }
     }
 
     /**
