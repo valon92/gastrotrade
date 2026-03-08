@@ -138,7 +138,8 @@ export default {
           }
           if (client) await cartStore.setClient(client)
           this.success = res.data.message || 'U regjistruat me sukses.'
-          this.$router.push('/shporta')
+          await this.$nextTick()
+          await this.$router.push('/shporta')
         }
       } catch (e) {
         if (e.response?.data?.errors) {

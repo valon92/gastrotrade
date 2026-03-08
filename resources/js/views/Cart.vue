@@ -309,10 +309,34 @@
                   <p v-if="cartStore.client.email"><span class="text-gray-500 font-medium">Email:</span> {{ cartStore.client.email }}</p>
                   <p v-if="displayNameForOrder && displayNameForOrder !== cartStore.client.email"><span class="text-gray-500 font-medium">Emri:</span> {{ displayNameForOrder }}</p>
                   <p v-else-if="!cartStore.client.email"><span class="text-gray-500 font-medium">Emri:</span> {{ cartStore.client.name || '–' }}</p>
-                  <p v-if="cartStore.client.store_name"><span class="text-gray-500 font-medium">Emri i biznesit:</span> {{ cartStore.client.store_name }}</p>
                   <p v-if="cartStore.client.fiscal_number"><span class="text-gray-500 font-medium">Nr. fiskal:</span> {{ cartStore.client.fiscal_number }}</p>
-                  <p v-if="cartStore.client.city"><span class="text-gray-500 font-medium">Qyteti:</span> {{ cartStore.client.city }}</p>
                   <p v-if="cartStore.client.phone || cartStore.client.viber"><span class="text-gray-500 font-medium">Telefon/Viber:</span> {{ cartStore.client.phone || cartStore.client.viber }}</p>
+                </div>
+                <!-- Fushat e detyrueshme për të aktivizuar butonat (Qyteti dhe/ose Emri i biznesit) -->
+                <p class="text-xs text-amber-700 font-medium">Plotësoni të paktën njërën për të aktivizuar butonat e porosisë:</p>
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div>
+                    <label for="orderCity" class="block text-sm font-medium text-gray-700 mb-1">Qyteti</label>
+                    <input
+                      id="orderCity"
+                      v-model.trim="customerData.city"
+                      type="text"
+                      class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+                      placeholder="P.sh. Ferizaj, Prishtinë"
+                      @input="persistCustomerData"
+                    />
+                  </div>
+                  <div>
+                    <label for="orderStoreName" class="block text-sm font-medium text-gray-700 mb-1">Emri i biznesit</label>
+                    <input
+                      id="orderStoreName"
+                      v-model.trim="customerData.storeName"
+                      type="text"
+                      class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+                      placeholder="P.sh. Dyqani im"
+                      @input="persistCustomerData"
+                    />
+                  </div>
                 </div>
                 <!-- Zgjedhja e pikës/njësisë nëse ka më shumë se një -->
                 <div v-if="clientLocations.length > 1">
@@ -725,10 +749,11 @@ export default {
     isFormValid() {
       if (!this.cartStore.client) return false
       const c = this.cartStore.client
+      const city = typeof this.customerData.city === 'string' ? this.customerData.city.trim() : ''
+      const storeName = typeof this.customerData.storeName === 'string' ? this.customerData.storeName.trim() : ''
+      const hasName = !!(c.name || c.email || (this.customerData.name && String(this.customerData.name).trim()))
+      const hasCityOrBusiness = !!(c.city || c.store_name || city || storeName)
       const hasLocation = this.clientLocations.length <= 1 || (this.clientLocations.length > 1 && this.selectedLocationId)
-      // Pranojmë edhe të dhënat e formës (customerData) që përdoruesi plotëson, jo vetëm të API
-      const hasName = !!(c.name || c.email || (this.customerData.name && this.customerData.name.trim()))
-      const hasCityOrBusiness = !!(c.city || c.store_name || (this.customerData.city && this.customerData.city.trim()) || (this.customerData.storeName && this.customerData.storeName.trim()))
       return hasName && hasCityOrBusiness && hasLocation
     },
     hasClientPrices() {
@@ -794,7 +819,7 @@ export default {
       }
     }
   },
-  mounted() {
+  async mounted() {
     // Initialize item discounts
     this.cartStore.items.forEach(item => {
       if (!item.discount_amount) item.discount_amount = 0
@@ -815,13 +840,29 @@ export default {
       }
     }
 
-    // Plotëso nga klienti i identifikuar (email + fjalëkalim në Kyçu)
+    // Rifresko të dhënat e klientit nga API (që të merren ndryshimet nga admin: qytet, emër biznesi)
+    const clientToken = localStorage.getItem('client_token')
+    if (clientToken) {
+      try {
+        const res = await axios.get('/api/client/me')
+        if (res.data.success && res.data.data) {
+          await this.cartStore.setClient(res.data.data)
+        }
+      } catch (_) {
+        // Token i pavlefshëm – mbaj të dhënat ekzistuese
+      }
+    }
+
+    // Plotëso nga klienti i identifikuar (pas rifreskimit nga API ose nga localStorage)
     if (this.cartStore.client) {
       const c = this.cartStore.client
       if (!this.customerData.name?.trim()) this.customerData.name = c.name || c.store_name || c.email || ''
-      if (!this.customerData.storeName?.trim()) this.customerData.storeName = c.store_name || ''
+      // Prefero të dhënat nga admin (qytet, emër biznesi) që të aktivizohen butonat
+      if (c.store_name?.trim()) this.customerData.storeName = c.store_name
+      else if (!this.customerData.storeName?.trim()) this.customerData.storeName = ''
+      if (c.city?.trim()) this.customerData.city = c.city
+      else if (!this.customerData.city?.trim()) this.customerData.city = ''
       if (!this.customerData.fiscalNumber?.trim()) this.customerData.fiscalNumber = c.fiscal_number || ''
-      if (!this.customerData.city?.trim()) this.customerData.city = c.city || ''
       if (!this.customerData.phone?.trim()) this.customerData.phone = c.phone || c.viber || ''
       this.persistCustomerData()
       if (c.locations && Array.isArray(c.locations) && c.locations.length > 0) {
