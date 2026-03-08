@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Api\ProductController;
+use App\Http\Controllers\Api\CategoryController;
 use App\Http\Controllers\Api\ClientController;
 use App\Http\Controllers\Api\ClientPriceController;
 use App\Http\Controllers\Api\ClientAuthController;
@@ -53,6 +54,9 @@ Route::middleware(['auth:sanctum', 'admin.user'])->group(function () {
     Route::get('/clients/{id}', [ClientController::class, 'show']);
     Route::put('/clients/{id}', [ClientController::class, 'update']);
     Route::delete('/clients/{id}', [ClientController::class, 'destroy']);
+
+    // Admin categories (create from product form)
+    Route::post('/admin/categories', [CategoryController::class, 'store']);
 
     // Admin product routes
     Route::get('/admin/products', [ProductController::class, 'adminIndex']);

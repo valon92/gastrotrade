@@ -222,20 +222,57 @@
                 </div>
                 <div>
                   <label class="block text-sm font-medium text-gray-700 mb-1">Kategoria *</label>
-                  <select
-                    v-model="productForm.category_id"
-                    required
-                    class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
-                  >
-                    <option value="">Zgjidh kategorinë</option>
-                    <option
-                      v-for="category in categories"
-                      :key="category.id"
-                      :value="category.id"
+                  <div class="flex flex-col gap-2">
+                    <select
+                      v-model="productForm.category_id"
+                      required
+                      :disabled="showAddCategory"
+                      class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-primary-500 focus:border-primary-500 disabled:bg-gray-100"
                     >
-                      {{ category.name }}
-                    </option>
-                  </select>
+                      <option value="">Zgjidh kategorinë</option>
+                      <option
+                        v-for="category in categories"
+                        :key="category.id"
+                        :value="category.id"
+                      >
+                        {{ category.name }}
+                      </option>
+                    </select>
+                    <button
+                      v-if="!showAddCategory"
+                      type="button"
+                      class="text-sm text-primary-600 hover:text-primary-800 font-medium flex items-center gap-1"
+                      @click="showAddCategory = true; addCategoryError = null; newCategoryName = ''"
+                    >
+                      <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" /></svg>
+                      Shto kategori të re
+                    </button>
+                    <div v-else class="flex flex-wrap items-center gap-2 p-2 bg-gray-50 rounded-lg border border-gray-200">
+                      <input
+                        v-model.trim="newCategoryName"
+                        type="text"
+                        placeholder="Emri i kategorisë së re"
+                        class="flex-1 min-w-[140px] px-3 py-1.5 text-sm border border-gray-300 rounded-md focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+                        @keydown.enter.prevent="addNewCategory"
+                      >
+                      <button
+                        type="button"
+                        class="px-3 py-1.5 text-sm font-medium text-white bg-primary-600 rounded-md hover:bg-primary-700 disabled:opacity-50"
+                        :disabled="addingCategory || !newCategoryName"
+                        @click="addNewCategory"
+                      >
+                        {{ addingCategory ? 'Duke shtuar...' : 'Shto' }}
+                      </button>
+                      <button
+                        type="button"
+                        class="px-2 py-1.5 text-sm text-gray-600 hover:text-gray-800"
+                        @click="showAddCategory = false; newCategoryName = ''; addCategoryError = null"
+                      >
+                        Anulo
+                      </button>
+                      <p v-if="addCategoryError" class="w-full text-xs text-red-600 mt-1">{{ addCategoryError }}</p>
+                    </div>
+                  </div>
                 </div>
               </div>
 
@@ -340,6 +377,7 @@
 
               <div>
                 <label class="block text-sm font-medium text-gray-700 mb-2">Foto e produktit</label>
+                <p class="text-xs text-gray-500 mb-2">Importoni foto nga jashtë (telefon, kompjuter) ose zgjidhni nga fotot e projektit më poshtë.</p>
                 <div class="flex flex-col sm:flex-row items-start gap-4 flex-wrap">
                   <div
                     v-if="productForm.preview"
@@ -376,7 +414,7 @@
                         @change="handleImageUpload"
                       >
                       <p class="text-sm font-medium text-gray-700 mb-1">Ngarko skedar të ri</p>
-                      <p class="text-xs text-gray-500 mb-3">Hidhni foto këtu ose zgjidhni nga telefoni/kompjuteri</p>
+                      <p class="text-xs text-gray-500 mb-3">Hidhni këtu ose zgjidhni nga pajisja (telefon/PC) — foto ruhen automatikisht në sistem</p>
                       <label
                         for="product-image-file"
                         class="inline-flex items-center gap-2 px-4 py-2.5 rounded-lg border border-gray-300 bg-white text-sm font-medium text-gray-700 hover:bg-primary-50 hover:border-primary-300 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-1 cursor-pointer transition-colors"
@@ -470,7 +508,11 @@ export default {
       projectImagesLoading: false,
       dragOver: false,
       uploadProgress: -1,
-      saveError: null
+      saveError: null,
+      showAddCategory: false,
+      newCategoryName: '',
+      addingCategory: false,
+      addCategoryError: null
     }
   },
   computed: {
@@ -555,11 +597,33 @@ export default {
         alert('Gabim në ngarkimin e kategorive')
       }
     },
+    async addNewCategory() {
+      const name = this.newCategoryName.trim()
+      if (!name) return
+      this.addingCategory = true
+      this.addCategoryError = null
+      try {
+        const res = await axios.post('/api/admin/categories', { name })
+        const category = res.data.data
+        this.categories.push(category)
+        this.productForm.category_id = category.id
+        this.showAddCategory = false
+        this.newCategoryName = ''
+      } catch (err) {
+        const msg = err.response?.data?.message || err.response?.data?.errors?.name?.[0] || 'Gabim në shtimin e kategorisë.'
+        this.addCategoryError = msg
+      } finally {
+        this.addingCategory = false
+      }
+    },
     openCreateModal() {
       this.editingProduct = null
       this.productForm = this.defaultForm()
       this.saveError = null
       this.uploadProgress = -1
+      this.showAddCategory = false
+      this.newCategoryName = ''
+      this.addCategoryError = null
       this.showModal = true
       this.loadProjectImages()
       this.$nextTick(() => {
@@ -618,6 +682,9 @@ export default {
       this.savingProduct = false
       this.saveError = null
       this.uploadProgress = -1
+      this.showAddCategory = false
+      this.newCategoryName = ''
+      this.addCategoryError = null
     },
     async loadProjectImages() {
       this.projectImagesLoading = true
