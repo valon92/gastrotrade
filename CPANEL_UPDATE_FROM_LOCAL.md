@@ -57,6 +57,20 @@ Nëse nuk ke FTP ose do të përdorësh vetëm Pull + Deploy/kopjim manual, për
 
 ---
 
+## Databaza në server – kur administratori shton produkt
+
+Kur administratori shton një **produkt të ri** nga **Admin → Menaxhimi i Produkteve**, specifikat e produktit (emri, kategoria, size, litra, përshkrimi, çmimi, barcode, foto, etj.) ruhen në **databasën e lidhur me projektin**. Lidhja me databasën bëhet përmes **`.env`** në server.
+
+- **Në server**, sigurohu që në **public_html/.env** janë vendosur saktë:
+  - `DB_CONNECTION=mysql` (ose `sqlite` nëse përdor SQLite)
+  - `DB_HOST=...`, `DB_DATABASE=...`, `DB_USERNAME=...`, `DB_PASSWORD=...`
+- Tabelat duhet të ekzistojnë: ekzekuto **migrations** në server (një herë) ose importo dump-in e databasës sipas **DATABASE_UPDATE_STEPS.md**.
+- I njëjti kod që run në localhost run edhe në server: produkti krijohet në tabelën `products`, fotoja në `uploads/products/` dhe rekordi në `product_images`. Nëse ndonjë hap dështon, asgjë nuk ruhet (transaksion).
+
+Nëse produktet nuk ruhen në server, kontrollo që `.env` në server ka të dhënat e sakta të databasës dhe që tabelat `products`, `categories`, `product_images` ekzistojnë.
+
+---
+
 ## Hapi 1 – Ndryshimet lokale dhe build
 
 ### 1.1 Bëj ndryshimet në kodin tënd

@@ -7,6 +7,7 @@ use App\Models\Product;
 use App\Models\ProductImage;
 use App\Models\Category;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
@@ -167,15 +168,20 @@ class ProductController extends Controller
             $data['image_path'] = $request->input('image_path');
         }
 
-        $product = Product::create($data);
+        // Only pass fillable attributes (e.g. exclude uploaded file key)
+        $data = array_intersect_key($data, array_fill_keys((new Product)->getFillable(), true));
 
-        if (!empty($product->image_path)) {
-            $this->syncProductFeaturedImage($product, $product->image_path);
-        }
+        $product = DB::transaction(function () use ($data) {
+            $product = Product::create($data);
+            if (!empty($product->image_path)) {
+                $this->syncProductFeaturedImage($product, $product->image_path);
+            }
+            return $product->load(['category', 'images']);
+        });
 
         return response()->json([
             'success' => true,
-            'data' => $product->load(['category', 'images']),
+            'data' => $product,
         ], 201);
     }
 
@@ -249,11 +255,14 @@ class ProductController extends Controller
             $data['image_path'] = $request->input('image_path');
         }
 
-        $product->update($data);
+        $data = array_intersect_key($data, array_fill_keys((new Product)->getFillable(), true));
 
-        if (array_key_exists('image_path', $data) && !empty($data['image_path'])) {
-            $this->syncProductFeaturedImage($product, $data['image_path']);
-        }
+        DB::transaction(function () use ($product, $data) {
+            $product->update($data);
+            if (array_key_exists('image_path', $data) && !empty($data['image_path'])) {
+                $this->syncProductFeaturedImage($product, $data['image_path']);
+            }
+        });
 
         return response()->json([
             'success' => true,
