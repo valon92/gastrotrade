@@ -137,54 +137,58 @@
                 Zbritje e aplikuar nga administratori: -{{ formatPrice(item.discount_amount) }}
               </div>
               
-              <div class="flex items-center gap-4">
-                <label class="text-sm font-medium text-gray-700">
-                  <span v-if="item.sold_by_package && item.pieces_per_package && canBuyByPieces(item)">
-                    Copa:
-                  </span>
-                  <span v-else-if="item.sold_by_package && item.pieces_per_package">
-                    Komplete:
-                  </span>
-                  <span v-else>
-                    Sasia:
-                  </span>
-                </label>
-                <div class="flex items-center border rounded-lg">
+              <div class="flex flex-col md:flex-row md:items-center gap-2 md:gap-4">
+                <div class="flex items-center gap-4">
+                  <label class="text-sm font-medium text-gray-700">
+                    <span v-if="item.sold_by_package && item.pieces_per_package && canBuyByPieces(item)">
+                      Copa:
+                    </span>
+                    <span v-else-if="item.sold_by_package && item.pieces_per_package">
+                      Komplete:
+                    </span>
+                    <span v-else>
+                      Sasia:
+                    </span>
+                  </label>
+                  <div class="flex items-center border rounded-lg">
+                    <button 
+                      @click="decreaseQuantity(item.id)"
+                      class="px-3 py-1 hover:bg-gray-100 transition-colors"
+                    >
+                      -
+                    </button>
+                    <input 
+                      type="number" 
+                      :value="item.sold_by_package && item.pieces_per_package && canBuyByPieces(item) ? getPiecesQuantity(item) : item.quantity" 
+                      @input="updateQuantity(item.id, $event.target.value, item)"
+                      :min="item.sold_by_package && item.pieces_per_package && canBuyByPieces(item) ? 1 : 1"
+                      :step="item.sold_by_package && item.pieces_per_package && canBuyByPieces(item) ? 1 : 1"
+                      class="w-20 text-center border-0 focus:ring-0"
+                    />
+                    <button 
+                      @click="increaseQuantity(item.id)"
+                      class="px-3 py-1 hover:bg-gray-100 transition-colors"
+                    >
+                      +
+                    </button>
+                  </div>
+                </div>
+                <div class="flex items-center justify-between gap-2 md:gap-4 flex-wrap w-full md:w-auto">
+                  <div v-if="item.sold_by_package && item.pieces_per_package" class="text-sm text-gray-600">
+                    <span v-if="canBuyByPieces(item)">
+                      ({{ getPiecesQuantity(item) }} copa)
+                    </span>
+                    <span v-else>
+                      ({{ item.quantity }} kompleti = {{ item.quantity * item.pieces_per_package }} copa)
+                    </span>
+                  </div>
                   <button 
-                    @click="decreaseQuantity(item.id)"
-                    class="px-3 py-1 hover:bg-gray-100 transition-colors"
+                    @click="removeItem(item.id)"
+                    class="text-red-600 hover:text-red-800 text-sm font-medium md:ml-auto"
                   >
-                    -
-                  </button>
-                  <input 
-                    type="number" 
-                    :value="item.sold_by_package && item.pieces_per_package && canBuyByPieces(item) ? getPiecesQuantity(item) : item.quantity" 
-                    @input="updateQuantity(item.id, $event.target.value, item)"
-                    :min="item.sold_by_package && item.pieces_per_package && canBuyByPieces(item) ? 1 : 1"
-                    :step="item.sold_by_package && item.pieces_per_package && canBuyByPieces(item) ? 1 : 1"
-                    class="w-20 text-center border-0 focus:ring-0"
-                  />
-                  <button 
-                    @click="increaseQuantity(item.id)"
-                    class="px-3 py-1 hover:bg-gray-100 transition-colors"
-                  >
-                    +
+                    Hiq
                   </button>
                 </div>
-                <div v-if="item.sold_by_package && item.pieces_per_package" class="text-sm text-gray-600">
-                  <span v-if="canBuyByPieces(item)">
-                    ({{ getPiecesQuantity(item) }} copa)
-                  </span>
-                  <span v-else>
-                    ({{ item.quantity }} kompleti = {{ item.quantity * item.pieces_per_package }} copa)
-                  </span>
-                </div>
-                <button 
-                  @click="removeItem(item.id)"
-                  class="text-red-600 hover:text-red-800 text-sm font-medium"
-                >
-                  Hiq
-                </button>
               </div>
             </div>
           </div>
@@ -695,7 +699,7 @@
       </div>
     </div>
 
-    <!-- Faturë në faqe për mobile (hapet kur window.open bllokohet ose për UX më të mirë) -->
+    <!-- Faturë në faqe (mobile + fallback): butonat Ndaj/Printo në header që janë gjithmonë të klikueshëm -->
     <Teleport to="body">
       <Transition name="invoice-modal">
         <div
@@ -722,6 +726,39 @@
             title="Faturë"
             sandbox="allow-scripts allow-same-origin allow-popups"
           />
+          <div class="flex-shrink-0 px-3 py-3 border-t border-gray-200 bg-gray-50 flex flex-wrap gap-2 justify-center">
+            <button
+              type="button"
+              @click="shareInvoiceViber"
+              class="inline-flex items-center justify-center gap-1.5 min-h-[44px] px-4 py-2.5 rounded-xl text-white text-sm font-medium shadow-sm hover:opacity-90 active:scale-[0.98] transition-all cursor-pointer touch-manipulation select-none"
+              style="background:#7360F2"
+            >
+              💬 Viber
+            </button>
+            <button
+              type="button"
+              @click="shareInvoiceWhatsApp"
+              class="inline-flex items-center justify-center gap-1.5 min-h-[44px] px-4 py-2.5 rounded-xl text-white text-sm font-medium shadow-sm hover:opacity-90 active:scale-[0.98] transition-all cursor-pointer touch-manipulation select-none"
+              style="background:#25D366"
+            >
+              📱 WhatsApp
+            </button>
+            <button
+              type="button"
+              @click="shareInvoiceGmail"
+              class="inline-flex items-center justify-center gap-1.5 min-h-[44px] px-4 py-2.5 rounded-xl text-white text-sm font-medium shadow-sm hover:opacity-90 active:scale-[0.98] transition-all cursor-pointer touch-manipulation select-none"
+              style="background:#EA4335"
+            >
+              📧 Gmail
+            </button>
+            <button
+              type="button"
+              @click="printInvoiceFromModal"
+              class="inline-flex items-center justify-center gap-1.5 min-h-[44px] px-4 py-2.5 rounded-xl bg-gray-600 text-white text-sm font-medium shadow-sm hover:bg-gray-700 active:scale-[0.98] transition-colors cursor-pointer touch-manipulation select-none"
+            >
+              🖨 Printo
+            </button>
+          </div>
         </div>
       </Transition>
     </Teleport>
@@ -772,7 +809,9 @@ export default {
       changePasswordSuccess: false,
       changePasswordLoading: false,
       showInvoiceModal: false,
-      invoiceHtml: ''
+      invoiceHtml: '',
+      invoiceShareText: '',
+      invoiceOrderNumber: ''
     }
   },
   computed: {
@@ -1495,8 +1534,6 @@ export default {
         }
       }
 
-      const isMobile = typeof window !== 'undefined' && window.innerWidth < 768
-
       const totalAmount = order.total_amount ? this.formatPrice(order.total_amount) : 'Sipas kërkesës'
       const createdAt = this.formatDate(order.created_at)
       const invoiceDateFormatted = this.formatDate(order.created_at)
@@ -1537,24 +1574,6 @@ export default {
             '</tr>'
         })
         .join('')
-
-      const orderDataJson = JSON.stringify({
-        order_number: order.order_number || 'N/A',
-        customer_name: order.customer_name || 'N/A',
-        business_name: order.business_name || 'N/A',
-        fiscal_number: order.fiscal_number || 'N/A',
-        city: order.city || 'N/A',
-        phone: order.phone || 'N/A',
-        location_unit_name: order.location_unit_name || null,
-        location_street_number: order.location_street_number || null,
-        location_city: order.location_city || null,
-        location_phone: order.location_phone || null,
-        location_viber: order.location_viber || null,
-        total_amount: order.total_amount
-      })
-
-      const scriptTag = '<' + 'script' + '>'
-      const scriptClose = '<' + '/' + 'script' + '>'
 
       const buyerName = (order.business_name || order.customer_name || 'N/A').trim()
       const buyerAddress = order.location_street_number || ''
@@ -1618,8 +1637,6 @@ export default {
         'Pranoi: ' + buyerName + '\n\n' +
         'Llogaria bankare: (vendosni nëse keni)'
 
-      const fullInvoiceTextJson = JSON.stringify(fullInvoiceText)
-
       const htmlContent = '<!DOCTYPE html><html lang="sq">' +
         '<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">' +
         '<title>Faturë ' + (order.order_number || 'N/A') + '</title>' +
@@ -1657,7 +1674,7 @@ export default {
         '.no-print h3{margin-bottom:12px;font-size:14px;color:#475569}' +
         '.no-print .btns{display:flex;gap:8px;justify-content:center;flex-wrap:wrap}' +
         '.no-print button{padding:10px 18px;border:none;border-radius:8px;cursor:pointer;font-size:14px;font-weight:500}' +
-        '</style></head><body>' +
+        '</style></head><body data-invoice-text="' + (fullInvoiceText || '').replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;') + '">' +
         '<div class="inv-header">' +
         '<div class="inv-seller">' +
         '<h2 class="inv-company">Aron Trade</h2>' +
@@ -1712,61 +1729,59 @@ export default {
         '<div class="inv-sig"><div class="line">Pranoi</div><div class="sub">' + buyerName + '</div></div>' +
         '</div>' +
         '<div class="inv-bank">Llogaria bankare: (vendosni nëse keni)</div>' +
-        '<div class="no-print">' +
-        '<h3>Ndaj Faturën</h3>' +
-        '<div class="btns">' +
-        '<button onclick="shareToViber()" style="background:#7360F2;color:white">💬 Viber</button>' +
-        '<button onclick="shareToWhatsApp()" style="background:#25D366;color:white">📱 WhatsApp</button>' +
-        '<button onclick="shareToGmail()" style="background:#EA4335;color:white">📧 Gmail</button>' +
-        '<button onclick="window.print()" style="background:#475569;color:white">🖨 Printo</button>' +
-        '</div></div>' +
-        scriptTag +
-        'const orderData = ' + orderDataJson + ';' +
-        'const fullInvoiceText = JSON.parse(' + fullInvoiceTextJson + ');' +
-        'function shareToViber() {' +
-        'var textToShare = fullInvoiceText;' +
-        'if (navigator.share) {' +
-        'navigator.share({ title: "Faturë " + orderData.order_number, text: textToShare })' +
-        '.catch(function(err) { console.log("Share error:", err); fallbackShareViber(textToShare); });' +
-        '} else { fallbackShareViber(textToShare); }' +
-        '}' +
-        'function fallbackShareViber(text) {' +
-        'if (navigator.clipboard && navigator.clipboard.writeText) {' +
-        'navigator.clipboard.writeText(text).then(function() { alert("Fatura e plotë u kopjua. Ngjiteni në Viber."); }).catch(function() { prompt("Kopjoni faturën dhe ngjisni në Viber:", text); });' +
-        '} else { prompt("Kopjoni faturën e plotë dhe ngjisni në Viber:", text); }' +
-        '}' +
-        'function shareToWhatsApp() {' +
-        'var textToShare = fullInvoiceText;' +
-        'var url = "https://wa.me/?text=" + encodeURIComponent(textToShare);' +
-        'window.open(url, "_blank");' +
-        '}' +
-        'function shareToGmail() {' +
-        'var subject = encodeURIComponent("Faturë " + orderData.order_number);' +
-        'var body = encodeURIComponent(fullInvoiceText);' +
-        'window.location.href = "mailto:svalon95@gmail.com?subject=" + subject + "&body=" + body;' +
-        '}' +
-        scriptClose +
         '</body>' +
         '</html>'
 
-      if (isMobile) {
-        this.invoiceHtml = htmlContent
-        this.showInvoiceModal = true
-        return
-      }
-
-      const printWindow = window.open('', '_blank', 'width=900,height=650')
-      if (!printWindow) {
-        this.invoiceHtml = htmlContent
-        this.showInvoiceModal = true
-        return
-      }
-      printWindow.document.write(htmlContent)
-      printWindow.document.close()
+      this.invoiceHtml = htmlContent
+      this.invoiceShareText = fullInvoiceText
+      this.invoiceOrderNumber = order.order_number || ''
+      this.showInvoiceModal = true
     },
     closeInvoiceModal() {
       this.showInvoiceModal = false
       this.invoiceHtml = ''
+      this.invoiceShareText = ''
+      this.invoiceOrderNumber = ''
+    },
+    shareInvoiceViber() {
+      const text = this.invoiceShareText || ''
+      if (!text) return
+      if (navigator.share) {
+        navigator.share({ title: 'Faturë ' + this.invoiceOrderNumber, text }).catch(() => this.fallbackCopyShare(text, 'Viber'))
+      } else {
+        this.fallbackCopyShare(text, 'Viber')
+      }
+    },
+    shareInvoiceWhatsApp() {
+      const text = this.invoiceShareText || ''
+      if (!text) return
+      window.open('https://wa.me/?text=' + encodeURIComponent(text), '_blank')
+    },
+    shareInvoiceGmail() {
+      const text = this.invoiceShareText || ''
+      if (!text) return
+      const subject = encodeURIComponent('Faturë ' + (this.invoiceOrderNumber || ''))
+      const body = encodeURIComponent(text)
+      window.location.href = 'mailto:svalon95@gmail.com?subject=' + subject + '&body=' + body
+    },
+    printInvoiceFromModal() {
+      if (!this.invoiceHtml) return
+      const w = window.open('', '_blank')
+      if (!w) {
+        alert('Lejoni hapjen e dritareve për të printuar.')
+        return
+      }
+      w.document.write(this.invoiceHtml)
+      w.document.close()
+      w.focus()
+      setTimeout(() => { w.print(); w.close() }, 300)
+    },
+    fallbackCopyShare(text, app) {
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(text).then(() => alert('Fatura u kopjua. Ngjiteni në ' + app + '.')).catch(() => prompt('Kopjoni dhe ngjisni në ' + app + ':', text))
+      } else {
+        prompt('Kopjoni faturën dhe ngjisni në ' + app + ':', text)
+      }
     },
     printCurrentOrder() {
       if (!this.isFormValid) {
