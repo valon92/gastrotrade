@@ -163,7 +163,14 @@ class ProductController extends Controller
         }
 
         if ($request->hasFile('image')) {
-            $data['image_path'] = $this->storeProductImage($request->file('image'));
+            try {
+                $data['image_path'] = $this->storeProductImage($request->file('image'));
+            } catch (\RuntimeException $e) {
+                return response()->json([
+                    'success' => false,
+                    'message' => $e->getMessage(),
+                ], 422);
+            }
         } elseif ($request->filled('image_path') && (str_starts_with($request->input('image_path'), '/images/') || str_starts_with($request->input('image_path'), '/uploads/'))) {
             $data['image_path'] = $request->input('image_path');
         }
@@ -250,7 +257,14 @@ class ProductController extends Controller
 
         if ($request->hasFile('image')) {
             $this->deleteProductImage($product->image_path);
-            $data['image_path'] = $this->storeProductImage($request->file('image'));
+            try {
+                $data['image_path'] = $this->storeProductImage($request->file('image'));
+            } catch (\RuntimeException $e) {
+                return response()->json([
+                    'success' => false,
+                    'message' => $e->getMessage(),
+                ], 422);
+            }
         } elseif ($request->filled('image_path') && (str_starts_with($request->input('image_path'), '/images/') || str_starts_with($request->input('image_path'), '/uploads/'))) {
             $data['image_path'] = $request->input('image_path');
         }
@@ -306,6 +320,7 @@ class ProductController extends Controller
 
     /**
      * Store uploaded image in public/uploads/products (works without storage:link, e.g. cPanel).
+     * Ensures directory exists and is writable; throws on failure with a clear message for the client.
      */
     private function storeProductImage($file): string
     {
@@ -313,8 +328,25 @@ class ProductController extends Controller
         if (!File::isDirectory($dir)) {
             File::ensureDirectoryExists($dir, 0755, true);
         }
-        $name = Str::uuid() . '.' . $file->getClientOriginalExtension();
-        $file->move($dir, $name);
+        if (!File::isWritable($dir)) {
+            throw new \RuntimeException(
+                'Drejtoria për foto nuk lejon shkrim. Kontrolloni të drejtat e folderit uploads/products në server.'
+            );
+        }
+        $ext = strtolower($file->getClientOriginalExtension() ?: 'jpg');
+        if (!in_array($ext, ['jpeg', 'jpg', 'png', 'gif', 'webp'], true)) {
+            $ext = 'jpg';
+        }
+        $name = Str::uuid() . '.' . $ext;
+        try {
+            $file->move($dir, $name);
+        } catch (\Throwable $e) {
+            throw new \RuntimeException(
+                'Ngarkimi i fotos dështoi. Kontrolloni të drejtat e folderit uploads/products në server.',
+                0,
+                $e
+            );
+        }
         return '/uploads/products/' . $name;
     }
 

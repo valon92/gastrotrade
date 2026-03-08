@@ -69,6 +69,8 @@ Kur administratori shton një **produkt të ri** nga **Admin → Menaxhimi i Pro
 
 Nëse produktet nuk ruhen në server, kontrollo që `.env` në server ka të dhënat e sakta të databasës dhe që tabelat `products`, `categories`, `product_images` ekzistojnë.
 
+**Foto nga telefoni (iPhone/Android):** Fotot nga iPhone (format HEIC) konvertohen automatikisht në JPEG në shfletues para dërgimit. Nëse ngarkimi i fotos dështon në server, krijo folderin **public_html/uploads/products** në cPanel (File Manager) dhe jepi të drejta **755** (ose **775** nëse serveri e kërkon), që aplikacioni të mund të ruajë foto aty.
+
 ---
 
 ## Hapi 1 – Ndryshimet lokale dhe build

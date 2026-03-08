@@ -377,7 +377,7 @@
 
               <div>
                 <label class="block text-sm font-medium text-gray-700 mb-2">Foto e produktit</label>
-                <p class="text-xs text-gray-500 mb-2">Importoni foto nga jashtë (telefon, kompjuter) ose zgjidhni nga fotot e projektit më poshtë.</p>
+                <p class="text-xs text-gray-500 mb-2">Importoni foto nga telefoni (iPhone/Android) ose kompjuteri — formatet HEIC nga iPhone konvertohen automatikisht në JPEG.</p>
                 <div class="flex flex-col sm:flex-row items-start gap-4 flex-wrap">
                   <div
                     v-if="productForm.preview"
@@ -427,6 +427,9 @@
                     </div>
                     <p class="text-xs text-gray-500 mt-2">ose zgjidhni nga fotot e projektit më poshtë.</p>
                   </div>
+                </div>
+                <div v-if="imageConverting" class="mt-3 p-2 rounded-lg bg-primary-50 border border-primary-200">
+                  <p class="text-sm text-primary-700">Duke konvertuar foton nga telefoni (HEIC → JPEG)...</p>
                 </div>
                 <div v-if="uploadProgress >= 0 && uploadProgress < 100" class="mt-3">
                   <div class="h-2 bg-gray-200 rounded-full overflow-hidden">
@@ -485,6 +488,27 @@ import axios from 'axios'
 import { adminStore } from '../../stores/adminStore'
 import AdminLayout from '../../components/admin/AdminLayout.vue'
 
+/** Returns true if the file is HEIC/HEIF (iPhone default format). */
+function isHeic(file) {
+  if (!file || !file.type) return false
+  const t = file.type.toLowerCase()
+  const name = (file.name || '').toLowerCase()
+  return t === 'image/heic' || t === 'image/heif' || name.endsWith('.heic') || name.endsWith('.heif')
+}
+
+/** Convert HEIC/HEIF file to JPEG (loads heic2any only when needed). */
+async function convertHeicToJpeg(file) {
+  const heic2any = (await import('heic2any')).default
+  const blob = await heic2any({
+    blob: file,
+    toType: 'image/jpeg',
+    quality: 0.92
+  })
+  const outBlob = Array.isArray(blob) ? blob[0] : blob
+  const name = (file.name || 'image').replace(/\.(heic|heif)$/i, '.jpg')
+  return new File([outBlob], name, { type: 'image/jpeg', lastModified: Date.now() })
+}
+
 export default {
   name: 'AdminProducts',
   components: {
@@ -512,7 +536,8 @@ export default {
       showAddCategory: false,
       newCategoryName: '',
       addingCategory: false,
-      addCategoryError: null
+      addCategoryError: null,
+      imageConverting: false
     }
   },
   computed: {
@@ -703,7 +728,7 @@ export default {
       this.productForm.image = null
       if (this.$refs.productImageInput) this.$refs.productImageInput.value = ''
     },
-    handleImageUpload(event) {
+    async handleImageUpload(event) {
       const file = event.target?.files?.[0]
       if (!file) return
       if (file.size > 10 * 1024 * 1024) {
@@ -711,15 +736,28 @@ export default {
         return
       }
       this.saveError = null
-      this.productForm.image = file
       this.productForm.existingImagePath = null
+      let fileToUse = file
+      if (isHeic(file)) {
+        this.imageConverting = true
+        try {
+          fileToUse = await convertHeicToJpeg(file)
+        } catch (err) {
+          console.error('HEIC conversion failed:', err)
+          this.saveError = 'Fota nga telefoni nuk u konvertua. Provoni një foto tjetër ose formatin JPG.'
+          this.imageConverting = false
+          return
+        }
+        this.imageConverting = false
+      }
+      this.productForm.image = fileToUse
       const reader = new FileReader()
       reader.onload = e => {
         this.productForm.preview = e.target.result
       }
-      reader.readAsDataURL(file)
+      reader.readAsDataURL(fileToUse)
     },
-    handleDrop(event) {
+    async handleDrop(event) {
       this.dragOver = false
       const file = event.dataTransfer?.files?.[0]
       if (!file || !file.type.startsWith('image/')) return
@@ -728,13 +766,26 @@ export default {
         return
       }
       this.saveError = null
-      this.productForm.image = file
       this.productForm.existingImagePath = null
+      let fileToUse = file
+      if (isHeic(file)) {
+        this.imageConverting = true
+        try {
+          fileToUse = await convertHeicToJpeg(file)
+        } catch (err) {
+          console.error('HEIC conversion failed:', err)
+          this.saveError = 'Fota nga telefoni nuk u konvertua. Provoni një foto tjetër ose formatin JPG.'
+          this.imageConverting = false
+          return
+        }
+        this.imageConverting = false
+      }
+      this.productForm.image = fileToUse
       const reader = new FileReader()
       reader.onload = e => {
         this.productForm.preview = e.target.result
       }
-      reader.readAsDataURL(file)
+      reader.readAsDataURL(fileToUse)
       if (this.$refs.productImageInput) this.$refs.productImageInput.value = ''
     },
     clearProductImage() {
@@ -757,6 +808,11 @@ export default {
       this.saveError = null
       this.uploadProgress = 0
       try {
+        if (this.productForm.image && isHeic(this.productForm.image)) {
+          this.imageConverting = true
+          this.productForm.image = await convertHeicToJpeg(this.productForm.image)
+          this.imageConverting = false
+        }
         const formData = new FormData()
         formData.append('name', this.productForm.name)
         formData.append('category_id', String(this.productForm.category_id))
