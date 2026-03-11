@@ -729,34 +729,17 @@
           <div class="flex-shrink-0 px-3 py-3 border-t border-gray-200 bg-gray-50 flex flex-wrap gap-2 justify-center">
             <button
               type="button"
-              @click="shareInvoiceViber"
-              class="inline-flex items-center justify-center gap-1.5 min-h-[44px] px-4 py-2.5 rounded-xl text-white text-sm font-medium shadow-sm hover:opacity-90 active:scale-[0.98] transition-all cursor-pointer touch-manipulation select-none"
-              style="background:#7360F2"
-            >
-              💬 Viber
-            </button>
-            <button
-              type="button"
-              @click="shareInvoiceWhatsApp"
-              class="inline-flex items-center justify-center gap-1.5 min-h-[44px] px-4 py-2.5 rounded-xl text-white text-sm font-medium shadow-sm hover:opacity-90 active:scale-[0.98] transition-all cursor-pointer touch-manipulation select-none"
-              style="background:#25D366"
-            >
-              📱 WhatsApp
-            </button>
-            <button
-              type="button"
-              @click="shareInvoiceGmail"
-              class="inline-flex items-center justify-center gap-1.5 min-h-[44px] px-4 py-2.5 rounded-xl text-white text-sm font-medium shadow-sm hover:opacity-90 active:scale-[0.98] transition-all cursor-pointer touch-manipulation select-none"
-              style="background:#EA4335"
-            >
-              📧 Gmail
-            </button>
-            <button
-              type="button"
               @click="printInvoiceFromModal"
               class="inline-flex items-center justify-center gap-1.5 min-h-[44px] px-4 py-2.5 rounded-xl bg-gray-600 text-white text-sm font-medium shadow-sm hover:bg-gray-700 active:scale-[0.98] transition-colors cursor-pointer touch-manipulation select-none"
             >
               🖨 Printo
+            </button>
+            <button
+              type="button"
+              @click="downloadInvoice"
+              class="inline-flex items-center justify-center gap-1.5 min-h-[44px] px-4 py-2.5 rounded-xl bg-blue-600 text-white text-sm font-medium shadow-sm hover:bg-blue-700 active:scale-[0.98] transition-colors cursor-pointer touch-manipulation select-none"
+            >
+              ⬇️ Shkarko
             </button>
           </div>
         </div>
@@ -1775,6 +1758,26 @@ export default {
       w.document.close()
       w.focus()
       setTimeout(() => { w.print(); w.close() }, 300)
+    },
+    downloadInvoice() {
+      if (!this.invoiceHtml) return
+      try {
+        const blob = new Blob([this.invoiceHtml], { type: 'text/html;charset=utf-8' })
+        const url = URL.createObjectURL(blob)
+        const a = document.createElement('a')
+        const fileName = this.invoiceOrderNumber
+          ? `Fature-${this.invoiceOrderNumber}.html`
+          : 'Fature-AronTrade.html'
+        a.href = url
+        a.download = fileName
+        document.body.appendChild(a)
+        a.click()
+        document.body.removeChild(a)
+        URL.revokeObjectURL(url)
+      } catch (e) {
+        console.error('Error downloading invoice:', e)
+        alert('Nuk u arrit të shkarkohet dokumenti. Provoni përsëri.')
+      }
     },
     fallbackCopyShare(text, app) {
       if (navigator.clipboard && navigator.clipboard.writeText) {
