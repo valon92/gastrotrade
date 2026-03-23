@@ -1,7 +1,8 @@
 <template>
-  <div id="app">
+  <div id="app" class="bg-slate-50 text-slate-900">
     <Navbar />
-    <main>
+    <main class="relative">
+      <div aria-hidden="true" class="pointer-events-none absolute inset-x-0 top-0 -z-10 h-56 bg-gradient-to-b from-primary-100/60 to-transparent"></div>
       <router-view />
     </main>
     <Footer />

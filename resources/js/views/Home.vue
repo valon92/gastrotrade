@@ -1,32 +1,34 @@
 <template>
   <div>
     <!-- Hero Section -->
-    <section class="bg-gradient-to-r from-primary-600 to-primary-800 text-white py-20">
-      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-        <h1 class="text-4xl md:text-6xl font-bold mb-6">
+    <section class="relative overflow-hidden bg-slate-950 text-white py-20 sm:py-24">
+      <div aria-hidden="true" class="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(20,184,166,0.28),transparent_40%),radial-gradient(circle_at_bottom_left,rgba(14,165,233,0.18),transparent_38%)]"></div>
+      <div class="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+        <p class="inline-flex items-center rounded-full border border-white/20 bg-white/5 px-4 py-1.5 text-xs font-semibold tracking-widest text-primary-100 mb-5">ARONTRADE B2B PLATFORM</p>
+        <h1 class="text-4xl md:text-6xl font-extrabold tracking-tight mb-6">
           Zgjidhja Juaj për Furnizimet Profesionale
         </h1>
-        <p class="text-xl md:text-2xl mb-8 text-primary-100">
+        <p class="text-lg md:text-2xl mb-8 text-slate-200 max-w-3xl mx-auto">
           Cilësi e lartë, shërbim i besueshëm dhe produkte të zgjedhura me kujdes për biznesin tuaj
         </p>
         <div class="flex flex-col sm:flex-row gap-3 sm:gap-4 justify-center items-stretch sm:items-center max-w-md mx-auto">
           <router-link 
             to="/produktet" 
-            class="w-full sm:w-auto inline-flex justify-center bg-white text-primary-600 font-semibold py-3 px-8 rounded-lg hover:bg-gray-100 transition-colors duration-200 text-lg sm:text-sm"
+            class="w-full sm:w-auto inline-flex justify-center items-center bg-white text-slate-900 font-semibold py-3 px-8 rounded-xl hover:bg-slate-100 transition-all duration-200 text-lg sm:text-sm shadow-lg hover:shadow-xl hover:-translate-y-0.5"
           >
             Shiko Produktet
           </router-link>
           <template v-if="isClientIdentified">
             <router-link 
               to="/shporta" 
-              class="w-full sm:w-auto inline-flex justify-center bg-primary-500/90 text-white font-semibold py-3 px-8 rounded-lg hover:bg-primary-400 border-2 border-white/50 transition-colors duration-200 text-lg"
+              class="w-full sm:w-auto inline-flex justify-center items-center bg-gradient-to-r from-primary-500 to-primary-600 text-white font-semibold py-3 px-8 rounded-xl hover:from-primary-400 hover:to-primary-500 border border-white/35 transition-all duration-200 text-lg shadow-md hover:shadow-lg hover:-translate-y-0.5"
             >
               Shporta
             </router-link>
             <button
               type="button"
               @click="logoutClient"
-              class="w-full sm:w-auto inline-flex justify-center border-2 border-white/70 text-white font-semibold py-3 px-8 rounded-lg hover:bg-white/10 transition-colors duration-200 text-lg"
+              class="w-full sm:w-auto inline-flex justify-center items-center border border-white/50 text-white font-semibold py-3 px-8 rounded-xl hover:bg-white/10 transition-all duration-200 text-lg hover:-translate-y-0.5"
             >
               Dil
             </button>
@@ -34,13 +36,13 @@
           <template v-else>
             <router-link 
               to="/kycu" 
-              class="w-full sm:w-auto inline-flex justify-center bg-primary-500/90 text-white font-semibold py-3 px-8 rounded-lg hover:bg-primary-400 border-2 border-white/50 transition-colors duration-200 text-lg"
+              class="w-full sm:w-auto inline-flex justify-center items-center bg-gradient-to-r from-primary-500 to-primary-600 text-white font-semibold py-3 px-8 rounded-xl hover:from-primary-400 hover:to-primary-500 border border-white/45 transition-all duration-200 text-lg shadow-md hover:shadow-lg hover:-translate-y-0.5"
             >
               Kyçu
             </router-link>
             <router-link 
               to="/shporta" 
-              class="w-full sm:w-auto inline-flex justify-center border-2 border-white/70 text-white font-semibold py-3 px-8 rounded-lg hover:bg-white/10 transition-colors duration-200 text-lg"
+              class="w-full sm:w-auto inline-flex justify-center items-center border border-white/60 text-white font-semibold py-3 px-8 rounded-xl hover:bg-white/10 transition-all duration-200 text-lg hover:-translate-y-0.5"
             >
               Shporta
             </router-link>
@@ -59,13 +61,13 @@
     </section>
 
     <!-- Featured Products Section -->
-    <section class="py-16 bg-gray-50">
+    <section class="py-16 bg-gradient-to-b from-white to-slate-100">
       <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div class="text-center mb-12">
-          <h2 class="text-3xl md:text-4xl font-bold text-gray-900 mb-4">
+          <h2 class="text-3xl md:text-4xl font-extrabold tracking-tight text-slate-900 mb-4">
             Produktet Tona Kryesore
           </h2>
-          <p class="text-xl text-gray-600">
+          <p class="text-lg text-slate-600">
             Zgjidhni nga një gamë e gjerë produktesh të cilësisë së lartë
           </p>
         </div>
@@ -75,7 +77,7 @@
               v-model.trim="searchQuery"
               type="search"
               placeholder="Kërko për produkt (p.sh. Pipëza, Letër Kuzhine...)"
-              class="w-full px-4 py-3 pl-11 border border-gray-300 rounded-lg shadow-sm focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+              class="w-full px-4 py-3 pl-11 border border-slate-300 rounded-xl shadow-sm focus:ring-2 focus:ring-primary-500 focus:border-primary-500 bg-white"
             >
             <span class="absolute inset-y-0 left-3 flex items-center text-gray-400">
               🔍
@@ -120,7 +122,7 @@
             </button>
           </div>
         </div>
-        <div v-else class="bg-white rounded-xl shadow p-10 text-center text-gray-600">
+        <div v-else class="bg-white rounded-2xl shadow-md p-10 text-center text-gray-600 border border-slate-100">
           <p class="text-2xl mb-2">😕 Nuk u gjet asnjë produkt</p>
           <p>Provoni një term tjetër kërkimi ose hiqni filtrin.</p>
         </div>
@@ -131,7 +133,7 @@
     <section class="py-16">
       <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div class="text-center mb-12">
-          <h2 class="text-3xl md:text-4xl font-bold text-gray-900 mb-4">
+          <h2 class="text-3xl md:text-4xl font-extrabold tracking-tight text-slate-900 mb-4">
             Kategoritë Tona
           </h2>
           <p class="text-xl text-gray-600">
@@ -148,16 +150,16 @@
           <div 
             v-for="category in categories" 
             :key="category.id"
-            class="card p-6 text-center hover:scale-105 transition-transform duration-300 cursor-pointer"
+            class="group rounded-2xl border border-slate-200 bg-white/80 backdrop-blur-sm p-6 text-center shadow-sm hover:shadow-xl hover:-translate-y-1.5 transition-all duration-300 cursor-pointer"
             @click="goToCategory(category.slug)"
           >
-            <div class="text-primary-600 text-4xl mb-4">
+            <div class="text-primary-600 text-4xl mb-4 transition-transform duration-300 group-hover:scale-110">
               {{ getCategoryIcon(category.slug) }}
             </div>
-            <h3 class="text-xl font-semibold text-gray-900 mb-2">
+            <h3 class="text-xl font-semibold text-slate-900 mb-2">
               {{ category.name }}
             </h3>
-            <p class="text-gray-600 text-sm">
+            <p class="text-slate-600 text-sm">
               {{ category.products_count }} produkte
             </p>
           </div>

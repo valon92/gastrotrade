@@ -1,27 +1,30 @@
 <template>
-  <div class="min-h-screen bg-gradient-to-b from-gray-50 to-white">
+  <div class="min-h-screen bg-gradient-to-b from-slate-50 via-white to-slate-100/60">
     <!-- Hero / Header -->
-    <section class="relative overflow-hidden bg-gradient-to-br from-primary-600 via-primary-700 to-primary-800 text-white">
-      <div class="absolute inset-0 bg-[url('data:image/svg+xml,%3Csvg width=\'60\' height=\'60\' viewBox=\'0 0 60 60\' xmlns=\'http://www.w3.org/2000/svg\'%3E%3Cg fill=\'none\' fill-rule=\'evenodd\'%3E%3Cg fill=\'%23ffffff\' fill-opacity=\'0.05\'%3E%3Cpath d=\'M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z\'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E')] opacity-60" aria-hidden="true" />
-      <div class="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 sm:py-12">
-        <h1 class="text-3xl sm:text-4xl md:text-5xl font-bold tracking-tight mb-3">
+    <section class="relative overflow-hidden bg-slate-950 text-white">
+      <div aria-hidden="true" class="absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(20,184,166,0.35),transparent_36%),radial-gradient(circle_at_bottom_right,rgba(37,99,235,0.25),transparent_34%)]" />
+      <div class="absolute inset-0 bg-[url('data:image/svg+xml,%3Csvg width=\'80\' height=\'80\' viewBox=\'0 0 80 80\' xmlns=\'http://www.w3.org/2000/svg\'%3E%3Cg fill=\'none\' fill-rule=\'evenodd\'%3E%3Cg fill=\'%23ffffff\' fill-opacity=\'0.04\'%3E%3Ccircle cx=\'6\' cy=\'6\' r=\'2\'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E')]" aria-hidden="true" />
+      <div class="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 sm:py-14">
+        <p class="inline-flex items-center rounded-full border border-white/20 bg-white/5 px-4 py-1.5 text-[11px] sm:text-xs font-semibold tracking-[0.14em] text-primary-100 mb-4">
+          ARONTRADE • KATALOGU B2B
+        </p>
+        <h1 class="text-3xl sm:text-4xl md:text-5xl font-extrabold tracking-tight mb-3">
           Produktet tona
         </h1>
-        <p class="text-primary-100 text-lg sm:text-xl max-w-2xl mb-6">
+        <p class="text-slate-200 text-lg sm:text-xl max-w-3xl mb-7">
           Zgjidhni nga gamë e gjerë produktesh të cilësisë së lartë – kese, letër, artikuj kuzhine dhe më shumë.
         </p>
-        <div class="flex flex-wrap items-center gap-3 text-sm text-primary-100">
-          <a href="tel:+38348756646" class="inline-flex items-center gap-2 hover:text-white transition-colors">📞 048 75 66 46</a>
-          <a href="tel:+38344824314" class="inline-flex items-center gap-2 hover:text-white transition-colors">📞 044 82 43 14</a>
-          <span class="hidden sm:inline text-primary-300">·</span>
-          <span class="inline-flex items-center gap-2">💬 Viber në dispozicion</span>
+        <div class="flex flex-wrap items-center gap-2.5 text-sm">
+          <a href="tel:+38348756646" class="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/10 px-3 py-1.5 text-slate-100 hover:bg-white/20 transition-colors">📞 048 75 66 46</a>
+          <a href="tel:+38344824314" class="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/10 px-3 py-1.5 text-slate-100 hover:bg-white/20 transition-colors">📞 044 82 43 14</a>
+          <span class="inline-flex items-center gap-2 rounded-full border border-emerald-300/35 bg-emerald-500/10 px-3 py-1.5 text-emerald-100">💬 Viber në dispozicion</span>
         </div>
         <template v-if="isClientIdentified">
           <p class="mt-4 text-primary-100 text-sm">✓ I identifikuar: <strong>{{ clientDisplayName }}</strong></p>
           <button
             type="button"
             @click="logoutClient"
-            class="inline-flex items-center gap-2 mt-3 px-5 py-2.5 bg-white/20 text-white font-semibold rounded-xl hover:bg-white/30 border border-white/40 transition-all duration-200"
+            class="inline-flex items-center gap-2 mt-3 px-5 py-2.5 bg-white/15 text-white font-semibold rounded-xl hover:bg-white/25 border border-white/35 transition-all duration-200"
           >
             Dil
           </button>
@@ -29,21 +32,22 @@
         <template v-else>
           <router-link
             to="/kycu"
-            class="inline-flex items-center gap-2 mt-6 px-5 py-2.5 bg-white text-primary-700 font-semibold rounded-xl hover:bg-primary-50 shadow-lg hover:shadow-xl transition-all duration-200"
+            class="inline-flex items-center gap-2 mt-6 px-5 py-2.5 bg-white text-slate-900 font-semibold rounded-xl hover:bg-slate-100 shadow-lg hover:shadow-xl transition-all duration-200"
           >
             Kyçu për çmimet tuaja
           </router-link>
         </template>
-        <p class="mt-3 text-primary-200 text-sm">
+        <p class="mt-3 text-slate-300 text-sm">
           Çmimet vendosen nga AronTrade për klientët e regjistruar.
         </p>
       </div>
     </section>
 
     <!-- Search -->
-    <div class="sticky top-0 z-10 bg-white/95 backdrop-blur-md border-b border-gray-200/80 shadow-sm">
+    <div class="sticky top-0 z-10 bg-white/92 backdrop-blur-xl border-b border-slate-200/80 shadow-[0_6px_20px_rgba(15,23,42,0.04)]">
       <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
-        <div class="relative max-w-2xl">
+        <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-3">
+          <div class="relative max-w-2xl w-full">
           <span class="absolute inset-y-0 left-4 flex items-center pointer-events-none text-gray-400">
             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
@@ -53,7 +57,7 @@
             v-model.trim="searchQuery"
             type="search"
             placeholder="Kërko produkt (p.sh. kese, letër kuzhine...)"
-            class="w-full pl-12 pr-10 py-3 border border-gray-200 rounded-xl bg-gray-50 focus:bg-white focus:ring-2 focus:ring-primary-500 focus:border-primary-500 focus:outline-none transition-all text-gray-900 placeholder-gray-500"
+            class="w-full pl-12 pr-10 py-3 border border-slate-200 rounded-2xl bg-slate-50/70 focus:bg-white focus:ring-2 focus:ring-primary-500 focus:border-primary-500 focus:outline-none transition-all text-slate-900 placeholder-slate-500"
           />
           <button
             v-if="searchQuery"
@@ -66,8 +70,13 @@
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
             </svg>
           </button>
+          </div>
+          <div class="inline-flex items-center gap-2 rounded-2xl border border-slate-200 bg-white px-3 py-2 text-xs sm:text-sm text-slate-600 w-fit">
+            <span class="font-semibold text-slate-700">Kategori aktive:</span>
+            <span class="inline-flex items-center justify-center min-w-7 h-7 px-2 rounded-lg bg-primary-50 text-primary-700 font-bold">{{ visibleCategorySlugs.length }}</span>
+          </div>
         </div>
-        <p class="text-xs text-gray-500 mt-2">Kërkimi aplikohet menjëherë mbi të gjitha kategoritë.</p>
+        <p class="text-xs text-slate-500 mt-2">Kërkimi aplikohet menjëherë mbi të gjitha kategoritë.</p>
       </div>
     </div>
 
@@ -80,7 +89,7 @@
 
       <template v-else>
         <!-- No results -->
-        <div v-if="visibleCategorySlugs.length === 0" class="text-center py-16 rounded-2xl bg-gray-50 border border-gray-100">
+        <div v-if="visibleCategorySlugs.length === 0" class="text-center py-16 rounded-3xl bg-white border border-slate-200 shadow-sm">
           <div class="text-5xl text-gray-300 mb-4">📦</div>
           <h2 class="text-xl font-semibold text-gray-800 mb-2">Nuk u gjetën produkte</h2>
           <p class="text-gray-600">Provo një kërkim tjetër ose pastro fjalët kyçe.</p>
@@ -99,17 +108,17 @@
             v-for="cat in visibleCategories"
             :key="cat.slug"
             :data-category="cat.slug"
-            class="rounded-2xl border border-gray-200 bg-white shadow-sm overflow-hidden transition-shadow hover:shadow-md"
+            class="rounded-3xl border border-slate-200/90 bg-white shadow-sm overflow-hidden transition-all hover:shadow-lg hover:shadow-slate-900/5"
           >
             <button
               type="button"
               @click="toggleSection(cat.slug)"
-              class="w-full flex items-center justify-between gap-4 px-5 sm:px-6 py-4 text-left bg-gray-50/80 hover:bg-primary-50/50 border-b border-gray-100 transition-colors focus:outline-none focus:ring-2 focus:ring-inset focus:ring-primary-500 rounded-t-2xl"
+              class="w-full flex items-center justify-between gap-4 px-5 sm:px-6 py-4 text-left bg-gradient-to-r from-slate-50 to-white hover:from-primary-50/60 hover:to-white border-b border-slate-100 transition-colors focus:outline-none focus:ring-2 focus:ring-inset focus:ring-primary-500 rounded-t-3xl"
               :aria-expanded="expandedSections[cat.slug]"
             >
               <div class="flex items-center gap-3 min-w-0">
                 <span
-                  class="flex-shrink-0 w-10 h-10 rounded-xl bg-primary-100 text-primary-600 flex items-center justify-center"
+                  class="flex-shrink-0 w-10 h-10 rounded-xl bg-primary-100 text-primary-700 flex items-center justify-center shadow-sm"
                   aria-hidden="true"
                 >
                   <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -117,12 +126,12 @@
                   </svg>
                 </span>
                 <div class="min-w-0">
-                  <h2 class="text-lg font-bold text-gray-900 truncate">{{ cat.name }}</h2>
-                  <p class="text-sm text-gray-500">{{ productsByCategory[cat.slug]?.length || 0 }} produkt(e)</p>
+                  <h2 class="text-lg font-extrabold tracking-tight text-slate-900 truncate">{{ cat.name }}</h2>
+                  <p class="text-sm text-slate-500">{{ productsByCategory[cat.slug]?.length || 0 }} produkt(e)</p>
                 </div>
               </div>
               <span
-                class="flex-shrink-0 w-10 h-10 rounded-full bg-primary-600 text-white flex items-center justify-center transition-transform"
+                class="flex-shrink-0 w-10 h-10 rounded-full bg-gradient-to-b from-primary-600 to-primary-700 text-white flex items-center justify-center transition-transform shadow-md ring-1 ring-primary-700/40"
                 aria-hidden="true"
               >
                 <svg
@@ -157,7 +166,7 @@
               leave-to-class="opacity-0 max-h-0"
             >
               <div v-show="expandedSections[cat.slug]" class="overflow-hidden">
-                <div class="p-4 sm:p-6 grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4 sm:gap-6">
+                <div class="p-4 sm:p-6 grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4 sm:gap-6 bg-gradient-to-b from-white to-slate-50/35">
                   <ProductCard
                     v-for="product in productsByCategory[cat.slug]"
                     :key="product.id"

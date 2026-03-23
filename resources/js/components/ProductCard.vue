@@ -1,25 +1,27 @@
 <template>
-  <div class="rounded-2xl border border-gray-200 bg-white overflow-hidden shadow-sm hover:shadow-md hover:border-primary-200 transition-all duration-300 h-full flex flex-col">
+  <div class="group relative rounded-3xl border border-slate-200/80 bg-white/95 overflow-hidden shadow-sm hover:shadow-2xl hover:shadow-slate-900/10 hover:border-primary-200 transition-all duration-300 h-full flex flex-col backdrop-blur-sm">
+    <div aria-hidden="true" class="pointer-events-none absolute inset-x-0 top-0 h-20 bg-gradient-to-b from-primary-50/80 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
     <!-- Imazhi me çmim mbi të (overlay) – i klikueshëm për zmadhim -->
-    <div class="relative w-full aspect-[4/3] min-h-[220px] bg-gray-100">
+    <div class="relative w-full aspect-[4/3] min-h-[220px] bg-slate-100">
       <button
         type="button"
         @click="showImageLightbox = true"
-        class="block w-full h-full focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-inset rounded-t-2xl overflow-hidden cursor-zoom-in"
+        class="block w-full h-full focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-inset rounded-t-3xl overflow-hidden cursor-zoom-in"
         :aria-label="'Zmadho imazhin: ' + product.name"
       >
         <img 
           :src="getProductImage()" 
           :alt="product.name"
-          class="w-full h-full object-cover object-center hover:scale-[1.02] transition-transform duration-300"
+          class="w-full h-full object-cover object-center group-hover:scale-[1.04] transition-transform duration-500"
           @error="handleImageError"
         />
       </button>
+      <div class="absolute inset-x-0 bottom-0 h-24 bg-gradient-to-t from-black/45 via-black/15 to-transparent pointer-events-none"></div>
       <div
         v-if="displayPrice != null"
         class="absolute top-3 left-3 z-10 flex flex-nowrap items-center gap-2 max-w-[90%]"
       >
-        <div class="inline-flex items-center gap-1.5 font-bold text-white bg-red-600 rounded-lg px-3 py-1.5 text-sm shadow-lg ring-1 ring-red-700/40 backdrop-blur-sm shrink-0">
+        <div class="inline-flex items-center gap-1.5 font-bold text-white bg-gradient-to-r from-rose-600 to-red-600 rounded-xl px-3 py-1.5 text-sm shadow-lg ring-1 ring-red-800/40 backdrop-blur-sm shrink-0">
           <span>{{ formatPrice(displayPrice) }}</span>
           <button
             v-if="hasPackageInfo"
@@ -68,34 +70,40 @@
           Çmimet vetëm për {{ clientDisplayName }}
         </span>
       </div>
+      <div class="absolute right-3 bottom-3 z-10">
+        <span class="inline-flex items-center rounded-full bg-black/60 px-2.5 py-1 text-[11px] font-medium text-slate-100 backdrop-blur-sm">
+          {{ product.category?.name || 'Produkt' }}
+        </span>
+      </div>
     </div>
     <div class="p-4 sm:p-5 flex-1 flex flex-col relative">
       <div class="flex justify-between items-start gap-2 mb-2">
-        <h3 class="text-lg font-bold text-gray-900 flex-1 min-w-0">
+        <h3 class="text-lg font-extrabold tracking-tight text-slate-900 flex-1 min-w-0 line-clamp-2">
           {{ product.name }}
         </h3>
-        <div class="text-[10px] text-gray-500 text-right whitespace-nowrap flex-shrink-0 hidden sm:block">
+        <div class="text-[10px] text-slate-500 text-right whitespace-nowrap flex-shrink-0 hidden sm:block">
           📞 048 75 66 46 / 044 82 43 14
         </div>
       </div>
       <div class="flex-1 min-h-0 mb-4">
-        <p v-if="productSpecsText" class="text-gray-600 line-clamp-2 text-sm">
+        <p v-if="productSpecsText" class="text-slate-600 line-clamp-2 text-sm">
           {{ productSpecsText }}
         </p>
-        <p v-else-if="product.description" class="text-gray-600 line-clamp-2 text-sm">
+        <p v-else-if="product.description" class="text-slate-600 line-clamp-2 text-sm">
           {{ product.description }}
         </p>
+        <p v-else class="text-slate-400 line-clamp-2 text-sm">Produkti i gatshëm për porosi profesionale.</p>
       </div>
       <!-- Barcode dhe butoni -->
       <div class="flex justify-between items-center gap-3 mt-auto">
-        <div class="flex flex-col items-center gap-1 min-w-0 max-w-[140px]">
-          <span class="text-xs text-gray-500 uppercase tracking-wide">Barcode</span>
+        <div class="flex flex-col items-center gap-1 min-w-0 max-w-[140px] rounded-xl bg-slate-50 border border-slate-100 px-2 py-2">
+          <span class="text-[10px] text-slate-500 uppercase tracking-wider font-semibold">Barcode</span>
           <BarcodeDisplay :value="product.barcode" compact />
         </div>
         <button 
           @click="onMainButtonClick"
           :class="[
-            'shrink-0 bg-primary-600 hover:bg-primary-700 active:bg-primary-800 active:scale-[0.98] text-white font-semibold rounded-xl shadow-md hover:shadow-lg transition-all duration-200 flex items-center justify-center gap-2 min-h-[44px] min-w-0',
+            'shrink-0 bg-gradient-to-r from-primary-600 to-primary-700 hover:from-primary-700 hover:to-primary-800 active:scale-[0.98] text-white font-semibold rounded-xl shadow-md hover:shadow-lg transition-all duration-200 flex items-center justify-center gap-2 min-h-[44px] min-w-0 ring-1 ring-primary-700/40',
             compactButton
               ? 'py-2.5 px-4 text-sm md:py-2.5 md:px-4 lg:py-2 lg:px-3 lg:text-sm lg:max-w-[130px]'
               : 'py-2.5 px-4 text-sm md:py-2.5 md:px-4 lg:py-3 lg:px-5 lg:text-base max-w-full'
@@ -105,7 +113,7 @@
           <svg xmlns="http://www.w3.org/2000/svg" :class="compactButton ? 'h-5 w-5 lg:h-4 lg:w-4 text-white shrink-0' : 'h-5 w-5 text-white shrink-0'" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
             <path d="M5 12h14M12 5l7 7-7 7" />
           </svg>
-          <span class="truncate">Bëj Porosi</span>
+          <span class="truncate">Porosit Tani</span>
         </button>
       </div>
     </div>

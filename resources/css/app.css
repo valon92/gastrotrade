@@ -7,19 +7,62 @@
 @layer base {
   html {
     font-family: 'Inter', system-ui, sans-serif;
+    scroll-behavior: smooth;
+  }
+
+  body {
+    @apply bg-slate-50 text-slate-900 antialiased;
+  }
+
+  ::selection {
+    @apply bg-primary-200 text-slate-900;
+  }
+
+  :root {
+    --btn-radius: 0.9rem;
+  }
+
+  button,
+  [type='button'],
+  [type='submit'],
+  [type='reset'] {
+    @apply rounded-[var(--btn-radius)] font-semibold tracking-[0.01em] text-sm sm:text-[0.95rem] transition-all duration-200 ease-out focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2 active:scale-[0.99] active:brightness-95;
+  }
+
+  button:disabled,
+  [type='button']:disabled,
+  [type='submit']:disabled,
+  [type='reset']:disabled {
+    @apply cursor-not-allowed opacity-60;
   }
 }
 
 @layer components {
   .btn-primary {
-    @apply bg-primary-600 hover:bg-primary-700 text-white font-medium py-2 px-4 rounded-lg transition-colors duration-200;
+    @apply inline-flex items-center justify-center gap-2 rounded-[var(--btn-radius)] bg-gradient-to-r from-primary-600 via-primary-600 to-cyan-600 px-4 py-2.5 text-white font-semibold shadow-sm ring-1 ring-primary-700/35 transition-all duration-200 hover:from-primary-700 hover:via-primary-700 hover:to-cyan-700 hover:shadow-lg hover:-translate-y-0.5;
   }
   
   .btn-secondary {
-    @apply bg-gray-200 hover:bg-gray-300 text-gray-800 font-medium py-2 px-4 rounded-lg transition-colors duration-200;
+    @apply inline-flex items-center justify-center gap-2 rounded-[var(--btn-radius)] border border-slate-300 bg-white/95 px-4 py-2.5 text-slate-700 font-semibold shadow-sm transition-all duration-200 hover:bg-slate-50 hover:border-slate-400 hover:-translate-y-0.5;
+  }
+
+  .btn-danger {
+    @apply inline-flex items-center justify-center gap-2 rounded-[var(--btn-radius)] bg-gradient-to-r from-rose-600 to-red-600 px-4 py-2.5 text-white font-semibold shadow-sm ring-1 ring-red-700/40 transition-all duration-200 hover:from-rose-700 hover:to-red-700 hover:shadow-lg hover:-translate-y-0.5;
+  }
+
+  .btn-ghost {
+    @apply inline-flex items-center justify-center gap-2 rounded-[var(--btn-radius)] px-4 py-2.5 text-slate-700 font-semibold transition-all duration-200 hover:bg-slate-100 hover:text-slate-900;
+  }
+
+  .btn-outline-light {
+    @apply inline-flex items-center justify-center gap-2 rounded-[var(--btn-radius)] border border-white/45 bg-white/10 px-4 py-2.5 text-white font-semibold backdrop-blur-sm transition-all duration-200 hover:bg-white/20 hover:border-white/60 hover:-translate-y-0.5;
+  }
+
+  .btn-dark {
+    @apply inline-flex items-center justify-center gap-2 rounded-[var(--btn-radius)] bg-slate-900 px-4 py-2.5 text-slate-100 font-semibold shadow-sm ring-1 ring-slate-800 transition-all duration-200 hover:bg-black hover:shadow-lg hover:-translate-y-0.5;
   }
   
   .card {
-    @apply bg-white rounded-lg shadow-lg hover:shadow-xl transition-shadow duration-300;
+    @apply bg-white rounded-2xl border border-slate-100 shadow-sm hover:shadow-lg transition-all duration-300;
   }
 }

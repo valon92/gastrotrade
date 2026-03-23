@@ -1,53 +1,63 @@
 <template>
-  <nav ref="navRef" class="bg-white shadow-lg sticky top-0 z-[1000] overflow-visible relative">
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full min-w-0">
+  <nav ref="navRef" class="sticky top-0 z-[1000] overflow-visible relative border-b border-slate-200/80 bg-white/85 shadow-[0_8px_30px_rgba(2,6,23,0.06)] backdrop-blur-xl">
+    <div aria-hidden="true" class="pointer-events-none absolute inset-0 bg-[linear-gradient(120deg,rgba(20,184,166,0.09),transparent_28%,transparent_72%,rgba(20,184,166,0.07))]"></div>
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full min-w-0 relative">
       <div class="flex justify-between items-center h-16 gap-2 min-w-0">
         <div class="flex items-center min-w-0 flex-shrink-0">
           <router-link to="/" class="flex-shrink-0 flex items-center gap-3">
             <!-- AT Logo - Aron Trade -->
-            <svg class="w-10 h-10 flex-shrink-0 text-primary-600" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-              <rect width="40" height="40" rx="8" fill="currentColor"/>
+            <svg class="w-10 h-10 flex-shrink-0 text-primary-600 drop-shadow-sm" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+              <rect width="40" height="40" rx="11" fill="currentColor"/>
               <text x="20" y="26" text-anchor="middle" fill="white" font-family="system-ui, sans-serif" font-weight="700" font-size="16">AT</text>
             </svg>
-            <h1 class="text-2xl font-bold text-primary-600">AronTrade</h1>
+            <div class="min-w-0">
+              <h1 class="text-2xl leading-none font-extrabold tracking-tight text-primary-700">AronTrade</h1>
+              <p class="hidden lg:flex items-center gap-1 text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-500 mt-1">
+                <span class="inline-block w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
+                B2B Furnizime Profesionale
+              </p>
+            </div>
           </router-link>
         </div>
 
-        <div class="hidden md:flex items-center space-x-8">
+        <div class="hidden md:flex items-center gap-3">
+          <div class="flex items-center gap-1 rounded-2xl border border-slate-200 bg-white/80 p-1 shadow-sm">
           <router-link
             to="/"
-            class="text-gray-700 hover:text-primary-600 px-3 py-2 rounded-md text-sm font-medium transition-colors duration-200"
-            active-class="text-primary-600"
+            class="text-slate-600 hover:text-primary-700 hover:bg-primary-50 px-3 py-2 rounded-xl text-sm font-semibold transition-colors duration-200"
+            active-class="text-primary-700 bg-primary-50"
+            exact-active-class="text-primary-700 bg-primary-50"
           >
             HOME
           </router-link>
           <router-link
             to="/produktet"
-            class="text-gray-700 hover:text-primary-600 px-3 py-2 rounded-md text-sm font-medium transition-colors duration-200"
-            active-class="text-primary-600"
+            class="text-slate-600 hover:text-primary-700 hover:bg-primary-50 px-3 py-2 rounded-xl text-sm font-semibold transition-colors duration-200"
+            active-class="text-primary-700 bg-primary-50"
           >
             PRODUKTET
           </router-link>
           <router-link
             to="/rreth-nesh"
-            class="text-gray-700 hover:text-primary-600 px-3 py-2 rounded-md text-sm font-medium transition-colors duration-200"
-            active-class="text-primary-600"
+            class="text-slate-600 hover:text-primary-700 hover:bg-primary-50 px-3 py-2 rounded-xl text-sm font-semibold transition-colors duration-200"
+            active-class="text-primary-700 bg-primary-50"
           >
             RRETH NESH
           </router-link>
           <router-link
             to="/kontakt"
-            class="text-gray-700 hover:text-primary-600 px-3 py-2 rounded-md text-sm font-medium transition-colors duration-200"
-            active-class="text-primary-600"
+            class="text-slate-600 hover:text-primary-700 hover:bg-primary-50 px-3 py-2 rounded-xl text-sm font-semibold transition-colors duration-200"
+            active-class="text-primary-700 bg-primary-50"
           >
             KONTAKT
           </router-link>
+          </div>
           <template v-if="isClientIdentified">
             <div ref="clientMenuRef" class="flex items-center gap-2">
               <button
                 type="button"
                 @click.stop="toggleMobileMenu"
-                class="flex items-center gap-2 text-gray-700 hover:text-primary-600 px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200 border border-primary-200 bg-primary-50/80 hover:bg-primary-100/80"
+                class="flex items-center gap-2 text-slate-700 hover:text-primary-700 px-3 py-2 rounded-xl text-sm font-semibold transition-all duration-200 border border-primary-200 bg-gradient-to-b from-primary-50 to-white hover:from-primary-100 hover:to-primary-50 shadow-sm"
                 aria-label="Hap menynë e llogarisë"
                 aria-expanded="mobileMenuOpen"
               >
@@ -62,20 +72,23 @@
           <template v-else>
             <router-link
               to="/kycu"
-              class="text-gray-700 hover:text-primary-600 px-3 py-2 rounded-md text-sm font-medium transition-colors duration-200"
+              class="text-slate-700 hover:text-primary-700 px-3 py-2 rounded-lg text-sm font-semibold transition-colors duration-200"
               active-class="text-primary-600"
             >
               KYÇU
             </router-link>
             <router-link
               to="/shporta"
-              class="relative text-gray-700 hover:text-primary-600 px-3 py-2 rounded-md text-sm font-medium transition-colors duration-200"
+              class="relative inline-flex items-center gap-2 bg-primary-600 text-white px-3.5 py-2 rounded-xl text-sm font-semibold hover:bg-primary-700 shadow-sm transition-colors duration-200"
               active-class="text-primary-600"
             >
-              🛒 SHPORTA
+              <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" />
+              </svg>
+              SHPORTA
               <span
                 v-if="cartItemCount > 0"
-                class="absolute -top-1 -right-1 bg-primary-600 text-white text-xs font-bold rounded-full h-5 w-5 flex items-center justify-center"
+                class="absolute -top-1 -right-1 bg-white text-primary-700 text-xs font-bold rounded-full h-5 min-w-5 px-1 flex items-center justify-center"
               >
                 {{ cartItemCount }}
               </span>
@@ -86,7 +99,7 @@
         <div class="md:hidden flex items-center gap-2 flex-shrink-0 min-w-0">
           <router-link
             to="/shporta"
-            class="relative p-2.5 rounded-xl text-gray-700 hover:text-primary-600 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 transition-colors"
+            class="relative p-2.5 rounded-xl text-gray-700 hover:text-primary-600 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 transition-colors border border-transparent hover:border-slate-200"
             aria-label="Shporta"
           >
             <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
@@ -101,7 +114,7 @@
           </router-link>
           <button
             @click="toggleMobileMenu"
-            class="p-2.5 rounded-xl text-gray-700 hover:text-primary-600 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 transition-colors"
+            class="p-2.5 rounded-xl text-gray-700 hover:text-primary-600 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 transition-colors border border-transparent hover:border-slate-200"
             :aria-expanded="mobileMenuOpen"
             aria-label="Hap menynë"
           >
@@ -135,7 +148,7 @@
     <Transition name="menu">
       <div
         v-show="mobileMenuOpen"
-        class="fixed md:absolute top-16 md:top-full left-0 right-0 z-[1001] md:left-auto md:right-4 md:mt-1 md:max-w-sm md:rounded-xl md:shadow-xl bg-white border-t md:border border-gray-200 shadow-lg max-h-[85vh] overflow-y-auto"
+        class="fixed md:absolute top-16 md:top-full left-0 right-0 z-[1001] md:left-auto md:right-4 md:mt-2 md:max-w-sm md:rounded-2xl md:shadow-2xl bg-white border-t md:border border-gray-200 shadow-lg max-h-[85vh] overflow-y-auto"
         role="dialog"
         aria-label="Menyja kryesore"
         @click.stop
@@ -262,7 +275,6 @@
 
 <script>
 import cartStore from '../store/cart'
-import axios from 'axios'
 
 export default {
   name: 'Navbar',
