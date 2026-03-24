@@ -5,15 +5,19 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Models\Product;
 use App\Models\ProductImage;
+use App\Models\ProjectImage;
 use App\Models\Category;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\File;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 
 class ProductController extends Controller
 {
+    private ?bool $projectImagesTableExists = null;
+
     /**
      * Display a listing of the resource.
      */
@@ -182,6 +186,7 @@ class ProductController extends Controller
             $product = Product::create($data);
             if (!empty($product->image_path)) {
                 $this->syncProductFeaturedImage($product, $product->image_path);
+                $this->syncProjectImageLibrary($product->image_path, $product->id);
             }
             return $product->load(['category', 'images']);
         });
@@ -275,6 +280,7 @@ class ProductController extends Controller
             $product->update($data);
             if (array_key_exists('image_path', $data) && !empty($data['image_path'])) {
                 $this->syncProductFeaturedImage($product, $data['image_path']);
+                $this->syncProjectImageLibrary($data['image_path'], $product->id);
             }
         });
 
@@ -406,7 +412,7 @@ class ProductController extends Controller
     public function listProjectImages()
     {
         $basePath = public_path('images');
-        $paths = [];
+        $pathsWithMtime = [];
         $extensions = ['jpg', 'jpeg', 'png', 'gif', 'webp'];
         if (!File::isDirectory($basePath)) {
             return response()->json(['success' => true, 'data' => []]);
@@ -426,11 +432,31 @@ class ProductController extends Controller
             $full = $file->getRealPath();
             $relative = substr($full, strlen($baseReal) + 1);
             $relative = str_replace(DIRECTORY_SEPARATOR, '/', $relative);
-            $paths[] = '/images/' . $relative;
+            $path = '/images/' . $relative;
+            $pathsWithMtime[$path] = $file->getMTime();
         }
-        sort($paths);
+        arsort($pathsWithMtime);
+
+        $ordered = [];
+        if ($this->hasProjectImagesTable()) {
+            $dbFirst = ProjectImage::query()
+                ->orderByDesc('updated_at')
+                ->pluck('file_path')
+                ->all();
+            foreach ($dbFirst as $path) {
+                if (isset($pathsWithMtime[$path]) && !in_array($path, $ordered, true)) {
+                    $ordered[] = $path;
+                }
+            }
+        }
+        foreach (array_keys($pathsWithMtime) as $path) {
+            if (!in_array($path, $ordered, true)) {
+                $ordered[] = $path;
+            }
+        }
+
         return response()
-            ->json(['success' => true, 'data' => $paths])
+            ->json(['success' => true, 'data' => $ordered])
             ->header('Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0')
             ->header('Pragma', 'no-cache')
             ->header('Expires', '0');
@@ -488,9 +514,16 @@ class ProductController extends Controller
                 DB::transaction(function () use ($product, $publicPath, &$updatedProduct) {
                     $product->update(['image_path' => $publicPath]);
                     $this->syncProductFeaturedImage($product, $publicPath);
+                    $this->syncProjectImageLibrary($publicPath, $product->id);
                     $updatedProduct = $product->refresh()->load(['category', 'images']);
                 });
             }
+        } else {
+            $this->syncProjectImageLibrary($publicPath, null, [
+                'original_name' => $file->getClientOriginalName(),
+                'mime_type' => $file->getMimeType(),
+                'size_bytes' => $file->getSize(),
+            ]);
         }
 
         return response()->json([
@@ -501,5 +534,48 @@ class ProductController extends Controller
                 'product' => $updatedProduct,
             ],
         ], 201);
+    }
+
+    private function syncProjectImageLibrary(string $filePath, ?int $productId = null, ?array $meta = null): void
+    {
+        if (!$this->hasProjectImagesTable()) {
+            return;
+        }
+
+        $full = public_path(ltrim($filePath, '/'));
+        $defaults = [
+            'linked_product_id' => $productId,
+            'uploaded_by' => auth()->id(),
+        ];
+        if (is_array($meta)) {
+            $defaults = array_merge($defaults, [
+                'original_name' => $meta['original_name'] ?? null,
+                'mime_type' => $meta['mime_type'] ?? null,
+                'size_bytes' => $meta['size_bytes'] ?? null,
+            ]);
+        }
+        if (File::exists($full)) {
+            $defaults['checksum_sha1'] = @sha1_file($full) ?: null;
+            $defaults['size_bytes'] = $defaults['size_bytes'] ?? @filesize($full) ?: null;
+        }
+
+        $record = ProjectImage::firstOrNew(['file_path' => $filePath]);
+        $record->fill($defaults);
+        $record->save();
+    }
+
+    private function hasProjectImagesTable(): bool
+    {
+        if ($this->projectImagesTableExists !== null) {
+            return $this->projectImagesTableExists;
+        }
+
+        try {
+            $this->projectImagesTableExists = Schema::hasTable('project_images');
+        } catch (\Throwable $e) {
+            $this->projectImagesTableExists = false;
+        }
+
+        return $this->projectImagesTableExists;
     }
 }
