@@ -32,7 +32,7 @@ class ProductSeeder extends Seeder
                 'description' => 'Luga kafe e bardhë profesionale 10cp për përzierjen e kafesë. Materiali i sigurt dhe i qëndrueshëm siguron përdorim të besueshëm. Ideal për kafetë, restorantet dhe përdorim shtëpiak. Dizajni elegant dhe praktik.
 
 **Paketimi:** Shitet vetëm në komplete. 1 kompleti = 10 copa.',
-                'image_path' => '/images/lugakafe.jpeg',
+                'image_path' => '/images/lugas1.jpeg',
                 'is_featured' => false,
                 'sort_order' => 0,
                 'sold_by_package' => true,
@@ -139,7 +139,7 @@ Të gjitha llojet janë të sigurta për kontakt me ushqim dhe të lehta për tr
                 'description' => 'Kese mbeturinash 120L të forta dhe të qëndrueshme për përdorim profesional dhe shtëpiak. Materiali i fortë siguron qëndrueshmëri dhe siguri. Ideal për përdorim të madh në restorante, kafetë, evente dhe përdorim profesional. Rezistente ndaj thyerjes dhe të sigurta për transport.
 
 **Paketimi:** Shitet vetëm në komplete. 1 kompleti = 20 copa.',
-                'image_path' => '/images/IMG_6815.jpeg',
+                'image_path' => '/images/120nush.jpeg',
                 'is_featured' => true,
                 'sort_order' => 3,
                 'sold_by_package' => true,
@@ -152,7 +152,7 @@ Të gjitha llojet janë të sigurta për kontakt me ushqim dhe të lehta për tr
                 'description' => 'Kese mbeturinash 150L të forta dhe të qëndrueshme për përdorim profesional dhe shtëpiak. Materiali i fortë siguron qëndrueshmëri dhe siguri. Ideal për përdorim profesional në restorante, kafetë, evente dhe përdorim komercial. Rezistente ndaj thyerjes dhe të sigurta për transport.
 
 **Paketimi:** Shitet vetëm në komplete. 1 kompleti = 20 copa.',
-                'image_path' => '/images/IMG_6815.jpeg',
+                'image_path' => '/images/150nush.jpeg',
                 'is_featured' => true,
                 'sort_order' => 4,
                 'sold_by_package' => true,
@@ -165,7 +165,7 @@ Të gjitha llojet janë të sigurta për kontakt me ushqim dhe të lehta për tr
                 'description' => 'Kese mbeturinash 170L të forta dhe të qëndrueshme për përdorim profesional dhe shtëpiak. Materiali i fortë siguron qëndrueshmëri dhe siguri. Ideal për përdorim intensiv në restorante, kafetë, evente dhe përdorim komercial. Rezistente ndaj thyerjes dhe të sigurta për transport.
 
 **Paketimi:** Shitet vetëm në komplete. 1 kompleti = 20 copa.',
-                'image_path' => '/images/IMG_6815.jpeg',
+                'image_path' => '/images/170lnush.jpeg',
                 'is_featured' => true,
                 'sort_order' => 5,
                 'sold_by_package' => true,
@@ -178,7 +178,7 @@ Të gjitha llojet janë të sigurta për kontakt me ushqim dhe të lehta për tr
                 'description' => 'Kese mbeturinash 200L të forta dhe të qëndrueshme për përdorim profesional dhe shtëpiak. Materiali i fortë siguron qëndrueshmëri dhe siguri. Ideal për përdorim komercial në restorante, kafetë, evente dhe përdorim profesional. Rezistente ndaj thyerjes dhe të sigurta për transport.
 
 **Paketimi:** Shitet vetëm në komplete. 1 kompleti = 20 copa.',
-                'image_path' => '/images/IMG_6815.jpeg',
+                'image_path' => '/images/200nush.jpeg',
                 'is_featured' => true,
                 'sort_order' => 6,
                 'sold_by_package' => true,
@@ -328,7 +328,7 @@ Të gjitha llojet janë të sigurta për kontakt me ushqim dhe të lehta për tr
                 'description' => 'Gota letre profesionale 4oz për kafe dhe pije të ngrohta. Materiali me cilësi të lartë mban temperaturën dhe siguron përdorim të sigurt në kafene, restorante dhe evente. Ideal për përdorim profesional dhe shtëpiak. Të sigurta për kontakt me ushqim dhe rezistente ndaj rrjedhjeve.
 
 **Paketimi:** Shitet vetëm në komplete. 1 kompleti = 20 copa.',
-                'image_path' => '/images/IMG_6824.jpeg',
+                'image_path' => '/images/4oz.jpeg',
                 'is_featured' => true,
                 'sort_order' => 0,
                 'sold_by_package' => true,
@@ -352,7 +352,7 @@ Të gjitha llojet janë të sigurta për kontakt me ushqim dhe të lehta për tr
                 'name' => 'Gota Plastike',
                 'slug' => 'gota-plastike',
                 'description' => 'Gota plastike të cilësisë së lartë për pije të nxehta dhe të ftohta. Të qëndrueshme, të sigurta për përdorim dhe të lehta. Ideal për kafetë, restorantet, evente dhe përdorim shtëpiak.',
-                'image_path' => '/images/Gota Plastike/foto1.jpg',
+                'image_path' => '/images/gotplastike.jpeg',
                 'is_featured' => true,
             ],
             [
