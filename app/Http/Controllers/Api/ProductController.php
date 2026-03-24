@@ -417,6 +417,10 @@ class ProductController extends Controller
             $paths[] = '/images/' . $relative;
         }
         sort($paths);
-        return response()->json(['success' => true, 'data' => $paths]);
+        return response()
+            ->json(['success' => true, 'data' => $paths])
+            ->header('Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0')
+            ->header('Pragma', 'no-cache')
+            ->header('Expires', '0');
     }
 }

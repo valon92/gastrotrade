@@ -714,7 +714,10 @@ export default {
     async loadProjectImages() {
       this.projectImagesLoading = true
       try {
-        const res = await axios.get('/api/admin/project-images')
+        const res = await axios.get('/api/admin/project-images', {
+          // Avoid stale browser/proxy cache so newest files appear instantly.
+          params: { t: Date.now() }
+        })
         this.projectImages = res.data.data || []
       } catch (e) {
         this.projectImages = []
