@@ -139,12 +139,12 @@ class ProductController extends Controller
             'sort_order' => ['nullable', 'integer', 'min:0'],
             'sold_by_package' => ['nullable', 'boolean'],
             'pieces_per_package' => ['nullable', 'integer', 'min:1'],
-            'image' => ['nullable', 'file', 'mimes:jpeg,jpg,png,gif,webp', 'max:10240'],
+            'image' => ['nullable', 'file', 'mimes:jpeg,jpg,png,gif,webp', 'max:20480'],
             'image_path' => ['nullable', 'string', 'max:500'],
         ], [
             'image.file' => 'Skedari i zgjedhur nuk është valid.',
             'image.mimes' => 'Lejohen vetëm formatet: JPG, PNG, GIF, WEBP.',
-            'image.max' => 'Foto nuk duhet të kalojë 10 MB.',
+            'image.max' => 'Foto nuk duhet të kalojë 20 MB.',
         ]);
 
         $data = $validated;
@@ -221,12 +221,12 @@ class ProductController extends Controller
             'sort_order' => ['nullable', 'integer', 'min:0'],
             'sold_by_package' => ['nullable', 'boolean'],
             'pieces_per_package' => ['nullable', 'integer', 'min:1'],
-            'image' => ['nullable', 'file', 'mimes:jpeg,jpg,png,gif,webp', 'max:10240'],
+            'image' => ['nullable', 'file', 'mimes:jpeg,jpg,png,gif,webp', 'max:20480'],
             'image_path' => ['nullable', 'string', 'max:500'],
         ], [
             'image.file' => 'Skedari i zgjedhur nuk është valid.',
             'image.mimes' => 'Lejohen vetëm formatet: JPG, PNG, GIF, WEBP.',
-            'image.max' => 'Foto nuk duhet të kalojë 10 MB.',
+            'image.max' => 'Foto nuk duhet të kalojë 20 MB.',
         ]);
 
         $data = $validated;
@@ -443,12 +443,12 @@ class ProductController extends Controller
     public function uploadProjectImage(Request $request)
     {
         $validated = $request->validate([
-            'image' => ['required', 'file', 'mimes:jpeg,jpg,png,gif,webp', 'max:10240'],
+            'image' => ['required', 'file', 'mimes:jpeg,jpg,png,gif,webp', 'max:20480'],
             'product_id' => ['nullable', 'integer', 'exists:products,id'],
         ], [
             'image.required' => 'Ju lutem zgjidhni një foto.',
             'image.mimes' => 'Lejohen vetëm formatet: JPG, PNG, GIF, WEBP.',
-            'image.max' => 'Foto nuk duhet të kalojë 10 MB.',
+            'image.max' => 'Foto nuk duhet të kalojë 20 MB.',
         ]);
 
         $file = $request->file('image');

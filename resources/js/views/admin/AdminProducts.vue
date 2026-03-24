@@ -409,7 +409,7 @@
                         id="product-image-file"
                         ref="productImageInput"
                         type="file"
-                        accept="image/*"
+                        accept="image/*,.heic,.heif"
                         class="sr-only"
                         @change="handleImageUpload"
                       >
@@ -423,7 +423,7 @@
                         Zgjidhni skedar
                       </label>
                       <p v-if="productForm.image" class="text-xs text-primary-600 mt-2 font-medium">{{ productForm.image.name }}</p>
-                      <p v-else class="text-xs text-gray-500 mt-2">JPG, PNG, GIF, WEBP — max 10 MB</p>
+                      <p v-else class="text-xs text-gray-500 mt-2">JPG, PNG, GIF, WEBP, HEIC — max 20 MB</p>
                     </div>
                     <p class="text-xs text-gray-500 mt-2">ose zgjidhni nga fotot e projektit më poshtë.</p>
                   </div>
@@ -513,6 +513,15 @@ function isHeic(file) {
   const t = file.type.toLowerCase()
   const name = (file.name || '').toLowerCase()
   return t === 'image/heic' || t === 'image/heif' || name.endsWith('.heic') || name.endsWith('.heif')
+}
+
+/** Handles browsers/devices that send empty or generic MIME types. */
+function isLikelyImage(file) {
+  if (!file) return false
+  const t = String(file.type || '').toLowerCase()
+  if (t.startsWith('image/')) return true
+  const name = String(file.name || '').toLowerCase()
+  return /\.(jpe?g|png|gif|webp|heic|heif)$/i.test(name)
 }
 
 /** Convert HEIC/HEIF file to JPEG (loads heic2any only when needed). */
@@ -755,8 +764,12 @@ export default {
     async handleImageUpload(event) {
       const file = event.target?.files?.[0]
       if (!file) return
-      if (file.size > 10 * 1024 * 1024) {
-        this.saveError = 'Foto nuk duhet të kalojë 10 MB.'
+      if (!isLikelyImage(file)) {
+        this.saveError = 'Skedari duhet të jetë foto (JPG, PNG, GIF, WEBP, HEIC).'
+        return
+      }
+      if (file.size > 20 * 1024 * 1024) {
+        this.saveError = 'Foto nuk duhet të kalojë 20 MB.'
         return
       }
       this.saveError = null
@@ -784,8 +797,12 @@ export default {
     async handleProjectLibraryUpload(event) {
       const picked = event.target?.files?.[0]
       if (!picked) return
-      if (picked.size > 10 * 1024 * 1024) {
-        this.saveError = 'Foto nuk duhet të kalojë 10 MB.'
+      if (!isLikelyImage(picked)) {
+        this.saveError = 'Skedari duhet të jetë foto (JPG, PNG, GIF, WEBP, HEIC).'
+        return
+      }
+      if (picked.size > 20 * 1024 * 1024) {
+        this.saveError = 'Foto nuk duhet të kalojë 20 MB.'
         return
       }
 
@@ -836,9 +853,13 @@ export default {
     async handleDrop(event) {
       this.dragOver = false
       const file = event.dataTransfer?.files?.[0]
-      if (!file || !file.type.startsWith('image/')) return
-      if (file.size > 10 * 1024 * 1024) {
-        this.saveError = 'Foto nuk duhet të kalojë 10 MB.'
+      if (!file) return
+      if (!isLikelyImage(file)) {
+        this.saveError = 'Skedari duhet të jetë foto (JPG, PNG, GIF, WEBP, HEIC).'
+        return
+      }
+      if (file.size > 20 * 1024 * 1024) {
+        this.saveError = 'Foto nuk duhet të kalojë 20 MB.'
         return
       }
       this.saveError = null
