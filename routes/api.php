@@ -61,6 +61,7 @@ Route::middleware(['auth:sanctum', 'admin.user'])->group(function () {
     // Admin product routes
     Route::get('/admin/products', [ProductController::class, 'adminIndex']);
     Route::get('/admin/project-images', [ProductController::class, 'listProjectImages']);
+    Route::post('/admin/project-images/upload', [ProductController::class, 'uploadProjectImage']);
     Route::post('/admin/products', [ProductController::class, 'store']);
     Route::post('/admin/products/{product}', [ProductController::class, 'update']); // fallback for clients without PUT support
     Route::put('/admin/products/{product}', [ProductController::class, 'update']);

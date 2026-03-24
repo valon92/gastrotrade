@@ -442,6 +442,25 @@
                 </div>
                 <div class="mt-4">
                   <p class="text-sm font-medium text-gray-700 mb-2">Foto nga projekti (public/images)</p>
+                  <div class="mb-3 flex flex-wrap items-center gap-2">
+                    <input
+                      ref="projectImageInput"
+                      type="file"
+                      accept="image/*,.heic,.heif"
+                      class="hidden"
+                      @change="handleProjectLibraryUpload"
+                    >
+                    <button
+                      type="button"
+                      class="inline-flex items-center gap-2 px-3 py-2 rounded-lg border border-primary-300 bg-primary-50 text-sm font-medium text-primary-700 hover:bg-primary-100"
+                      :disabled="projectLibraryUploading"
+                      @click="$refs.projectImageInput && $refs.projectImageInput.click()"
+                    >
+                      <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
+                      {{ projectLibraryUploading ? 'Duke ngarkuar në skedar...' : 'Shto foto në Skedar' }}
+                    </button>
+                    <span class="text-xs text-gray-500">Ngarkon foton në `public/images/Uploads` dhe e zgjedh automatikisht.</span>
+                  </div>
                   <div v-if="projectImagesLoading" class="text-sm text-gray-500">Duke ngarkuar...</div>
                   <div v-else-if="projectImages.length" class="grid grid-cols-4 sm:grid-cols-6 md:grid-cols-8 gap-2 max-h-[70vh] overflow-y-auto">
                     <button
@@ -537,7 +556,8 @@ export default {
       newCategoryName: '',
       addingCategory: false,
       addCategoryError: null,
-      imageConverting: false
+      imageConverting: false,
+      projectLibraryUploading: false
     }
   },
   computed: {
@@ -710,6 +730,7 @@ export default {
       this.showAddCategory = false
       this.newCategoryName = ''
       this.addCategoryError = null
+      this.projectLibraryUploading = false
     },
     async loadProjectImages() {
       this.projectImagesLoading = true
@@ -759,6 +780,58 @@ export default {
         this.productForm.preview = e.target.result
       }
       reader.readAsDataURL(fileToUse)
+    },
+    async handleProjectLibraryUpload(event) {
+      const picked = event.target?.files?.[0]
+      if (!picked) return
+      if (picked.size > 10 * 1024 * 1024) {
+        this.saveError = 'Foto nuk duhet të kalojë 10 MB.'
+        return
+      }
+
+      this.saveError = null
+      this.projectLibraryUploading = true
+      let fileToUse = picked
+
+      if (isHeic(picked)) {
+        this.imageConverting = true
+        try {
+          fileToUse = await convertHeicToJpeg(picked)
+        } catch (err) {
+          console.error('HEIC conversion failed:', err)
+          this.saveError = 'Fota nga telefoni nuk u konvertua. Provoni një foto tjetër ose formatin JPG.'
+          this.imageConverting = false
+          this.projectLibraryUploading = false
+          return
+        }
+        this.imageConverting = false
+      }
+
+      try {
+        const fd = new FormData()
+        fd.append('image', fileToUse, fileToUse.name || 'image.jpg')
+        if (this.editingProduct?.id) {
+          // If editing, persist image_path immediately for that product.
+          fd.append('product_id', String(this.editingProduct.id))
+        }
+        const res = await axios.post('/api/admin/project-images/upload', fd, {
+          headers: { 'Accept': 'application/json' }
+        })
+        const path = res.data?.data?.path
+        if (path) {
+          await this.loadProjectImages()
+          this.selectProjectImage(path)
+          if (res.data?.data?.product_updated) {
+            await this.loadProducts()
+          }
+        }
+      } catch (error) {
+        console.error('Error uploading project image:', error)
+        this.saveError = error.response?.data?.message || 'Ngarkimi i fotos në skedar dështoi.'
+      } finally {
+        this.projectLibraryUploading = false
+        if (this.$refs.projectImageInput) this.$refs.projectImageInput.value = ''
+      }
     },
     async handleDrop(event) {
       this.dragOver = false

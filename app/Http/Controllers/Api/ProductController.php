@@ -423,4 +423,71 @@ class ProductController extends Controller
             ->header('Pragma', 'no-cache')
             ->header('Expires', '0');
     }
+
+    /**
+     * Admin: upload image directly into public/images (project library).
+     * Optionally links image to an existing product immediately.
+     */
+    public function uploadProjectImage(Request $request)
+    {
+        $validated = $request->validate([
+            'image' => ['required', 'file', 'mimes:jpeg,jpg,png,gif,webp', 'max:10240'],
+            'product_id' => ['nullable', 'integer', 'exists:products,id'],
+        ], [
+            'image.required' => 'Ju lutem zgjidhni një foto.',
+            'image.mimes' => 'Lejohen vetëm formatet: JPG, PNG, GIF, WEBP.',
+            'image.max' => 'Foto nuk duhet të kalojë 10 MB.',
+        ]);
+
+        $file = $request->file('image');
+        $subDir = 'images/Uploads/' . now()->format('Y/m');
+        $dir = public_path($subDir);
+        if (!File::isDirectory($dir)) {
+            File::ensureDirectoryExists($dir, 0755, true);
+        }
+        if (!File::isWritable($dir)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Drejtoria public/images/Uploads nuk lejon shkrim në server.',
+            ], 422);
+        }
+
+        $ext = strtolower($file->getClientOriginalExtension() ?: 'jpg');
+        if (!in_array($ext, ['jpeg', 'jpg', 'png', 'gif', 'webp'], true)) {
+            $ext = 'jpg';
+        }
+        $name = Str::uuid() . '.' . $ext;
+
+        try {
+            $file->move($dir, $name);
+        } catch (\Throwable $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Ngarkimi i fotos dështoi. Provoni përsëri.',
+            ], 422);
+        }
+
+        $publicPath = '/images/Uploads/' . now()->format('Y/m') . '/' . $name;
+        $updatedProduct = null;
+
+        if (!empty($validated['product_id'])) {
+            $product = Product::find($validated['product_id']);
+            if ($product) {
+                DB::transaction(function () use ($product, $publicPath, &$updatedProduct) {
+                    $product->update(['image_path' => $publicPath]);
+                    $this->syncProductFeaturedImage($product, $publicPath);
+                    $updatedProduct = $product->refresh()->load(['category', 'images']);
+                });
+            }
+        }
+
+        return response()->json([
+            'success' => true,
+            'data' => [
+                'path' => $publicPath,
+                'product_updated' => (bool)$updatedProduct,
+                'product' => $updatedProduct,
+            ],
+        ], 201);
+    }
 }
