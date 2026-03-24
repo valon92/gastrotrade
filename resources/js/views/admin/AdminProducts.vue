@@ -443,7 +443,7 @@
                 <div class="mt-4">
                   <p class="text-sm font-medium text-gray-700 mb-2">Foto nga projekti (public/images)</p>
                   <div v-if="projectImagesLoading" class="text-sm text-gray-500">Duke ngarkuar...</div>
-                  <div v-else-if="projectImages.length" class="grid grid-cols-4 sm:grid-cols-6 md:grid-cols-8 gap-2 max-h-48 overflow-y-auto">
+                  <div v-else-if="projectImages.length" class="grid grid-cols-4 sm:grid-cols-6 md:grid-cols-8 gap-2 max-h-[70vh] overflow-y-auto">
                     <button
                       v-for="path in projectImages"
                       :key="path"
