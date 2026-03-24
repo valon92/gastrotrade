@@ -1,8 +1,12 @@
 <template>
-  <div class="barcode-display inline-flex flex-col items-center justify-center">
+  <div class="barcode-display inline-flex max-w-full flex-col items-center justify-center">
     <svg v-if="validValue" ref="barcodeSvg" class="barcode-svg max-w-full h-auto" :class="{ 'compact': compact }"></svg>
-    <span v-if="validValue" class="barcode-number mt-1 font-mono text-xs tracking-widest text-gray-700">{{ value }}</span>
-    <span v-else class="text-gray-400 text-xs">{{ value || '—' }}</span>
+    <span
+      v-if="validValue"
+      class="barcode-number mt-0.5 max-w-full truncate text-center font-mono text-slate-700 antialiased sm:mt-1"
+      :class="compact ? 'text-[9px] tracking-wide sm:text-xs sm:tracking-widest' : 'text-xs tracking-widest'"
+    >{{ value }}</span>
+    <span v-else class="text-[10px] text-slate-400 sm:text-xs">{{ value || '—' }}</span>
   </div>
 </template>
 
@@ -45,8 +49,8 @@ export default {
       const el = this.$refs.barcodeSvg
       el.innerHTML = ''
       const options = {
-        width: this.compact ? 1.2 : 2,
-        height: this.compact ? 28 : 48,
+        width: this.compact ? 1 : 2,
+        height: this.compact ? 22 : 48,
         displayValue: false,
         margin: 4,
         background: '#ffffff',
@@ -72,7 +76,7 @@ export default {
   min-height: 32px;
 }
 .barcode-svg.compact {
-  min-height: 24px;
+  min-height: 20px;
 }
 .barcode-number {
   letter-spacing: 0.15em;

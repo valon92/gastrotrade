@@ -44,7 +44,7 @@
     </section>
 
     <!-- Search -->
-    <div class="sticky top-0 z-10 bg-white/92 backdrop-blur-xl border-b border-slate-200/80 shadow-[0_6px_20px_rgba(15,23,42,0.04)]">
+    <div class="relative z-0 bg-white/92 backdrop-blur-xl border-b border-slate-200/80 shadow-[0_6px_20px_rgba(15,23,42,0.04)] md:sticky md:top-0 md:z-10">
       <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
         <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-3">
           <div class="relative max-w-2xl w-full">
@@ -102,8 +102,20 @@
           </button>
         </div>
 
-        <!-- Category sections: expand (minus) = show products, collapse (plus) = hide -->
-        <div v-else class="space-y-4">
+        <!-- Mobile: vetëm kartat e produkteve (pa kategori), 3 në rresht -->
+        <div v-else class="md:hidden">
+          <div class="grid grid-cols-3 gap-2">
+            <ProductCard
+              v-for="product in filteredProducts"
+              :key="`mobile-${product.id}`"
+              :product="product"
+              :compact-button="true"
+            />
+          </div>
+        </div>
+
+        <!-- Desktop/Tablet: sipas kategorive -->
+        <div class="hidden md:block space-y-4">
           <div
             v-for="cat in visibleCategories"
             :key="cat.slug"
