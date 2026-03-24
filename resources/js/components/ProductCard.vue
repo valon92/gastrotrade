@@ -12,7 +12,7 @@
         <img 
           :src="getProductImage()" 
           :alt="product.name"
-          class="h-full w-full object-contain object-center p-1 sm:p-0 md:object-cover md:p-0 group-hover:scale-[1.04] transition-transform duration-500"
+          class="h-full w-full min-h-0 object-cover object-center group-hover:scale-[1.04] transition-transform duration-500"
           @error="handleImageError"
         />
       </button>
@@ -85,7 +85,7 @@
           📞 048 75 66 46 / 044 82 43 14
         </div>
       </div>
-      <div class="mb-2 min-h-0 flex-1 md:mb-4">
+      <div class="mb-2 min-h-0 flex-1 md:mb-4 hidden sm:block">
         <p v-if="productSpecsText" class="line-clamp-2 text-[10px] leading-relaxed text-slate-600 antialiased sm:text-xs md:text-sm">
           {{ productSpecsText }}
         </p>
@@ -97,23 +97,27 @@
       <!-- Barcode dhe butoni -->
       <div class="mt-auto flex flex-col gap-2 sm:gap-3">
         <div class="flex w-full flex-col items-center gap-0.5 rounded-lg border border-slate-100 bg-slate-50 px-1.5 py-1.5 sm:gap-1 sm:rounded-xl sm:px-2 sm:py-2">
-          <span class="text-[9px] font-semibold uppercase tracking-wider text-slate-500 sm:text-[10px]">Barcode</span>
-          <BarcodeDisplay :value="product.barcode" compact />
+          <span class="hidden text-[9px] font-semibold uppercase tracking-wider text-slate-500 sm:inline sm:text-[10px]">Barcode</span>
+          <!-- Mobile: vetëm numri; desktop: grafiku + numri -->
+          <p class="w-full text-center font-mono text-[11px] font-semibold tabular-nums tracking-wide text-slate-800 break-all sm:hidden">
+            {{ product.barcode != null && String(product.barcode).trim() !== '' ? product.barcode : '—' }}
+          </p>
+          <BarcodeDisplay :value="product.barcode" compact class="hidden sm:inline-flex" />
         </div>
         <button 
           @click="onMainButtonClick"
           :class="[
-            'flex min-h-[40px] w-full items-center justify-center gap-1 rounded-lg bg-gradient-to-r from-primary-600 to-primary-700 font-semibold text-white shadow-md ring-1 ring-primary-700/40 transition-all duration-200 hover:from-primary-700 hover:to-primary-800 hover:shadow-lg active:scale-[0.98] sm:min-h-[44px] sm:gap-2 sm:rounded-xl',
+            'flex min-h-[40px] w-full items-center justify-center gap-0 rounded-lg bg-gradient-to-r from-primary-600 to-primary-700 font-semibold text-white shadow-md ring-1 ring-primary-700/40 transition-all duration-200 hover:from-primary-700 hover:to-primary-800 hover:shadow-lg active:scale-[0.98] sm:min-h-[44px] sm:gap-2 sm:rounded-xl',
             compactButton
-              ? 'px-1.5 py-1.5 text-[10px] leading-tight sm:px-2.5 sm:py-2 sm:text-xs md:text-sm'
-              : 'px-3 py-2.5 text-xs sm:px-4 sm:text-sm md:py-2.5 md:text-base lg:py-3 lg:px-5'
+              ? 'px-2 py-2 text-[10px] leading-tight sm:px-2.5 sm:py-2 sm:text-xs md:text-sm'
+              : 'px-2 py-2 text-xs sm:px-4 sm:py-2.5 sm:text-sm md:text-base lg:py-3 lg:px-5'
           ]"
           title="Bëj porosi"
         >
-          <svg xmlns="http://www.w3.org/2000/svg" :class="compactButton ? 'h-3.5 w-3.5 shrink-0 text-white sm:h-4 sm:w-4 md:h-5 md:w-5' : 'h-5 w-5 shrink-0 text-white'" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <svg xmlns="http://www.w3.org/2000/svg" :class="compactButton ? 'hidden h-3.5 w-3.5 shrink-0 text-white sm:block sm:h-4 sm:w-4 md:h-5 md:w-5' : 'hidden h-5 w-5 shrink-0 text-white sm:block'" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
             <path d="M5 12h14M12 5l7 7-7 7" />
           </svg>
-          <span class="truncate leading-tight">Porosit Tani</span>
+          <span class="max-sm:w-full max-sm:text-center max-sm:text-[11px] max-sm:font-semibold max-sm:leading-snug max-sm:whitespace-normal sm:truncate sm:leading-tight">Porosit Tani</span>
         </button>
       </div>
     </div>

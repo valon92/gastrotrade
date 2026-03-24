@@ -89,7 +89,7 @@ Të gjitha llojet janë të sigurta për kontakt me ushqim dhe të lehta për tr
                 'category_id' => $laguraCategory->id,
                 'name' => 'Baby Wipes Canéa Aqua Pure',
                 'slug' => 'baby-wipes-canea-aqua-pure',
-                'description' => 'Peceta të lagura Canéa Aqua Pure për fëmijë. Formula e butë dhe e sigurt për lëkurën e ndjeshme të fëmijëve. Përmbajnë ujë të pastër dhe përbërës natyralë. Ideal për pastrimin e fëmijëve, si dhe për përdorim në kuzhinë për pastrimin e duarve dhe sipërfaqeve. Paketimi praktik dhe i lehtë për transport.',
+                'description' => 'E butë dhe e sigurt për lëkurën e ndjeshme të fëmijëve. Përmbajnë ujë të pastër dhe përbërës natyralë. Ideal për pastrimin e fëmijëve, si dhe për përdorim në kuzhinë për pastrimin e duarve dhe sipërfaqeve. Paketimi praktik dhe i lehtë për transport.',
                 'image_path' => '/images/IMG_6818.jpeg',
                 'is_featured' => true,
             ],

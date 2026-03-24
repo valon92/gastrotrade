@@ -57,7 +57,7 @@ INSERT INTO `products` (`category_id`,`name`,`slug`,`description`,`image_path`,`
 (3,'Folie Alumini 9 Micron','folie-alumini-9-micron','Folie alumini profesionale 9 micron për ruajtjen dhe mbrojtjen e ushqimit.','/images/IMG_6814.jpeg',1,0,0,NULL,NOW(),NOW()),
 (4,'Letër Kuzhine NUSH 2 Shtresa','leter-kuzhine-nush-2-shtresa','Letër kuzhine NUSH 2 shtresa, 100% celulozë. 1 kompleti = 12 copa.','/images/Pallomat/XL/foto1.png',1,0,1,12,NOW(),NOW()),
 (4,'Letër Salvete','leter-salvete','Salvete letre për tavolina dhe nevoja të ndryshme.','/images/Pallomat/Salvete/foto1.jpg',1,0,0,NULL,NOW(),NOW()),
-(6,'Baby Wipes Canéa Aqua Pure','baby-wipes-canea-aqua-pure','Peceta të lagura Canéa Aqua Pure për fëmijë dhe kuzhinë.','/images/IMG_6818.jpeg',1,0,0,NULL,NOW(),NOW()),
+(6,'Baby Wipes Canéa Aqua Pure','baby-wipes-canea-aqua-pure','Për fëmijë dhe kuzhinë.','/images/IMG_6818.jpeg',1,0,0,NULL,NOW(),NOW()),
 (1,'Pipëza Transparente për Pije','pipeza-transparente-per-pije','Pipëza transparente për pije. 1 kompleti = 20 copa.','/images/IMG_6819.jpeg',0,0,1,20,NOW(),NOW()),
 (5,'Kese Mbeturinash 40L','kese-mbeturinash-40l','Kese mbeturinash 40L të forta. 1 kompleti = 20 copa.','/images/IMG_6815.jpeg',1,1,1,20,NOW(),NOW()),
 (5,'Kese Mbeturinash 70L','kese-mbeturinash-70l','Kese mbeturinash 70L të forta. 1 kompleti = 20 copa.','/images/IMG_6815.jpeg',1,2,1,20,NOW(),NOW()),
