@@ -6,7 +6,7 @@
       <div class="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
         <p class="inline-flex items-center rounded-full border border-white/20 bg-white/5 px-4 py-1.5 text-xs font-semibold tracking-widest text-primary-100 mb-5">ARONTRADE B2B PLATFORM</p>
         <h1 class="text-4xl md:text-6xl font-extrabold tracking-tight mb-6">
-          Zgjidhja Juaj për Furnizimet Profesionale
+          Zgjidhja Juaj për Furnizime
         </h1>
         <p class="text-lg md:text-2xl mb-8 text-slate-200 max-w-3xl mx-auto">
           Cilësi e lartë, shërbim i besueshëm dhe produkte të zgjedhura me kujdes për biznesin tuaj
@@ -14,21 +14,21 @@
         <div class="flex flex-col sm:flex-row gap-3 sm:gap-4 justify-center items-stretch sm:items-center max-w-md mx-auto">
           <router-link 
             to="/produktet" 
-            class="w-full sm:w-auto inline-flex justify-center items-center bg-white text-slate-900 font-semibold py-3 px-8 rounded-xl hover:bg-slate-100 transition-all duration-200 text-lg sm:text-sm shadow-lg hover:shadow-xl hover:-translate-y-0.5"
+            class="w-full sm:w-auto inline-flex justify-center items-center bg-gradient-to-r from-cyan-400 to-primary-500 text-white font-semibold py-3 px-8 rounded-xl hover:from-cyan-500 hover:to-primary-600 transition-all duration-200 text-lg sm:text-sm shadow-lg shadow-primary-900/20 hover:shadow-xl hover:shadow-primary-900/30 hover:-translate-y-0.5 ring-1 ring-white/20"
           >
             Shiko Produktet
           </router-link>
           <template v-if="isClientIdentified">
             <router-link 
               to="/shporta" 
-              class="w-full sm:w-auto inline-flex justify-center items-center bg-gradient-to-r from-primary-500 to-primary-600 text-white font-semibold py-3 px-8 rounded-xl hover:from-primary-400 hover:to-primary-500 border border-white/35 transition-all duration-200 text-lg shadow-md hover:shadow-lg hover:-translate-y-0.5"
+              class="w-full sm:w-auto inline-flex justify-center items-center bg-gradient-to-r from-violet-500 to-indigo-600 text-white font-semibold py-3 px-8 rounded-xl hover:from-violet-600 hover:to-indigo-700 border border-white/20 transition-all duration-200 text-lg shadow-md shadow-indigo-900/25 hover:shadow-lg hover:shadow-indigo-900/30 hover:-translate-y-0.5"
             >
               Shporta
             </router-link>
             <button
               type="button"
               @click="logoutClient"
-              class="w-full sm:w-auto inline-flex justify-center items-center border border-white/50 text-white font-semibold py-3 px-8 rounded-xl hover:bg-white/10 transition-all duration-200 text-lg hover:-translate-y-0.5"
+              class="w-full sm:w-auto inline-flex justify-center items-center bg-white/10 text-white font-semibold py-3 px-8 rounded-xl border border-white/45 hover:bg-white/20 hover:border-white/60 transition-all duration-200 text-lg shadow-sm backdrop-blur-sm hover:-translate-y-0.5"
             >
               Dil
             </button>

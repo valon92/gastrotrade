@@ -1,7 +1,7 @@
 <template>
-  <div class="min-h-screen bg-gray-50 py-8">
+  <div class="min-h-screen bg-gradient-to-b from-slate-50 via-white to-slate-100/70 py-8">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-      <h1 class="text-4xl md:text-5xl font-bold text-gray-900 mb-8 text-center">
+      <h1 class="text-4xl md:text-5xl font-extrabold tracking-tight text-slate-900 mb-8 text-center">
         Shporta e Blerjeve
       </h1>
 
@@ -20,7 +20,7 @@
         </div>
 
         <!-- Identifikimi: kur i kyqur nuk shfaqet ftoja për identifikim -->
-        <div class="mt-10 bg-white rounded-xl shadow-lg p-6 border border-gray-200">
+        <div class="mt-10 bg-white rounded-2xl shadow-xl shadow-slate-900/5 p-6 border border-slate-200">
           <h3 class="text-xl font-semibold text-gray-900 mb-2">
             Identifikimi
           </h3>
@@ -43,7 +43,7 @@
               </router-link>
             </div>
           </template>
-          <div v-else class="p-4 bg-green-50 border border-green-200 rounded-lg flex flex-wrap items-center justify-between gap-3">
+          <div v-else class="p-4 bg-emerald-50 border border-emerald-200 rounded-xl flex flex-wrap items-center justify-between gap-3">
             <p class="text-sm text-green-800">
               ✅ I identifikuar: <strong>{{ cartStore.client.name || cartStore.client.store_name || cartStore.client.email }}</strong>
             </p>
@@ -71,13 +71,13 @@
         <!-- Cart Items -->
         <div class="lg:col-span-2 space-y-4">
           <!-- Search Bar -->
-          <div class="bg-white rounded-lg shadow-lg p-4">
+          <div class="bg-white rounded-2xl border border-slate-200 shadow-lg shadow-slate-900/5 p-4">
             <div class="relative">
               <input 
                 type="text"
                 v-model="searchQuery"
                 placeholder="Kërko produkte në shportë..."
-                class="w-full px-4 py-3 pl-12 pr-4 text-base border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-all"
+                class="w-full px-4 py-3 pl-12 pr-4 text-base border border-slate-300 rounded-xl bg-slate-50/60 focus:bg-white focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-all"
               />
               <span class="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400 text-xl">🔍</span>
               <button
@@ -100,18 +100,18 @@
           <div 
             v-for="item in filteredCartItems" 
             :key="item.id"
-            class="bg-white rounded-lg shadow-lg p-6 flex flex-col sm:flex-row gap-4"
+            class="bg-white rounded-2xl border border-slate-200 shadow-lg shadow-slate-900/5 p-6 flex flex-col sm:flex-row gap-4"
           >
             <div class="flex-shrink-0">
               <img 
                 :src="item.image_path" 
                 :alt="item.name"
-                class="w-24 h-24 object-cover rounded-lg"
+                class="w-24 h-24 object-cover rounded-xl border border-slate-200"
               />
             </div>
             <div class="flex-grow">
               <div class="flex justify-between items-start mb-2">
-                <h3 class="text-xl font-semibold text-gray-900">
+                <h3 class="text-xl font-bold tracking-tight text-slate-900">
                   {{ item.name }}
                 </h3>
                 <div v-if="item.price" class="text-right">
@@ -124,7 +124,7 @@
                       ({{ item.pieces_per_package }} copa/Komplete)
                     </span>
                   </p>
-                  <p class="text-lg font-bold text-primary-600">
+                  <p class="text-lg font-extrabold text-primary-700">
                     Total: {{ formatPrice(getItemTotal(item)) }}
                   </p>
                 </div>
@@ -150,10 +150,10 @@
                       Sasia:
                     </span>
                   </label>
-                  <div class="flex items-center border rounded-lg">
+                  <div class="flex items-center border border-slate-300 rounded-xl bg-white shadow-sm">
                     <button 
                       @click="decreaseQuantity(item.id)"
-                      class="px-3 py-1 hover:bg-gray-100 transition-colors"
+                      class="px-3 py-1.5 hover:bg-slate-100 transition-colors"
                     >
                       -
                     </button>
@@ -163,11 +163,11 @@
                       @input="updateQuantity(item.id, $event.target.value, item)"
                       :min="item.sold_by_package && item.pieces_per_package && canBuyByPieces(item) ? 1 : 1"
                       :step="item.sold_by_package && item.pieces_per_package && canBuyByPieces(item) ? 1 : 1"
-                      class="w-20 text-center border-0 focus:ring-0"
+                      class="w-20 text-center border-0 focus:ring-0 bg-transparent"
                     />
                     <button 
                       @click="increaseQuantity(item.id)"
-                      class="px-3 py-1 hover:bg-gray-100 transition-colors"
+                      class="px-3 py-1.5 hover:bg-slate-100 transition-colors"
                     >
                       +
                     </button>
@@ -184,7 +184,7 @@
                   </div>
                   <button 
                     @click="removeItem(item.id)"
-                    class="text-red-600 hover:text-red-800 text-sm font-medium md:ml-auto"
+                    class="inline-flex items-center rounded-lg px-2.5 py-1.5 text-red-600 hover:text-red-700 hover:bg-red-50 text-sm font-semibold md:ml-auto transition-colors"
                   >
                     Hiq
                   </button>
@@ -197,7 +197,7 @@
           <div class="mt-6">
             <router-link 
               to="/produktet"
-              class="flex items-center justify-center gap-2 w-full bg-primary-600 hover:bg-primary-700 text-white font-semibold py-3 px-6 rounded-lg shadow-lg transition-colors duration-200"
+              class="btn-primary flex items-center justify-center gap-2 w-full py-3 px-6"
             >
               <span class="text-xl">➕</span>
               <span>Shto Produkte Tjera</span>
@@ -207,8 +207,8 @@
 
         <!-- Order Summary -->
         <div class="lg:col-span-1">
-          <div class="bg-white rounded-lg shadow-lg p-6 sticky top-24">
-            <h2 class="text-2xl font-bold text-gray-900 mb-6">
+          <div class="bg-white rounded-2xl border border-slate-200 shadow-xl shadow-slate-900/5 p-6 sticky top-24">
+            <h2 class="text-2xl font-extrabold tracking-tight text-slate-900 mb-6">
               Përmbledhje e Porosisë
             </h2>
 
@@ -511,7 +511,7 @@
                   'w-full font-medium py-3 px-4 rounded-lg transition-colors duration-200 flex items-center justify-center gap-2',
                   (!isFormValid || cartStore.items.length === 0)
                     ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
-                    : 'bg-purple-600 hover:bg-purple-700 text-white'
+                    : 'bg-gradient-to-r from-violet-600 to-purple-600 hover:from-violet-700 hover:to-purple-700 text-white shadow-sm hover:shadow-md'
                 ]"
               >
                 🖨 Printo Faturën
@@ -524,7 +524,7 @@
                   'w-full font-medium py-3 px-4 rounded-lg transition-colors duration-200 flex items-center justify-center gap-2',
                   (!isFormValid || savingOrder || submittingOrder || cartStore.items.length === 0)
                     ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
-                    : 'bg-green-600 hover:bg-green-700 text-white shadow-lg'
+                    : 'bg-gradient-to-r from-emerald-600 to-green-600 hover:from-emerald-700 hover:to-green-700 text-white shadow-md hover:shadow-lg'
                 ]"
               >
                 {{ submittingOrder ? 'Duke dërguar...' : '📤 Dergo Porosin' }}
@@ -538,7 +538,7 @@
                   'w-full font-medium py-3 px-4 rounded-lg transition-colors duration-200 flex items-center justify-center gap-2',
                   (!isFormValid || savingOrder || submittingOrder || cartStore.items.length === 0)
                     ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
-                    : 'bg-blue-600 hover:bg-blue-700 text-white'
+                    : 'bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white shadow-sm hover:shadow-md'
                 ]"
               >
                 {{ savingOrder ? 'Duke ruajtur...' : '💾 Ruaj Porosinë' }}
@@ -546,7 +546,7 @@
 
               <button 
                 @click="clearCart"
-                class="w-full bg-gray-200 hover:bg-gray-300 text-gray-800 font-medium py-2 px-4 rounded-lg transition-colors duration-200"
+                class="btn-secondary w-full py-2.5"
               >
                 Pastro Shportën
               </button>
