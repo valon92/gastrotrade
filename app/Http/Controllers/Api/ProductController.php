@@ -324,13 +324,16 @@ class ProductController extends Controller
      */
     private function storeProductImage($file): string
     {
-        $dir = public_path('uploads/products');
+        // Store inside public/images so it's always web-accessible on shared hosting/cPanel.
+        // (Some hosts don't serve files written under public/uploads reliably depending on document root.)
+        $subDir = 'images/Uploads/products/' . now()->format('Y/m');
+        $dir = public_path($subDir);
         if (!File::isDirectory($dir)) {
             File::ensureDirectoryExists($dir, 0755, true);
         }
         if (!File::isWritable($dir)) {
             throw new \RuntimeException(
-                'Drejtoria për foto nuk lejon shkrim. Kontrolloni të drejtat e folderit uploads/products në server.'
+                'Drejtoria për foto nuk lejon shkrim. Kontrolloni të drejtat e folderit public/images/Uploads në server.'
             );
         }
         $ext = strtolower($file->getClientOriginalExtension() ?: 'jpg');
@@ -342,12 +345,12 @@ class ProductController extends Controller
             $file->move($dir, $name);
         } catch (\Throwable $e) {
             throw new \RuntimeException(
-                'Ngarkimi i fotos dështoi. Kontrolloni të drejtat e folderit uploads/products në server.',
+                'Ngarkimi i fotos dështoi. Kontrolloni të drejtat e folderit public/images/Uploads në server.',
                 0,
                 $e
             );
         }
-        return '/uploads/products/' . $name;
+        return '/images/Uploads/products/' . now()->format('Y/m') . '/' . $name;
     }
 
     private function deleteProductImage(?string $path): void
@@ -356,6 +359,15 @@ class ProductController extends Controller
             return;
         }
         if (str_starts_with($path, '/uploads/')) {
+            // Legacy path support
+            $relativePath = Str::after($path, '/');
+            $fullPath = public_path($relativePath);
+            if (File::exists($fullPath)) {
+                File::delete($fullPath);
+            }
+            return;
+        }
+        if (str_starts_with($path, '/images/Uploads/')) {
             $relativePath = Str::after($path, '/');
             $fullPath = public_path($relativePath);
             if (File::exists($fullPath)) {
