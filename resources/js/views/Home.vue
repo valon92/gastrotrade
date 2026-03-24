@@ -146,20 +146,20 @@
           <p class="mt-4 text-gray-600">Duke ngarkuar kategoritë...</p>
         </div>
         
-        <div v-else class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+        <div v-else class="grid grid-cols-3 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-4 lg:gap-6">
           <div 
             v-for="category in categories" 
             :key="category.id"
-            class="group rounded-2xl border border-slate-200 bg-white/80 backdrop-blur-sm p-6 text-center shadow-sm hover:shadow-xl hover:-translate-y-1.5 transition-all duration-300 cursor-pointer"
+            class="group rounded-2xl border border-slate-200 bg-white/80 backdrop-blur-sm p-3 sm:p-4 lg:p-6 text-center shadow-sm hover:shadow-xl hover:-translate-y-1.5 transition-all duration-300 cursor-pointer"
             @click="goToCategory(category.slug)"
           >
-            <div class="text-primary-600 text-4xl mb-4 transition-transform duration-300 group-hover:scale-110">
+            <div class="text-primary-600 text-2xl sm:text-3xl lg:text-4xl mb-2 sm:mb-3 lg:mb-4 transition-transform duration-300 group-hover:scale-110">
               {{ getCategoryIcon(category.slug) }}
             </div>
-            <h3 class="text-xl font-semibold text-slate-900 mb-2">
+            <h3 class="text-xs sm:text-sm lg:text-xl font-semibold text-slate-900 mb-1 sm:mb-1.5 lg:mb-2 leading-tight">
               {{ category.name }}
             </h3>
-            <p class="text-slate-600 text-sm">
+            <p class="text-slate-600 text-[10px] sm:text-xs lg:text-sm">
               {{ category.products_count }} produkte
             </p>
           </div>
