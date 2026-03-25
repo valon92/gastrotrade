@@ -39,6 +39,11 @@ Route::post('/admin/login', [AuthController::class, 'login']);
 Route::get('/admin/check', [AuthController::class, 'check'])->middleware('auth:sanctum');
 Route::post('/admin/logout', [AuthController::class, 'logout'])->middleware('auth:sanctum');
 
+// Thumbnail për “Skedar” në admin: <img> nuk dërgon Authorization header — përdor URL të firmosur.
+Route::get('/admin/project-images/file', [ProductController::class, 'serveProjectImage'])
+    ->name('api.admin.project-images.file')
+    ->middleware('signed');
+
 // Admin-only routes (Sanctum + must be User admin; client tokens cannot access)
 Route::middleware(['auth:sanctum', 'admin.user'])->group(function () {
     Route::get('/client-prices', [ClientPriceController::class, 'index']);
@@ -61,7 +66,6 @@ Route::middleware(['auth:sanctum', 'admin.user'])->group(function () {
     // Admin product routes
     Route::get('/admin/products', [ProductController::class, 'adminIndex']);
     Route::get('/admin/project-images', [ProductController::class, 'listProjectImages']);
-    Route::get('/admin/project-images/file', [ProductController::class, 'serveProjectImage']);
     Route::post('/admin/project-images/upload', [ProductController::class, 'uploadProjectImage']);
     Route::post('/admin/products', [ProductController::class, 'store']);
     Route::post('/admin/products/{product}', [ProductController::class, 'update']); // fallback for clients without PUT support

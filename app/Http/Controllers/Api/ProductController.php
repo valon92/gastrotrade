@@ -12,6 +12,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\URL;
 use Illuminate\Support\Str;
 
 class ProductController extends Controller
@@ -455,8 +456,21 @@ class ProductController extends Controller
             }
         }
 
+        $signedTtl = now()->addHours(24);
+        $data = [];
+        foreach ($ordered as $path) {
+            $data[] = [
+                'path' => $path,
+                'thumb_url' => URL::temporarySignedRoute(
+                    'api.admin.project-images.file',
+                    $signedTtl,
+                    ['path' => $path]
+                ),
+            ];
+        }
+
         return response()
-            ->json(['success' => true, 'data' => $ordered])
+            ->json(['success' => true, 'data' => $data])
             ->header('Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0')
             ->header('Pragma', 'no-cache')
             ->header('Expires', '0');

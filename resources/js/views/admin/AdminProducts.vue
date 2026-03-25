@@ -464,13 +464,13 @@
                   <div v-if="projectImagesLoading" class="text-sm text-gray-500">Duke ngarkuar...</div>
                   <div v-else-if="projectImages.length" class="grid grid-cols-4 sm:grid-cols-6 md:grid-cols-8 gap-2 max-h-[70vh] overflow-y-auto">
                     <button
-                      v-for="path in projectImages"
-                      :key="path"
+                      v-for="item in projectImages"
+                      :key="item.path"
                       type="button"
-                      :class="['rounded-lg border-2 overflow-hidden flex-shrink-0 focus:outline-none focus:ring-2 focus:ring-primary-500', productForm.existingImagePath === path ? 'border-primary-600 ring-2 ring-primary-400' : 'border-gray-200 hover:border-primary-300']"
-                      @click="selectProjectImage(path)"
+                      :class="['rounded-lg border-2 overflow-hidden flex-shrink-0 focus:outline-none focus:ring-2 focus:ring-primary-500', productForm.existingImagePath === item.path ? 'border-primary-600 ring-2 ring-primary-400' : 'border-gray-200 hover:border-primary-300']"
+                      @click="selectProjectImage(item.path, item.thumb_url)"
                     >
-                      <img :src="projectImagePreviewUrl(path)" :alt="path" class="w-full aspect-square object-cover" @error="$event.target.style.display='none'">
+                      <img :src="item.thumb_url" :alt="item.path" class="w-full aspect-square object-cover" @error="$event.target.style.display='none'">
                     </button>
                   </div>
                   <p v-else class="text-xs text-gray-500">Nuk u gjetën foto në public/images.</p>
@@ -755,14 +755,12 @@ export default {
         this.projectImagesLoading = false
       }
     },
-    selectProjectImage(path) {
+    selectProjectImage(path, previewUrl) {
       this.productForm.existingImagePath = path
-      this.productForm.preview = path
+      // Grid uses signed /api URL; modal preview must match so <img> loads without Bearer token.
+      this.productForm.preview = previewUrl || path
       this.productForm.image = null
       if (this.$refs.productImageInput) this.$refs.productImageInput.value = ''
-    },
-    projectImagePreviewUrl(path) {
-      return `/api/admin/project-images/file?path=${encodeURIComponent(path)}`
     },
     async handleImageUpload(event) {
       const file = event.target?.files?.[0]
@@ -840,7 +838,8 @@ export default {
         const path = res.data?.data?.path
         if (path) {
           await this.loadProjectImages()
-          this.selectProjectImage(path)
+          const row = this.projectImages.find(i => i.path === path)
+          this.selectProjectImage(path, row?.thumb_url)
           if (res.data?.data?.product_updated) {
             await this.loadProducts()
           }
