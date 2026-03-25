@@ -104,7 +104,7 @@
           >
             <div class="flex-shrink-0">
               <img 
-                :src="item.image_path" 
+                :src="item.image_url || item.image_path" 
                 :alt="item.name"
                 class="w-24 h-24 object-cover rounded-xl border border-slate-200"
               />

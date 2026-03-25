@@ -72,7 +72,7 @@
             >
               <div class="flex-shrink-0">
                 <img 
-                  :src="item.image_path" 
+                  :src="item.image_url || item.image_path" 
                   :alt="item.name"
                   class="w-20 h-20 object-cover rounded-lg"
                 />

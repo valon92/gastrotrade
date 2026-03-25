@@ -19,6 +19,24 @@ class ProductController extends Controller
 {
     private ?bool $projectImagesTableExists = null;
 
+    private function withImageUrl(Product $product): Product
+    {
+        if (
+            !empty($product->image_path)
+            && (Str::startsWith($product->image_path, '/images/') || Str::startsWith($product->image_path, '/uploads/'))
+        ) {
+            $product->image_url = URL::temporarySignedRoute(
+                'api.admin.project-images.file',
+                now()->addHours(24),
+                ['path' => $product->image_path]
+            );
+        } else {
+            $product->image_url = $product->image_path;
+        }
+
+        return $product;
+    }
+
     /**
      * Display a listing of the resource.
      */
@@ -38,7 +56,7 @@ class ProductController extends Controller
             $query->where('is_featured', true);
         }
 
-        $products = $query->orderBy('name', 'asc')->get();
+        $products = $query->orderBy('name', 'asc')->get()->map(fn (Product $p) => $this->withImageUrl($p));
 
         return response()->json([
             'success' => true,
@@ -64,7 +82,7 @@ class ProductController extends Controller
 
         return response()->json([
             'success' => true,
-            'data' => $product
+            'data' => $this->withImageUrl($product)
         ]);
     }
 
@@ -90,7 +108,8 @@ class ProductController extends Controller
             ->where('is_featured', true)
             ->orderBy('sort_order', 'asc')
             ->orderBy('created_at', 'desc')
-            ->get();
+            ->get()
+            ->map(fn (Product $p) => $this->withImageUrl($p));
 
         return response()->json([
             'success' => true,
@@ -120,24 +139,7 @@ class ProductController extends Controller
         $products = $query
             ->orderBy('name', 'asc')
             ->get()
-            ->map(function (Product $product) {
-                // In production, public/images might not be served by the web server.
-                // Provide a signed API URL for admin preview (img tags don't send Bearer tokens).
-                if (
-                    !empty($product->image_path)
-                    && (Str::startsWith($product->image_path, '/images/') || Str::startsWith($product->image_path, '/uploads/'))
-                ) {
-                    $product->image_url = URL::temporarySignedRoute(
-                        'api.admin.project-images.file',
-                        now()->addHours(24),
-                        ['path' => $product->image_path]
-                    );
-                } else {
-                    $product->image_url = $product->image_path;
-                }
-
-                return $product;
-            });
+            ->map(fn (Product $p) => $this->withImageUrl($p));
 
         return response()->json([
             'success' => true,

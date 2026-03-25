@@ -258,6 +258,9 @@ export default {
     },
     getProductImage() {
       if (!this.product) return PLACEHOLDER_IMAGE_DATA_URL
+      if (this.product.image_url && String(this.product.image_url).trim()) {
+        return this.product.image_url
+      }
       // Foto e regjistruar në admin ka përparësi – e njëjta foto shfaqet kudo
       const path = this.product.image_path
       if (path && String(path).trim()) {
@@ -296,7 +299,7 @@ export default {
         return '/images/Pipat/Pipa-100cp/Color/foto1.jpg'
       }
       
-      return this.product.image_path || PLACEHOLDER_IMAGE_DATA_URL
+      return this.product.image_url || this.product.image_path || PLACEHOLDER_IMAGE_DATA_URL
     },
     handleImageError(event) {
       // Nëse është një nga këto tre produkte, provoni rrugët alternative
