@@ -470,7 +470,7 @@
                       :class="['rounded-lg border-2 overflow-hidden flex-shrink-0 focus:outline-none focus:ring-2 focus:ring-primary-500', productForm.existingImagePath === path ? 'border-primary-600 ring-2 ring-primary-400' : 'border-gray-200 hover:border-primary-300']"
                       @click="selectProjectImage(path)"
                     >
-                      <img :src="path" :alt="path" class="w-full aspect-square object-cover" @error="$event.target.style.display='none'">
+                      <img :src="projectImagePreviewUrl(path)" :alt="path" class="w-full aspect-square object-cover" @error="$event.target.style.display='none'">
                     </button>
                   </div>
                   <p v-else class="text-xs text-gray-500">Nuk u gjetën foto në public/images.</p>
@@ -760,6 +760,9 @@ export default {
       this.productForm.preview = path
       this.productForm.image = null
       if (this.$refs.productImageInput) this.$refs.productImageInput.value = ''
+    },
+    projectImagePreviewUrl(path) {
+      return `/api/admin/project-images/file?path=${encodeURIComponent(path)}`
     },
     async handleImageUpload(event) {
       const file = event.target?.files?.[0]

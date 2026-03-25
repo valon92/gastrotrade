@@ -463,6 +463,42 @@ class ProductController extends Controller
     }
 
     /**
+     * Admin: safely serve a project image from filesystem.
+     * Helps when static web server config doesn't expose public/images properly.
+     */
+    public function serveProjectImage(Request $request)
+    {
+        $path = (string) $request->query('path', '');
+        if ($path === '' || !str_starts_with($path, '/')) {
+            abort(404);
+        }
+
+        $public = public_path();
+        $full = realpath($public . DIRECTORY_SEPARATOR . ltrim($path, '/'));
+        if ($full === false) {
+            abort(404);
+        }
+
+        $imagesRoot = realpath(public_path('images'));
+        $uploadsRoot = realpath(public_path('uploads'));
+
+        $allowed = false;
+        if ($imagesRoot && str_starts_with($full, $imagesRoot . DIRECTORY_SEPARATOR)) {
+            $allowed = true;
+        }
+        if ($uploadsRoot && str_starts_with($full, $uploadsRoot . DIRECTORY_SEPARATOR)) {
+            $allowed = true;
+        }
+        if (!$allowed || !is_file($full)) {
+            abort(404);
+        }
+
+        return response()->file($full, [
+            'Cache-Control' => 'public, max-age=600',
+        ]);
+    }
+
+    /**
      * Admin: upload image directly into public/images (project library).
      * Optionally links image to an existing product immediately.
      */
