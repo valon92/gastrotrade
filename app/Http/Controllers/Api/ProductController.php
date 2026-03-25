@@ -119,7 +119,25 @@ class ProductController extends Controller
 
         $products = $query
             ->orderBy('name', 'asc')
-            ->get();
+            ->get()
+            ->map(function (Product $product) {
+                // In production, public/images might not be served by the web server.
+                // Provide a signed API URL for admin preview (img tags don't send Bearer tokens).
+                if (
+                    !empty($product->image_path)
+                    && (Str::startsWith($product->image_path, '/images/') || Str::startsWith($product->image_path, '/uploads/'))
+                ) {
+                    $product->image_url = URL::temporarySignedRoute(
+                        'api.admin.project-images.file',
+                        now()->addHours(24),
+                        ['path' => $product->image_path]
+                    );
+                } else {
+                    $product->image_url = $product->image_path;
+                }
+
+                return $product;
+            });
 
         return response()->json([
             'success' => true,

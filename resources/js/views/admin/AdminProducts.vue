@@ -87,7 +87,7 @@
                 <div class="flex items-center gap-4">
                   <img
                     v-if="product.image_path"
-                    :src="product.image_path"
+                    :src="product.image_url || product.image_path"
                     :alt="product.name"
                     class="w-16 h-16 object-cover rounded-md border"
                   >
@@ -148,7 +148,7 @@
           <div class="flex gap-3 mb-3">
             <img
               v-if="product.image_path"
-              :src="product.image_path"
+              :src="product.image_url || product.image_path"
               :alt="product.name"
               class="w-20 h-20 object-cover rounded-md border"
             >
