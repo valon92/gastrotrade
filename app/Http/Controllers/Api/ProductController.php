@@ -175,7 +175,7 @@ class ProductController extends Controller
                     'message' => $e->getMessage(),
                 ], 422);
             }
-        } elseif ($request->filled('image_path') && (str_starts_with($request->input('image_path'), '/images/') || str_starts_with($request->input('image_path'), '/uploads/'))) {
+        } elseif ($request->filled('image_path') && (Str::startsWith($request->input('image_path'), '/images/') || Str::startsWith($request->input('image_path'), '/uploads/'))) {
             $data['image_path'] = $request->input('image_path');
         }
 
@@ -270,7 +270,7 @@ class ProductController extends Controller
                     'message' => $e->getMessage(),
                 ], 422);
             }
-        } elseif ($request->filled('image_path') && (str_starts_with($request->input('image_path'), '/images/') || str_starts_with($request->input('image_path'), '/uploads/'))) {
+        } elseif ($request->filled('image_path') && (Str::startsWith($request->input('image_path'), '/images/') || Str::startsWith($request->input('image_path'), '/uploads/'))) {
             $data['image_path'] = $request->input('image_path');
         }
 
@@ -364,7 +364,7 @@ class ProductController extends Controller
         if (!$path) {
             return;
         }
-        if (str_starts_with($path, '/uploads/')) {
+        if (Str::startsWith($path, '/uploads/')) {
             // Legacy path support
             $relativePath = Str::after($path, '/');
             $fullPath = public_path($relativePath);
@@ -373,7 +373,7 @@ class ProductController extends Controller
             }
             return;
         }
-        if (str_starts_with($path, '/images/Uploads/')) {
+        if (Str::startsWith($path, '/images/Uploads/')) {
             $relativePath = Str::after($path, '/');
             $fullPath = public_path($relativePath);
             if (File::exists($fullPath)) {
@@ -381,7 +381,7 @@ class ProductController extends Controller
             }
             return;
         }
-        if (str_starts_with($path, '/storage/')) {
+        if (Str::startsWith($path, '/storage/')) {
             $relativePath = Str::after($path, '/storage/');
             if (Storage::disk('public')->exists($relativePath)) {
                 Storage::disk('public')->delete($relativePath);
@@ -469,7 +469,7 @@ class ProductController extends Controller
     public function serveProjectImage(Request $request)
     {
         $path = (string) $request->query('path', '');
-        if ($path === '' || !str_starts_with($path, '/')) {
+        if ($path === '' || !Str::startsWith($path, '/')) {
             abort(404);
         }
 
@@ -483,10 +483,10 @@ class ProductController extends Controller
         $uploadsRoot = realpath(public_path('uploads'));
 
         $allowed = false;
-        if ($imagesRoot && str_starts_with($full, $imagesRoot . DIRECTORY_SEPARATOR)) {
+        if ($imagesRoot && Str::startsWith($full, $imagesRoot . DIRECTORY_SEPARATOR)) {
             $allowed = true;
         }
-        if ($uploadsRoot && str_starts_with($full, $uploadsRoot . DIRECTORY_SEPARATOR)) {
+        if ($uploadsRoot && Str::startsWith($full, $uploadsRoot . DIRECTORY_SEPARATOR)) {
             $allowed = true;
         }
         if (!$allowed || !is_file($full)) {
