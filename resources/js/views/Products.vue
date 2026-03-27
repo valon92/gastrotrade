@@ -1,7 +1,7 @@
 <template>
   <div class="min-h-screen bg-gradient-to-b from-slate-50 via-white to-slate-100/60">
-    <!-- Hero / Header -->
-    <section class="relative overflow-hidden bg-slate-950 text-white">
+    <!-- Hero / Header (desktop/tablet — në mobile shko direkt te kartat) -->
+    <section class="hidden md:block relative overflow-hidden bg-slate-950 text-white">
       <div aria-hidden="true" class="absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(20,184,166,0.35),transparent_36%),radial-gradient(circle_at_bottom_right,rgba(37,99,235,0.25),transparent_34%)]" />
       <div class="absolute inset-0 bg-[url('data:image/svg+xml,%3Csvg width=\'80\' height=\'80\' viewBox=\'0 0 80 80\' xmlns=\'http://www.w3.org/2000/svg\'%3E%3Cg fill=\'none\' fill-rule=\'evenodd\'%3E%3Cg fill=\'%23ffffff\' fill-opacity=\'0.04\'%3E%3Ccircle cx=\'6\' cy=\'6\' r=\'2\'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E')]" aria-hidden="true" />
       <div class="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 sm:py-14">
@@ -43,8 +43,8 @@
       </div>
     </section>
 
-    <!-- Search -->
-    <div class="relative z-0 bg-white/92 backdrop-blur-xl border-b border-slate-200/80 shadow-[0_6px_20px_rgba(15,23,42,0.04)] md:sticky md:top-0 md:z-10">
+    <!-- Search (desktop/tablet — në mobile pa hero/kërkim, vetëm kartat) -->
+    <div class="hidden md:block relative z-0 bg-white/92 backdrop-blur-xl border-b border-slate-200/80 shadow-[0_6px_20px_rgba(15,23,42,0.04)] md:sticky md:top-0 md:z-10">
       <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
         <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-3">
           <div class="relative max-w-2xl w-full">
@@ -81,7 +81,7 @@
     </div>
 
     <!-- Content -->
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-10">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3 md:py-8 lg:py-10">
       <div v-if="loading" class="flex flex-col items-center justify-center py-20">
         <div class="w-12 h-12 border-3 border-primary-200 border-t-primary-600 rounded-full animate-spin" />
         <p class="mt-4 text-gray-600 font-medium">Duke ngarkuar produktet...</p>
