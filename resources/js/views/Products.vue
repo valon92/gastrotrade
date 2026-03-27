@@ -222,24 +222,56 @@ export default {
       return c.name || c.store_name || c.email || 'Klient'
     },
     filteredProducts() {
-      if (!this.searchQuery.trim()) return this.products
-      const q = this.searchQuery.toLowerCase().trim()
-      return this.products.filter(
-        (p) =>
-          p.name?.toLowerCase().includes(q) ||
-          p.description?.toLowerCase().includes(q) ||
-          p.category?.name?.toLowerCase().includes(q)
-      )
+      const cmp = (a, b) => {
+        const sa = Number(a.sort_order) || 0
+        const sb = Number(b.sort_order) || 0
+        if (sa !== sb) return sa - sb
+        const c = (a.name || '').localeCompare(b.name || '', 'sq', { sensitivity: 'base' })
+        if (c !== 0) return c
+        return (a.id || 0) - (b.id || 0)
+      }
+      const q = this.searchQuery.trim().toLowerCase()
+      let list
+      if (!q) {
+        list = this.products.slice()
+      } else {
+        list = this.products.filter(
+          (p) =>
+            p.name?.toLowerCase().includes(q) ||
+            p.description?.toLowerCase().includes(q) ||
+            p.category?.name?.toLowerCase().includes(q)
+        )
+      }
+      return list.sort(cmp)
     },
     productsByCategory() {
       const map = {}
+      const cmp = (a, b) => {
+        const sa = Number(a.sort_order) || 0
+        const sb = Number(b.sort_order) || 0
+        if (sa !== sb) return sa - sb
+        const c = (a.name || '').localeCompare(b.name || '', 'sq', { sensitivity: 'base' })
+        if (c !== 0) return c
+        return (a.id || 0) - (b.id || 0)
+      }
       for (const cat of this.categories) {
-        map[cat.slug] = this.filteredProducts.filter((p) => p.category?.slug === cat.slug)
+        const list = this.filteredProducts.filter((p) => p.category?.slug === cat.slug)
+        map[cat.slug] = list.slice().sort(cmp)
       }
       return map
     },
     visibleCategories() {
-      return this.categories.filter((cat) => (this.productsByCategory[cat.slug]?.length || 0) > 0)
+      const withProducts = this.categories.filter(
+        (cat) => (this.productsByCategory[cat.slug]?.length || 0) > 0
+      )
+      return withProducts.slice().sort((a, b) => {
+        const pa = this.productsByCategory[a.slug] || []
+        const pb = this.productsByCategory[b.slug] || []
+        const minA = pa.length ? Math.min(...pa.map((p) => Number(p.sort_order) || 0)) : 999999
+        const minB = pb.length ? Math.min(...pb.map((p) => Number(p.sort_order) || 0)) : 999999
+        if (minA !== minB) return minA - minB
+        return (a.name || '').localeCompare(b.name || '', 'sq', { sensitivity: 'base' })
+      })
     },
     visibleCategorySlugs() {
       return this.visibleCategories.map((c) => c.slug)

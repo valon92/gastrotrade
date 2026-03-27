@@ -200,17 +200,25 @@ export default {
       return c.name || c.store_name || c.email || 'Klient'
     },
     filteredFeaturedProducts() {
-      if (!this.searchQuery) {
-        return this.featuredProducts
+      const cmp = (a, b) => {
+        const sa = Number(a.sort_order) || 0
+        const sb = Number(b.sort_order) || 0
+        if (sa !== sb) return sa - sb
+        const c = (a.name || '').localeCompare(b.name || '', 'sq', { sensitivity: 'base' })
+        if (c !== 0) return c
+        return (a.id || 0) - (b.id || 0)
       }
-      const query = this.searchQuery.toLowerCase()
-      return this.featuredProducts.filter(product => {
-        return (
-          product.name?.toLowerCase().includes(query) ||
-          product.description?.toLowerCase().includes(query) ||
-          product.category?.name?.toLowerCase().includes(query)
-        )
-      })
+      const query = this.searchQuery ? this.searchQuery.toLowerCase() : ''
+      let list = query
+        ? this.featuredProducts.filter((product) => {
+            return (
+              product.name?.toLowerCase().includes(query) ||
+              product.description?.toLowerCase().includes(query) ||
+              product.category?.name?.toLowerCase().includes(query)
+            )
+          })
+        : this.featuredProducts.slice()
+      return list.sort(cmp)
     },
     displayedFeaturedProducts() {
       if (this.showMoreFeatured) return this.filteredFeaturedProducts

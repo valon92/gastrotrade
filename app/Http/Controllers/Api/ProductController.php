@@ -8,6 +8,7 @@ use App\Models\ProductImage;
 use App\Models\ProjectImage;
 use App\Models\Category;
 use Illuminate\Http\Request;
+use Illuminate\Validation\ValidationException;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Schema;
@@ -56,7 +57,12 @@ class ProductController extends Controller
             $query->where('is_featured', true);
         }
 
-        $products = $query->orderBy('name', 'asc')->get()->map(fn (Product $p) => $this->withImageUrl($p));
+        $products = $query
+            ->orderBy('sort_order', 'asc')
+            ->orderBy('name', 'asc')
+            ->orderBy('id', 'asc')
+            ->get()
+            ->map(fn (Product $p) => $this->withImageUrl($p));
 
         return response()->json([
             'success' => true,
@@ -107,7 +113,8 @@ class ProductController extends Controller
         $products = Product::with(['category', 'images'])
             ->where('is_featured', true)
             ->orderBy('sort_order', 'asc')
-            ->orderBy('created_at', 'desc')
+            ->orderBy('name', 'asc')
+            ->orderBy('id', 'asc')
             ->get()
             ->map(fn (Product $p) => $this->withImageUrl($p));
 
@@ -137,6 +144,7 @@ class ProductController extends Controller
         }
 
         $products = $query
+            ->orderBy('sort_order', 'asc')
             ->orderBy('name', 'asc')
             ->get()
             ->map(fn (Product $p) => $this->withImageUrl($p));
@@ -202,6 +210,16 @@ class ProductController extends Controller
 
         // Only pass fillable attributes (e.g. exclude uploaded file key)
         $data = array_intersect_key($data, array_fill_keys((new Product)->getFillable(), true));
+
+        $orderForCreate = (int) ($data['sort_order'] ?? 0);
+        $collision = Product::query()->where('sort_order', $orderForCreate)->first(['id', 'name']);
+        if ($collision) {
+            throw ValidationException::withMessages([
+                'sort_order' => [
+                    'Pozicioni ' . $orderForCreate . ' është i zënë nga «' . $collision->name . '». Zgjidhni një numër tjetër në listë.',
+                ],
+            ]);
+        }
 
         $product = DB::transaction(function () use ($data) {
             $product = Product::create($data);
@@ -298,6 +316,20 @@ class ProductController extends Controller
         $data = array_intersect_key($data, array_fill_keys((new Product)->getFillable(), true));
 
         DB::transaction(function () use ($product, $data) {
+            if (array_key_exists('sort_order', $data)) {
+                $newOrder = (int) $data['sort_order'];
+                $oldOrder = (int) $product->sort_order;
+                if ($newOrder !== $oldOrder) {
+                    $other = Product::query()
+                        ->where('sort_order', $newOrder)
+                        ->where('id', '!=', $product->id)
+                        ->lockForUpdate()
+                        ->first(['id', 'sort_order']);
+                    if ($other) {
+                        $other->update(['sort_order' => $oldOrder]);
+                    }
+                }
+            }
             $product->update($data);
             if (array_key_exists('image_path', $data) && !empty($data['image_path'])) {
                 $this->syncProductFeaturedImage($product, $data['image_path']);
@@ -307,7 +339,7 @@ class ProductController extends Controller
 
         return response()->json([
             'success' => true,
-            'data' => $product->refresh()->load(['category', 'images']),
+            'data' => $this->withImageUrl($product->refresh()->load(['category', 'images'])),
         ]);
     }
 

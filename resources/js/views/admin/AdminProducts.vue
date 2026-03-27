@@ -160,6 +160,7 @@
               <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Çmimi</th>
               <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Komplete</th>
               <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Featured</th>
+              <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase whitespace-nowrap">Poz.</th>
               <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Veprime</th>
             </tr>
           </thead>
@@ -204,6 +205,9 @@
                   {{ product.is_featured ? 'Po' : 'Jo' }}
                 </span>
               </td>
+              <td class="px-4 py-4 text-sm text-gray-800 tabular-nums font-semibold">
+                {{ product.sort_order ?? 0 }}
+              </td>
               <td class="px-4 py-4 text-sm font-medium space-x-2">
                 <button
                   @click="openEditModal(product)"
@@ -244,6 +248,7 @@
           </div>
           <p class="text-sm text-gray-600 mb-2">{{ product.description || 'Pa përshkrim.' }}</p>
           <div class="flex flex-wrap gap-2 text-xs mb-3">
+            <span class="px-2 py-1 bg-slate-100 text-slate-800 rounded-full font-mono">Poz. {{ product.sort_order ?? 0 }}</span>
             <span class="px-2 py-1 bg-gray-100 text-gray-800 rounded-full">Çmimi: {{ formatPrice(product.price) }}</span>
             <span
               class="px-2 py-1 rounded-full"
@@ -418,15 +423,26 @@
                 </div>
               </div>
               <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div>
-                  <label class="block text-sm font-medium text-gray-700 mb-1">Pozicioni në listë</label>
-                  <input
+                <div class="sm:col-span-2">
+                  <label class="block text-sm font-medium text-gray-700 mb-1">Pozicioni në listë (unik për produkt)</label>
+                  <select
                     v-model.number="productForm.sort_order"
-                    type="number"
-                    min="0"
-                    class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
-                    placeholder="p.sh. 10"
+                    class="w-full max-w-md px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-primary-500 focus:border-primary-500 bg-white"
                   >
+                    <option
+                      v-for="opt in sortOrderSelectOptions"
+                      :key="'so-' + opt.value"
+                      :value="opt.value"
+                      :disabled="opt.disabled"
+                    >
+                      {{ opt.label }}
+                    </option>
+                  </select>
+                  <p class="text-xs text-gray-500 mt-1.5 max-w-xl">
+                    Për <strong>produkt të ri</strong>: numrat e zënë nga të tjerët janë të çaktivizuar.
+                    Për <strong>editim</strong>: mund të zgjidhni një numër të zënë — ruajtja <strong>ndërron vendet</strong> automatikisht me atë produkt (vetëm nga paneli admin).
+                    Numri më i vogël shfaqet më lart: në <strong>Ballinë</strong> (produktet kryesore), në <strong>/produktet</strong> dhe në këtë listë.
+                  </p>
                 </div>
               </div>
 
@@ -684,6 +700,49 @@ export default {
 
         return matchesSearch && matchesCategory && matchesPackage && matchesFeatured
       })
+    },
+    /** Cilët numra renditjeje janë të zënë (për produkte të tjera kur po editojmë njërin). */
+    sortOrderSlotOwners() {
+      const map = {}
+      const skipId = this.editingProduct?.id ?? null
+      for (const p of this.products) {
+        if (skipId != null && p.id === skipId) continue
+        const k = Number(p.sort_order)
+        if (Number.isNaN(k)) continue
+        if (map[k] == null) {
+          map[k] = { id: p.id, name: (p.name || 'Produkt').trim() }
+        }
+      }
+      return map
+    },
+    sortOrderSelectMax() {
+      let maxAssigned = 0
+      for (const p of this.products) {
+        const n = Number(p.sort_order)
+        if (!Number.isNaN(n)) maxAssigned = Math.max(maxAssigned, n)
+      }
+      const cur = Number(this.productForm.sort_order)
+      const curSafe = Number.isNaN(cur) ? 0 : cur
+      return Math.max(maxAssigned + 25, curSafe + 5, 80)
+    },
+    sortOrderSelectOptions() {
+      const owners = this.sortOrderSlotOwners
+      const max = this.sortOrderSelectMax
+      const opts = []
+      for (let n = 0; n <= max; n++) {
+        const owner = owners[n]
+        const disabled = !!(owner && !this.editingProduct)
+        let label = String(n)
+        if (owner && this.editingProduct && owner.id !== this.editingProduct.id) {
+          const short = owner.name.length > 42 ? owner.name.slice(0, 40) + '…' : owner.name
+          label = `${n} · zënë nga: ${short}`
+        } else if (owner && !this.editingProduct) {
+          const short = owner.name.length > 42 ? owner.name.slice(0, 40) + '…' : owner.name
+          label = `${n} · i zënë (${short})`
+        }
+        opts.push({ value: n, disabled, label })
+      }
+      return opts
     }
   },
   async mounted() {
@@ -819,9 +878,23 @@ export default {
         alert(msg)
       }
     },
+    nextFreeSortOrder() {
+      const owners = {}
+      for (const p of this.products) {
+        const k = Number(p.sort_order)
+        if (!Number.isNaN(k)) owners[k] = true
+      }
+      let n = 0
+      while (n <= 10000) {
+        if (!owners[n]) return n
+        n++
+      }
+      return 0
+    },
     openCreateModal() {
       this.editingProduct = null
       this.productForm = this.defaultForm()
+      this.productForm.sort_order = this.nextFreeSortOrder()
       this.saveError = null
       this.uploadProgress = -1
       this.showAddCategory = false
@@ -844,7 +917,7 @@ export default {
         liters: product.liters || '',
         barcode: product.barcode || '',
         price: product.price,
-        sort_order: product.sort_order,
+        sort_order: Number(product.sort_order) || 0,
         is_featured: Boolean(product.is_featured),
         sold_by_package: Boolean(product.sold_by_package),
         pieces_per_package: product.pieces_per_package,
