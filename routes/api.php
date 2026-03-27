@@ -62,6 +62,8 @@ Route::middleware(['auth:sanctum', 'admin.user'])->group(function () {
 
     // Admin categories (create from product form)
     Route::post('/admin/categories', [CategoryController::class, 'store']);
+    Route::put('/admin/categories/{category}', [CategoryController::class, 'update']);
+    Route::delete('/admin/categories/{category}', [CategoryController::class, 'destroy']);
 
     // Admin product routes
     Route::get('/admin/products', [ProductController::class, 'adminIndex']);

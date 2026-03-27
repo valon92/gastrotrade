@@ -65,6 +65,91 @@
         </div>
       </div>
 
+      <!-- Categories management -->
+      <div class="bg-white rounded-lg shadow p-4 mb-6">
+        <div class="flex items-center justify-between gap-3">
+          <div>
+            <h2 class="text-lg font-semibold text-gray-900">Kategoritë Tona</h2>
+            <p class="text-xs text-gray-500">Riemërto, përditëso përshkrimin dhe menaxho kategoritë nga kjo faqe.</p>
+          </div>
+          <button
+            type="button"
+            class="px-3 py-2 text-sm font-medium rounded-md border border-gray-300 text-gray-700 hover:bg-gray-50"
+            @click="showCategoryManager = !showCategoryManager"
+          >
+            {{ showCategoryManager ? 'Mbyll menaxhimin' : 'Menaxho kategoritë' }}
+          </button>
+        </div>
+
+        <div v-if="showCategoryManager" class="mt-4 border border-gray-200 rounded-lg overflow-hidden">
+          <div v-if="categories.length" class="divide-y divide-gray-200">
+            <div
+              v-for="category in categories"
+              :key="category.id"
+              class="p-3 sm:p-4"
+            >
+              <div v-if="editingCategoryId !== category.id" class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                <div>
+                  <p class="font-medium text-gray-900">{{ category.name }}</p>
+                  <p class="text-xs text-gray-500 mt-0.5">Produkte: {{ category.products_count ?? 0 }}</p>
+                  <p v-if="category.description" class="text-sm text-gray-600 mt-1">{{ category.description }}</p>
+                </div>
+                <div class="flex items-center gap-2">
+                  <button
+                    type="button"
+                    class="px-3 py-1.5 text-sm rounded-md border border-primary-300 text-primary-700 hover:bg-primary-50"
+                    @click="startEditCategory(category)"
+                  >
+                    Edito
+                  </button>
+                  <button
+                    type="button"
+                    class="px-3 py-1.5 text-sm rounded-md border border-red-300 text-red-700 hover:bg-red-50"
+                    @click="deleteCategory(category)"
+                  >
+                    Fshi
+                  </button>
+                </div>
+              </div>
+
+              <div v-else class="space-y-2">
+                <input
+                  v-model.trim="categoryForm.name"
+                  type="text"
+                  class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+                  placeholder="Emri i kategorisë"
+                >
+                <textarea
+                  v-model.trim="categoryForm.description"
+                  rows="2"
+                  class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+                  placeholder="Përshkrim (opsional)"
+                ></textarea>
+                <div class="flex items-center gap-2">
+                  <button
+                    type="button"
+                    class="px-3 py-1.5 text-sm rounded-md bg-primary-600 text-white hover:bg-primary-700 disabled:opacity-50"
+                    :disabled="savingCategory || !categoryForm.name"
+                    @click="saveCategory(category.id)"
+                  >
+                    {{ savingCategory ? 'Duke ruajtur...' : 'Ruaj' }}
+                  </button>
+                  <button
+                    type="button"
+                    class="px-3 py-1.5 text-sm rounded-md border border-gray-300 text-gray-700 hover:bg-gray-50"
+                    @click="cancelCategoryEdit"
+                  >
+                    Anulo
+                  </button>
+                </div>
+                <p v-if="categoryError" class="text-xs text-red-600">{{ categoryError }}</p>
+              </div>
+            </div>
+          </div>
+          <p v-else class="p-4 text-sm text-gray-500">Nuk ka kategori të regjistruara ende.</p>
+        </div>
+      </div>
+
       <!-- Products table -->
       <div class="hidden lg:block bg-white rounded-lg shadow overflow-hidden">
         <table class="min-w-full divide-y divide-gray-200">
@@ -566,7 +651,15 @@ export default {
       addingCategory: false,
       addCategoryError: null,
       imageConverting: false,
-      projectLibraryUploading: false
+      projectLibraryUploading: false,
+      showCategoryManager: false,
+      editingCategoryId: null,
+      categoryForm: {
+        name: '',
+        description: ''
+      },
+      savingCategory: false,
+      categoryError: null
     }
   },
   computed: {
@@ -668,6 +761,62 @@ export default {
         this.addCategoryError = msg
       } finally {
         this.addingCategory = false
+      }
+    },
+    startEditCategory(category) {
+      this.editingCategoryId = category.id
+      this.categoryForm = {
+        name: category.name || '',
+        description: category.description || ''
+      }
+      this.categoryError = null
+    },
+    cancelCategoryEdit() {
+      this.editingCategoryId = null
+      this.categoryForm = { name: '', description: '' }
+      this.savingCategory = false
+      this.categoryError = null
+    },
+    async saveCategory(categoryId) {
+      const name = (this.categoryForm.name || '').trim()
+      if (!name) {
+        this.categoryError = 'Emri i kategorisë është i detyrueshëm.'
+        return
+      }
+      this.savingCategory = true
+      this.categoryError = null
+      try {
+        const res = await axios.put(`/api/admin/categories/${categoryId}`, {
+          name,
+          description: this.categoryForm.description || ''
+        }, {
+          headers: { Accept: 'application/json' }
+        })
+        const updated = res.data?.data
+        if (updated) {
+          this.categories = this.categories.map(c => (c.id === updated.id ? { ...c, ...updated } : c))
+        }
+        await this.loadProducts()
+        this.cancelCategoryEdit()
+      } catch (err) {
+        this.categoryError = err.response?.data?.message || err.response?.data?.errors?.name?.[0] || 'Përditësimi i kategorisë dështoi.'
+      } finally {
+        this.savingCategory = false
+      }
+    },
+    async deleteCategory(category) {
+      const name = category?.name || 'këtë kategori'
+      if (!confirm(`A jeni të sigurt që dëshironi të fshini kategorinë "${name}"?`)) return
+      try {
+        await axios.delete(`/api/admin/categories/${category.id}`)
+        this.categories = this.categories.filter(c => c.id !== category.id)
+        if (String(this.productForm.category_id) === String(category.id)) {
+          this.productForm.category_id = ''
+        }
+        await this.loadProducts()
+      } catch (err) {
+        const msg = err.response?.data?.message || 'Fshirja e kategorisë dështoi.'
+        alert(msg)
       }
     },
     openCreateModal() {
