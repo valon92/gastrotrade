@@ -143,8 +143,24 @@ const router = createRouter({
   }
 })
 
+function isMobileProductLanding() {
+  if (typeof window === 'undefined') return false
+  // Përputhet me breakpoint `sm` të Tailwind: mobile = < 640px
+  return window.matchMedia('(max-width: 639px)').matches
+}
+
 // Global navigation guard for admin auth/roles
 router.beforeEach(async (to, from, next) => {
+  // Mobile: hyrja e parë në platformë në `/` → shfaq direkt produktet (kartat)
+  // Kur përdoruesi zgjedh “Ballina” nga menuja, `from` ka route të përcaktuar — nuk ridrejtojmë
+  if (
+    to.name === 'Home' &&
+    isMobileProductLanding() &&
+    !from.matched.length
+  ) {
+    return next({ name: 'Products', replace: true })
+  }
+
   const requiresAuth = to.meta?.requiresAuth
   const requiresAdmin = to.meta?.requiresAdmin
   const token = localStorage.getItem('admin_token')
