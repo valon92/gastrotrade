@@ -224,7 +224,9 @@
             </template>
             <template v-else>
               <div>
-                <label class="block text-sm font-medium text-gray-700 mb-1">Sasia</label>
+                <label class="block text-sm font-medium text-gray-700 mb-1">
+                  {{ product.sold_by_package && product.pieces_per_package ? 'Numri i kompleteve' : 'Sasia' }}
+                </label>
                 <input
                   v-model.number="orderPackages"
                   type="number"
@@ -233,9 +235,6 @@
                 >
                 <p v-if="product.sold_by_package && product.pieces_per_package" class="text-xs text-gray-500 mt-1">
                   1 Komplete = {{ product.pieces_per_package }} copa
-                </p>
-                <p v-if="totalPiecesFromPackages !== null" class="text-sm font-semibold text-gray-700 mt-2">
-                  Gjithsej: {{ totalPiecesFromPackages }} copa
                 </p>
               </div>
             </template>
