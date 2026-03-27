@@ -108,5 +108,12 @@ UPDATE `products` SET `size`='3oz',   `barcode`='GT-GL-3oz'   WHERE `slug`='gota
 UPDATE `products` SET `size`='4oz',   `barcode`='GT-GL-4oz'   WHERE `slug`='gota-leter-per-kafe-4oz';
 UPDATE `products` SET `size`='7oz',   `barcode`='GT-GL-7oz'   WHERE `slug`='gota-leter-per-kafe-7oz';
 
+-- ========== Gota Letre: copa për komplet (përputhje me localhost / seed ==========
+-- Nëse në live modali "Bëj porosi" tregon 1000 copa/komplet, është gabim në `pieces_per_package`.
+UPDATE `products` SET `sold_by_package` = 1, `pieces_per_package` = 40 WHERE `slug` = 'gota-leter-per-kafe-2-5oz';
+UPDATE `products` SET `sold_by_package` = 1, `pieces_per_package` = 20 WHERE `slug` = 'gota-leter-per-kafe-3oz';
+UPDATE `products` SET `sold_by_package` = 1, `pieces_per_package` = 20 WHERE `slug` = 'gota-leter-per-kafe-4oz';
+UPDATE `products` SET `sold_by_package` = 1, `pieces_per_package` = 20 WHERE `slug` = 'gota-leter-per-kafe-7oz';
+
 -- ========== BARCODE: për pjesën tjetër ==========
 UPDATE `products` SET `barcode` = CONCAT('GT-', UPPER(`slug`)) WHERE `barcode` IS NULL OR `barcode` = '';
