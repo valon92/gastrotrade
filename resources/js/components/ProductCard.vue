@@ -2,7 +2,7 @@
   <div class="group relative rounded-2xl border border-slate-200 bg-white/80 overflow-hidden shadow-sm hover:shadow-xl hover:-translate-y-1.5 transition-all duration-300 h-full flex flex-col backdrop-blur-sm">
     <div aria-hidden="true" class="pointer-events-none absolute inset-x-0 top-0 h-20 bg-gradient-to-b from-primary-50/70 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
     <!-- Imazhi me çmim mbi të (overlay) – i klikueshëm për zmadhim -->
-    <div class="relative w-full aspect-square bg-slate-100 md:aspect-[4/3] md:min-h-[220px]">
+    <div class="relative w-full aspect-square bg-slate-100 xl:aspect-[4/3] xl:min-h-[220px]">
       <button
         type="button"
         @click="showImageLightbox = true"
@@ -16,12 +16,12 @@
           @error="handleImageError"
         />
       </button>
-      <div class="pointer-events-none absolute inset-x-0 bottom-0 h-16 bg-gradient-to-t from-black/35 via-black/10 to-transparent md:h-24 md:from-black/45"></div>
+      <div class="pointer-events-none absolute inset-x-0 bottom-0 h-16 bg-gradient-to-t from-black/35 via-black/10 to-transparent xl:h-24 xl:from-black/45"></div>
       <div
         v-if="displayPrice != null"
-        class="absolute left-1.5 top-1.5 z-10 flex max-w-[92%] flex-nowrap items-center gap-1 md:left-3 md:top-3 md:gap-2"
+        class="absolute left-1.5 top-1.5 z-10 flex max-w-[92%] flex-nowrap items-center gap-1 xl:left-3 xl:top-3 xl:gap-2"
       >
-        <div class="inline-flex shrink-0 items-center gap-1 rounded-lg bg-gradient-to-r from-rose-600 to-red-600 px-2 py-1 text-[10px] font-bold text-white shadow-md ring-1 ring-red-800/40 backdrop-blur-sm sm:gap-1.5 sm:rounded-xl sm:px-3 sm:py-1.5 sm:text-sm sm:shadow-lg">
+        <div class="inline-flex shrink-0 items-center gap-1 rounded-lg bg-gradient-to-r from-rose-600 to-red-600 px-2 py-1 text-[10px] font-bold text-white shadow-md ring-1 ring-red-800/40 backdrop-blur-sm xl:gap-1.5 xl:rounded-xl xl:px-3 xl:py-1.5 xl:text-sm xl:shadow-lg">
           <span>{{ formatPrice(displayPrice) }}</span>
           <button
             v-if="hasPackageInfo"
@@ -52,72 +52,68 @@
             </div>
           </div>
         </div>
-        <!-- Mobile: tekst i plotë, font pak më i madh -->
+        <!-- Telefon: tekst i plotë; tablet (sm–lg): i njëjti; desktop i gjerë: truncate -->
         <span
           v-if="cartStore.client"
-          class="inline-flex sm:hidden items-center px-2 py-0.5 rounded-full bg-black/65 text-[11px] font-semibold text-amber-100"
+          class="inline-flex xl:hidden items-center px-2 py-0.5 rounded-full bg-black/65 text-[11px] font-semibold text-amber-100 max-w-[min(100%,14rem)]"
           style="text-shadow: 0 0 1px rgba(0,0,0,0.6);"
         >
           Çmimet vetëm për {{ clientDisplayName }}
         </span>
-        <!-- Desktop: variant i shkurtuar me truncate -->
         <span
           v-if="cartStore.client"
-          class="hidden sm:inline-flex items-center px-2 py-0.5 rounded-full bg-black/55 text-[10px] font-semibold text-amber-100 min-w-0 max-w-[220px] truncate"
+          class="hidden xl:inline-flex items-center px-2 py-0.5 rounded-full bg-black/55 text-[10px] font-semibold text-amber-100 min-w-0 max-w-[220px] truncate"
           style="text-shadow: 0 0 1px rgba(0,0,0,0.6);"
           :title="'Çmimet vetëm për ' + clientDisplayName"
         >
           Çmimet vetëm për {{ clientDisplayName }}
         </span>
       </div>
-      <div class="absolute bottom-1.5 right-1.5 z-10 md:bottom-3 md:right-3">
-        <span class="inline-flex max-w-[calc(100%-0.5rem)] items-center truncate rounded-full bg-black/60 px-1.5 py-0.5 text-[9px] font-medium text-slate-100 backdrop-blur-sm sm:px-2.5 sm:py-1 sm:text-[11px]">
+      <div class="absolute bottom-1.5 right-1.5 z-10 xl:bottom-3 xl:right-3">
+        <span class="inline-flex max-w-[calc(100%-0.5rem)] items-center truncate rounded-full bg-black/60 px-1.5 py-0.5 text-[9px] font-medium text-slate-100 backdrop-blur-sm xl:px-2.5 xl:py-1 xl:text-[11px]">
           {{ product.category?.name || 'Produkt' }}
         </span>
       </div>
     </div>
-    <div class="flex flex-1 flex-col p-2.5 sm:p-3 md:p-4 lg:p-5 relative">
-      <div class="mb-1.5 flex items-start justify-between gap-1.5 sm:gap-2 sm:mb-2">
-        <h3 class="min-w-0 flex-1 text-[11px] font-bold leading-snug tracking-tight text-slate-900 antialiased line-clamp-2 sm:text-sm sm:leading-snug md:text-base md:font-extrabold lg:text-lg">
+    <div class="flex flex-1 flex-col p-2.5 xl:p-4 2xl:p-5 relative">
+      <div class="mb-1.5 xl:mb-2">
+        <h3 class="min-w-0 text-[11px] font-bold leading-snug tracking-tight text-slate-900 antialiased line-clamp-2 xl:text-sm xl:leading-snug 2xl:text-lg 2xl:font-extrabold">
           {{ product.name }}
         </h3>
-        <div class="hidden shrink-0 text-right text-[10px] text-slate-500 whitespace-nowrap sm:block">
-          📞 048 75 66 46 / 044 82 43 14
-        </div>
       </div>
-      <div class="mb-2 min-h-0 flex-1 md:mb-4 hidden sm:block">
-        <p v-if="productSpecsText" class="line-clamp-2 text-[10px] leading-relaxed text-slate-600 antialiased sm:text-xs md:text-sm">
+      <div class="mb-2 min-h-0 flex-1 xl:mb-4 hidden xl:block">
+        <p v-if="productSpecsText" class="line-clamp-2 text-xs leading-relaxed text-slate-600 antialiased xl:text-sm">
           {{ productSpecsText }}
         </p>
-        <p v-else-if="product.description" class="line-clamp-2 text-[10px] leading-relaxed text-slate-600 antialiased sm:text-xs md:text-sm">
+        <p v-else-if="product.description" class="line-clamp-2 text-xs leading-relaxed text-slate-600 antialiased xl:text-sm">
           {{ product.description }}
         </p>
-        <p v-else class="line-clamp-2 text-[10px] leading-relaxed text-slate-400 antialiased sm:text-xs md:text-sm">Produkti i gatshëm për porosi profesionale.</p>
+        <p v-else class="line-clamp-2 text-xs leading-relaxed text-slate-400 antialiased xl:text-sm">Produkti i gatshëm për porosi profesionale.</p>
       </div>
       <!-- Barcode dhe butoni -->
-      <div class="mt-auto flex flex-col gap-2 sm:gap-3">
-        <div class="flex w-full flex-col items-center gap-0.5 rounded-lg border border-slate-100 bg-slate-50 px-1.5 py-1.5 sm:gap-1 sm:rounded-xl sm:px-2 sm:py-2">
-          <span class="hidden text-[9px] font-semibold uppercase tracking-wider text-slate-500 sm:inline sm:text-[10px]">Barcode</span>
-          <!-- Mobile: vetëm numri; desktop: grafiku + numri -->
-          <p class="w-full text-center font-mono text-[11px] font-semibold tabular-nums tracking-wide text-slate-800 break-all sm:hidden">
+      <div class="mt-auto flex flex-col gap-2 xl:gap-3">
+        <div class="flex w-full flex-col items-center gap-0.5 rounded-lg border border-slate-100 bg-slate-50 px-1.5 py-1.5 xl:gap-1 xl:rounded-xl xl:px-2 xl:py-2">
+          <span class="hidden text-[9px] font-semibold uppercase tracking-wider text-slate-500 xl:inline xl:text-[10px]">Barcode</span>
+          <!-- Telefon & tablet & iPad (deri xl): vetëm numri; desktop i gjerë: grafiku -->
+          <p class="w-full text-center font-mono text-[11px] font-semibold tabular-nums tracking-wide text-slate-800 break-all xl:hidden">
             {{ product.barcode != null && String(product.barcode).trim() !== '' ? product.barcode : '—' }}
           </p>
-          <BarcodeDisplay :value="product.barcode" compact class="hidden sm:inline-flex" />
+          <BarcodeDisplay :value="product.barcode" compact class="hidden xl:inline-flex" />
         </div>
         <button 
           @click="onMainButtonClick"
           :class="[
-            'flex min-h-[40px] w-full items-center justify-center gap-0 rounded-lg bg-gradient-to-r from-primary-600 to-primary-700 font-semibold text-white shadow-md ring-1 ring-primary-700/40 transition-all duration-200 hover:from-primary-700 hover:to-primary-800 hover:shadow-lg active:scale-[0.98] sm:min-h-[44px] sm:gap-2 sm:rounded-xl',
+            'flex min-h-[40px] w-full items-center justify-center gap-0 rounded-lg bg-gradient-to-r from-primary-600 to-primary-700 font-semibold text-white shadow-md ring-1 ring-primary-700/40 transition-all duration-200 hover:from-primary-700 hover:to-primary-800 hover:shadow-lg active:scale-[0.98] xl:min-h-[44px] xl:gap-2 xl:rounded-xl',
             compactButton
-              ? 'px-2 py-2 text-[10px] leading-tight sm:px-2.5 sm:py-2 sm:text-xs md:text-sm'
-              : 'px-2 py-2 text-xs sm:px-4 sm:py-2.5 sm:text-sm md:text-base lg:py-3 lg:px-5'
+              ? 'px-2 py-2 text-[10px] leading-tight xl:px-2.5 xl:py-2 xl:text-xs 2xl:text-sm'
+              : 'px-2 py-2 text-xs xl:px-4 xl:py-2.5 xl:text-sm 2xl:text-base 2xl:py-3 2xl:px-5'
           ]"
           title="Bëj porosi"
         >
-          <svg xmlns="http://www.w3.org/2000/svg" :class="compactButton ? 'hidden h-3.5 w-3.5 shrink-0 text-white sm:block sm:h-4 sm:w-4 md:h-5 md:w-5' : 'hidden h-5 w-5 shrink-0 text-white sm:block'" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <svg xmlns="http://www.w3.org/2000/svg" :class="compactButton ? 'hidden h-3.5 w-3.5 shrink-0 text-white xl:block xl:h-4 xl:w-4 2xl:h-5 2xl:w-5' : 'hidden h-5 w-5 shrink-0 text-white xl:block'" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
             <path d="M5 12h14M12 5l7 7-7 7" />
           </svg>
-          <span class="max-sm:w-full max-sm:text-center max-sm:text-[11px] max-sm:font-semibold max-sm:leading-snug max-sm:whitespace-normal sm:truncate sm:leading-tight">Porosit Tani</span>
+          <span class="max-xl:w-full max-xl:text-center max-xl:text-[11px] max-xl:font-semibold max-xl:leading-snug max-xl:whitespace-normal xl:truncate xl:leading-tight">Porosit Tani</span>
         </button>
       </div>
     </div>
