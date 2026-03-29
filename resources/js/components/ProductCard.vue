@@ -25,34 +25,16 @@
           <span class="max-xl:truncate">{{ formatPrice(displayPrice) }}</span>
           <button
             v-if="hasPackageInfo"
-            @mouseenter="showInfoTooltip = true"
-            @mouseleave="showInfoTooltip = false"
             @click.stop="showInfoTooltip = !showInfoTooltip"
             type="button"
             class="relative shrink-0 flex h-3.5 w-3.5 items-center justify-center rounded-full bg-blue-600 text-[7px] font-bold leading-none text-white shadow ring-1 ring-blue-400/60 active:scale-95 xl:h-5 xl:w-5 xl:text-xs xl:shadow-md xl:ring-2 xl:ring-blue-400/50 xl:hover:scale-110"
             title="Informacion për çmimin"
             aria-label="Shfaq llogaritjen e kompletit"
+            :aria-expanded="showInfoTooltip"
+            :aria-controls="'package-info-panel-' + product.id"
           >
             i
           </button>
-          <!-- Tooltip me llogaritjen -->
-          <div
-            v-if="showInfoTooltip && hasPackageInfo"
-            class="absolute left-0 top-full z-20 mt-1.5 w-[min(calc(100vw-2rem),16rem)] max-xl:origin-top-left p-2.5 xl:mt-2 xl:w-64 xl:p-3 bg-gradient-to-br from-blue-50 to-blue-100 border-2 border-blue-300 text-blue-900 text-[11px] xl:text-xs rounded-lg xl:rounded-xl shadow-2xl whitespace-normal backdrop-blur-sm"
-            @mouseenter="showInfoTooltip = true"
-            @mouseleave="showInfoTooltip = false"
-          >
-            <div class="flex items-start gap-2">
-              <div class="shrink-0 w-5 h-5 rounded-full bg-blue-500 text-white flex items-center justify-center text-xs font-bold mt-0.5">
-                i
-              </div>
-              <div class="flex-1">
-                <p class="font-bold mb-1.5 text-blue-900">Total Kompleti:</p>
-                <p class="text-blue-800 font-medium mb-2">{{ packageCalculationText }}</p>
-                <p class="text-blue-700 text-[10px] leading-relaxed">{{ packageTotalPrice }} është çmimi për një Komplete.</p>
-              </div>
-            </div>
-          </div>
         </div>
       </div>
       <div class="absolute bottom-1.5 right-1.5 z-10 xl:bottom-3 xl:right-3">
@@ -142,6 +124,73 @@
             <p id="lightbox-product-name" class="mt-3 text-white text-center font-medium text-lg drop-shadow-lg">
               {{ product.name }}
             </p>
+          </div>
+        </div>
+      </Transition>
+    </Teleport>
+
+    <!-- Informacioni i kompletit: jashtë kartës (fixed) — nuk pritet nga overflow-hidden -->
+    <Teleport to="body">
+      <Transition
+        enter-active-class="transition duration-200 ease-out"
+        enter-from-class="opacity-0"
+        enter-to-class="opacity-100"
+        leave-active-class="transition duration-150 ease-in"
+        leave-from-class="opacity-100"
+        leave-to-class="opacity-0"
+      >
+        <div
+          v-if="showInfoTooltip && hasPackageInfo"
+          class="fixed inset-0 z-[105] flex items-end justify-center xl:items-center xl:justify-center xl:p-4"
+          role="dialog"
+          aria-modal="true"
+          :aria-labelledby="'package-info-title-' + product.id"
+        >
+          <div
+            class="absolute inset-0 bg-slate-900/45 backdrop-blur-[2px] xl:bg-slate-900/40"
+            aria-hidden="true"
+            @click="showInfoTooltip = false"
+          />
+          <div
+            :id="'package-info-panel-' + product.id"
+            class="relative z-10 w-full max-w-lg px-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] pt-2 xl:max-w-md xl:px-0 xl:pb-0 xl:pt-0"
+            @click.stop
+          >
+            <div
+              class="max-h-[min(72vh,24rem)] overflow-y-auto overscroll-contain rounded-2xl border border-blue-200/90 bg-gradient-to-br from-white via-blue-50/50 to-white p-4 text-slate-800 shadow-2xl ring-1 ring-slate-200/70 backdrop-blur-md xl:max-h-[min(85vh,26rem)] xl:p-5"
+            >
+              <div class="flex items-start justify-between gap-3">
+                <div class="flex min-w-0 flex-1 items-start gap-3">
+                  <div class="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-blue-500 to-blue-600 text-sm font-bold text-white shadow-md ring-1 ring-blue-400/40">
+                    i
+                  </div>
+                  <div class="min-w-0 flex-1">
+                    <p
+                      :id="'package-info-title-' + product.id"
+                      class="text-base font-bold leading-snug tracking-tight text-blue-950 xl:text-lg"
+                    >
+                      Total kompleti
+                    </p>
+                    <p class="mt-2 text-sm font-semibold tabular-nums text-blue-900 xl:text-base">
+                      {{ packageCalculationText }}
+                    </p>
+                    <p class="mt-2 text-sm leading-relaxed text-slate-600 xl:text-[0.9375rem]">
+                      {{ packageTotalPrice }} është çmimi për një komplet.
+                    </p>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-slate-200/80 bg-white/90 text-slate-600 shadow-sm transition hover:bg-slate-50 hover:text-slate-900 focus:outline-none focus:ring-2 focus:ring-primary-500"
+                  aria-label="Mbyll"
+                  @click="showInfoTooltip = false"
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              </div>
+            </div>
           </div>
         </div>
       </Transition>
@@ -340,24 +389,33 @@ export default {
   },
   watch: {
     showImageLightbox(open) {
-      if (open) {
+      if (open) this.showInfoTooltip = false
+      this._syncBodyScrollLock()
+    },
+    showInfoTooltip() {
+      this._syncBodyScrollLock()
+    }
+  },
+  mounted() {
+    this._onEscapeKey = (e) => {
+      if (e.key !== 'Escape') return
+      if (this.showImageLightbox) this.showImageLightbox = false
+      else if (this.showInfoTooltip) this.showInfoTooltip = false
+    }
+    document.addEventListener('keydown', this._onEscapeKey)
+  },
+  beforeUnmount() {
+    if (this._onEscapeKey) document.removeEventListener('keydown', this._onEscapeKey)
+    document.body.classList.remove('overflow-hidden')
+  },
+  methods: {
+    _syncBodyScrollLock() {
+      if (this.showImageLightbox || this.showInfoTooltip) {
         document.body.classList.add('overflow-hidden')
       } else {
         document.body.classList.remove('overflow-hidden')
       }
-    }
-  },
-  mounted() {
-    this._escapeLightbox = (e) => {
-      if (e.key === 'Escape' && this.showImageLightbox) this.showImageLightbox = false
-    }
-    document.addEventListener('keydown', this._escapeLightbox)
-  },
-  beforeUnmount() {
-    if (this._escapeLightbox) document.removeEventListener('keydown', this._escapeLightbox)
-    document.body.classList.remove('overflow-hidden')
-  },
-  methods: {
+    },
     formatPrice(price) {
       return new Intl.NumberFormat('sq-AL', {
         style: 'currency',
