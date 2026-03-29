@@ -737,9 +737,19 @@
             <button
               type="button"
               @click="downloadInvoice"
-              class="inline-flex items-center justify-center gap-1.5 min-h-[44px] px-4 py-2.5 rounded-xl bg-blue-600 text-white text-sm font-medium shadow-sm hover:bg-blue-700 active:scale-[0.98] transition-colors cursor-pointer touch-manipulation select-none"
+              :disabled="downloadingInvoicePdf"
+              class="inline-flex items-center justify-center gap-1.5 min-h-[44px] px-4 py-2.5 rounded-xl bg-blue-600 text-white text-sm font-medium shadow-sm hover:bg-blue-700 active:scale-[0.98] transition-colors cursor-pointer touch-manipulation select-none disabled:opacity-60 disabled:pointer-events-none"
             >
-              ⬇️ Shkarko
+              {{ downloadingInvoicePdf ? '⏳ PDF gjenerim…' : '⬇️ Shkarko PDF' }}
+            </button>
+            <button
+              type="button"
+              @click="downloadInvoiceHtml"
+              :disabled="downloadingInvoicePdf"
+              class="inline-flex items-center justify-center gap-1.5 min-h-[44px] px-3 py-2.5 rounded-xl border border-slate-300 bg-white text-slate-700 text-sm font-medium hover:bg-slate-50 active:scale-[0.98] transition-colors cursor-pointer touch-manipulation select-none disabled:opacity-50"
+              title="Për bashkëngjitje në email (HTML)"
+            >
+              HTML
             </button>
           </div>
         </div>
@@ -794,7 +804,8 @@ export default {
       showInvoiceModal: false,
       invoiceHtml: '',
       invoiceShareText: '',
-      invoiceOrderNumber: ''
+      invoiceOrderNumber: '',
+      downloadingInvoicePdf: false
     }
   },
   computed: {
@@ -1868,7 +1879,65 @@ export default {
       w.focus()
       setTimeout(() => { w.print(); w.close() }, 300)
     },
-    downloadInvoice() {
+    /**
+     * Shkarkim si PDF — Viber/WhatsApp e pranojnë PDF; .html shpesh “corrupted”.
+     * Gmail (mailto me tekst) mbetet i paprekur.
+     */
+    async downloadInvoice() {
+      if (!this.invoiceHtml || this.downloadingInvoicePdf) return
+      const fileBase = this.invoiceOrderNumber ? `Fature-${this.invoiceOrderNumber}` : 'Fature-AronTrade'
+      this.downloadingInvoicePdf = true
+      let iframe = null
+      try {
+        iframe = document.createElement('iframe')
+        iframe.setAttribute('title', 'pdf-source')
+        iframe.setAttribute(
+          'style',
+          'position:fixed;left:-9999px;top:0;width:840px;height:2000px;border:0;opacity:0;pointer-events:none'
+        )
+        document.body.appendChild(iframe)
+        const doc = iframe.contentDocument
+        if (!doc) throw new Error('iframe document')
+        doc.open()
+        doc.write(this.invoiceHtml)
+        doc.close()
+        await new Promise((resolve) => {
+          const finish = () => resolve()
+          iframe.onload = finish
+          setTimeout(finish, 400)
+        })
+        if (doc.fonts && doc.fonts.ready) {
+          await doc.fonts.ready.catch(() => {})
+        }
+        const mod = await import('html2pdf.js')
+        const html2pdf = mod.default
+        await html2pdf()
+          .set({
+            margin: [6, 6, 6, 6],
+            filename: `${fileBase}.pdf`,
+            image: { type: 'jpeg', quality: 0.94 },
+            html2canvas: {
+              scale: 2,
+              logging: false,
+              useCORS: true,
+              letterRendering: true,
+              allowTaint: false
+            },
+            jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
+            pagebreak: { mode: ['css', 'legacy'] }
+          })
+          .from(doc.body)
+          .save()
+      } catch (e) {
+        console.error('Invoice PDF:', e)
+        this.downloadInvoiceHtml()
+        alert('PDF nuk u gjenerua; u shkarkua .html. Për Viber/WhatsApp: Printo → Ruaj si PDF, pastaj bashkëngjitni atë skedar.')
+      } finally {
+        if (iframe && iframe.parentNode) iframe.parentNode.removeChild(iframe)
+        this.downloadingInvoicePdf = false
+      }
+    },
+    downloadInvoiceHtml() {
       if (!this.invoiceHtml) return
       try {
         const blob = new Blob([this.invoiceHtml], { type: 'text/html;charset=utf-8' })
@@ -1884,7 +1953,7 @@ export default {
         document.body.removeChild(a)
         URL.revokeObjectURL(url)
       } catch (e) {
-        console.error('Error downloading invoice:', e)
+        console.error('Error downloading invoice HTML:', e)
         alert('Nuk u arrit të shkarkohet dokumenti. Provoni përsëri.')
       }
     },
