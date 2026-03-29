@@ -972,11 +972,11 @@ export default {
       const q = parseFloat(item.quantity) || 0
       if (soldPkg && ppk > 0) {
         const total = q * ppk
+        const nbsp = '\u00A0'
         const html =
           '<span class="inv-qty-stack">' +
-          '<span class="inv-qty-total">' + fmtQty(total) + '</span>' +
           '<span class="inv-qty-breakdown">' +
-          fmtQty(q) + ' komplete × ' + ppk + ' cp = ' + fmtQty(total) + ' cp' +
+          fmtQty(q) + nbsp + 'komplete' + nbsp + '×' + nbsp + ppk + nbsp + 'cp' + nbsp + '=' + nbsp + fmtQty(total) + nbsp + 'cp' +
           '</span></span>'
         const plain = fmtQty(q) + ' komplete × ' + ppk + ' cp = ' + fmtQty(total) + ' cp'
         return { qtyHtml: html, qtyPlain: plain, unit: 'Copë' }
@@ -1554,33 +1554,86 @@ export default {
       const amountBeforeVat = hasVat && order.total_amount ? parseFloat(order.total_amount) / 1.18 : (order.amount_before_vat != null ? parseFloat(order.amount_before_vat) : (order.total_amount ? parseFloat(order.total_amount) : null))
       const vatAmount = hasVat && order.total_amount ? parseFloat(order.total_amount) - (parseFloat(order.total_amount) / 1.18) : (order.vat_amount != null ? parseFloat(order.vat_amount) : 0)
       const totalItemDiscounts = (order.items || []).reduce((sum, item) => sum + (parseFloat(item.discount_amount) || 0), 0)
+      const orderDiscount = parseFloat(order.discount_amount) || 0
+      const hasDiscount = totalItemDiscounts > 0.009 || orderDiscount > 0.009
+      const totalDiscountAmount = totalItemDiscounts + orderDiscount
       const valueBeforeDiscount = (order.subtotal != null ? parseFloat(order.subtotal) : null) || (order.items || []).reduce((s, i) => s + (parseFloat(i.total_price) || 0), 0)
 
-      const itemsRows = (order.items || [])
-        .map((item, idx) => {
-          const barcode = (item.barcode != null && item.barcode !== '') ? String(item.barcode) : (item.product && item.product.barcode != null && item.product.barcode !== '' ? String(item.product.barcode) : '')
-          const qty = parseFloat(item.quantity) || 1
-          const qp = this.invoiceLineQtyParts(item, fmtQty)
-          const soldPkg = item.sold_by_package === true || item.sold_by_package === 1
-          const ppk = parseInt(item.pieces_per_package, 10)
-          const piecesForLine = soldPkg && ppk > 0 ? qty * ppk : qty
-          const unitPrice = item.unit_price != null ? parseFloat(item.unit_price) : null
-          const lineTotal = item.total_price != null ? parseFloat(item.total_price) : (unitPrice ? unitPrice * piecesForLine : 0)
-          const unitPriceNoVat = hasVat && unitPrice ? unitPrice / 1.18 : unitPrice
-          const discountPct = 0
-          return '<tr>' +
-            '<td class="inv-num">' + (idx + 1) + '</td>' +
-            '<td class="inv-code">' + (barcode || '-') + '</td>' +
-            '<td class="inv-desc">' + (item.product_name || '') + '</td>' +
-            '<td class="inv-qty">' + qp.qtyHtml + '</td>' +
-            '<td class="inv-unit">' + qp.unit + '</td>' +
-            '<td class="inv-num">' + (unitPriceNoVat != null ? fmtNum(unitPriceNoVat) : '-') + '</td>' +
-            '<td class="inv-num">' + fmtNum(discountPct) + '</td>' +
-            '<td class="inv-num">' + (hasVat ? vatRate : 0) + '</td>' +
+      const invoiceItemRowCells = (item, idx) => {
+        const barcode = (item.barcode != null && item.barcode !== '') ? String(item.barcode) : (item.product && item.product.barcode != null && item.product.barcode !== '' ? String(item.product.barcode) : '')
+        const qty = parseFloat(item.quantity) || 1
+        const qp = this.invoiceLineQtyParts(item, fmtQty)
+        const soldPkg = item.sold_by_package === true || item.sold_by_package === 1
+        const ppk = parseInt(item.pieces_per_package, 10)
+        const piecesForLine = soldPkg && ppk > 0 ? qty * ppk : qty
+        const unitPrice = item.unit_price != null ? parseFloat(item.unit_price) : null
+        const lineTotal = item.total_price != null ? parseFloat(item.total_price) : (unitPrice ? unitPrice * piecesForLine : 0)
+        const unitPriceNoVat = hasVat && unitPrice ? unitPrice / 1.18 : unitPrice
+        const discountPct = 0
+        const base = '<td class="inv-num">' + (idx + 1) + '</td>' +
+          '<td class="inv-code">' + (barcode || '-') + '</td>' +
+          '<td class="inv-desc">' + (item.product_name || '') + '</td>' +
+          '<td class="inv-qty">' + qp.qtyHtml + '</td>' +
+          '<td class="inv-unit">' + qp.unit + '</td>'
+        if (hasVat) {
+          let rest = '<td class="inv-num">' + (unitPriceNoVat != null ? fmtNum(unitPriceNoVat) : '-') + '</td>'
+          if (hasDiscount) rest += '<td class="inv-num">' + fmtNum(discountPct) + '</td>'
+          rest += '<td class="inv-num">' + vatRate + '</td>' +
             '<td class="inv-num">' + (unitPrice != null ? fmtNum(unitPrice) : '-') + '</td>' +
-            '<td class="inv-num">' + (lineTotal > 0 ? fmtNum(lineTotal) : '-') + '</td>' +
-            '</tr>'
-        })
+            '<td class="inv-num">' + (lineTotal > 0 ? fmtNum(lineTotal) : '-') + '</td>'
+          return base + rest
+        }
+        let rest = ''
+        if (hasDiscount) rest += '<td class="inv-num">' + fmtNum(discountPct) + '</td>'
+        rest += '<td class="inv-num">' + (unitPrice != null ? fmtNum(unitPrice) : '-') + '</td>' +
+          '<td class="inv-num">' + (lineTotal > 0 ? fmtNum(lineTotal) : '-') + '</td>'
+        return base + rest
+      }
+
+      const invoiceItemRowTabs = (item, idx) => {
+        const barcode = (item.barcode != null && item.barcode !== '') ? String(item.barcode) : (item.product && item.product.barcode ? String(item.product.barcode) : '-')
+        const qty = parseFloat(item.quantity) || 1
+        const qp = this.invoiceLineQtyParts(item, fmtQty)
+        const soldPkg = item.sold_by_package === true || item.sold_by_package === 1
+        const ppk = parseInt(item.pieces_per_package, 10)
+        const piecesForLine = soldPkg && ppk > 0 ? qty * ppk : qty
+        const unitPrice = item.unit_price != null ? parseFloat(item.unit_price) : null
+        const lineTotal = item.total_price != null ? parseFloat(item.total_price) : (unitPrice ? unitPrice * piecesForLine : 0)
+        const unitPriceNoVat = hasVat && unitPrice ? unitPrice / 1.18 : unitPrice
+        const discountPct = 0
+        const parts = [
+          String(idx + 1),
+          barcode || '-',
+          item.product_name || '',
+          qp.qtyPlain,
+          qp.unit
+        ]
+        if (hasVat) {
+          parts.push(unitPriceNoVat != null ? fmtNum(unitPriceNoVat) : '-')
+          if (hasDiscount) parts.push(fmtNum(discountPct))
+          parts.push(String(vatRate))
+          parts.push(unitPrice != null ? fmtNum(unitPrice) : '-')
+          parts.push(lineTotal > 0 ? fmtNum(lineTotal) : '-')
+        } else {
+          if (hasDiscount) parts.push(fmtNum(discountPct))
+          parts.push(unitPrice != null ? fmtNum(unitPrice) : '-')
+          parts.push(lineTotal > 0 ? fmtNum(lineTotal) : '-')
+        }
+        return parts.join('\t')
+      }
+
+      const itemsHeaderTabs = 'No\tBarcode\tEmertimi\tSasia\tNjesia' +
+        (hasVat ? '\tCmimi pa TVSH' : '') +
+        (hasDiscount ? '\tRabati %' : '') +
+        (hasVat ? '\tTVSH %\tCmimi me TVSH\tVlera me TVSH' : '\tCmimi\tVlera')
+
+      const itemsHeaderHtml = '<th>No</th><th>Barcode</th><th>Emertimi</th><th>Sasia</th><th>Njesia</th>' +
+        (hasVat ? '<th>Çmimi pa TVSH</th>' : '') +
+        (hasDiscount ? '<th>Rabati %</th>' : '') +
+        (hasVat ? '<th>TVSH %</th><th>Çmimi me TVSH</th><th>Vlera me TVSH</th>' : '<th>Çmimi</th><th>Vlera</th>')
+
+      const itemsRows = (order.items || [])
+        .map((item, idx) => '<tr>' + invoiceItemRowCells(item, idx) + '</tr>')
         .join('')
 
       const buyerName = (order.business_name || order.customer_name || 'N/A').trim()
@@ -1593,25 +1646,14 @@ export default {
       const taxVat18 = hasVat ? fmtNum(vatAmount) : '0.00'
       const taxVal18 = order.total_amount ? fmtNum(parseFloat(order.total_amount)) : '0.00'
       const valBeforeDiscount = valueBeforeDiscount != null ? fmtNum(valueBeforeDiscount) : '0.00'
-      const discountVal = totalItemDiscounts > 0 ? fmtNum(totalItemDiscounts) : '0.00'
+      const discountVal = hasDiscount ? fmtNum(totalDiscountAmount) : '0.00'
       const valNoVat = amountBeforeVat != null ? fmtNum(amountBeforeVat) : '0.00'
       const paymentDone = isPaid ? (order.total_amount ? fmtNum(parseFloat(order.total_amount)) : '0.00') : '0.00'
       const totalForPay = order.total_amount ? fmtNum(parseFloat(order.total_amount)) : '-'
       const mbetjaVal = order.total_amount ? (isPaid ? '0.00' : fmtNum(parseFloat(order.total_amount))) : '-'
 
       const itemsTextLines = (order.items || [])
-        .map((item, idx) => {
-          const barcode = (item.barcode != null && item.barcode !== '') ? String(item.barcode) : (item.product && item.product.barcode ? String(item.product.barcode) : '-')
-          const qty = parseFloat(item.quantity) || 1
-          const qp = this.invoiceLineQtyParts(item, fmtQty)
-          const soldPkg = item.sold_by_package === true || item.sold_by_package === 1
-          const ppk = parseInt(item.pieces_per_package, 10)
-          const piecesForLine = soldPkg && ppk > 0 ? qty * ppk : qty
-          const unitPrice = item.unit_price != null ? parseFloat(item.unit_price) : null
-          const lineTotal = item.total_price != null ? parseFloat(item.total_price) : (unitPrice ? unitPrice * piecesForLine : 0)
-          const unitPriceNoVat = hasVat && unitPrice ? unitPrice / 1.18 : unitPrice
-          return (idx + 1) + '\t' + (barcode || '-') + '\t' + (item.product_name || '') + '\t' + qp.qtyPlain + '\t' + qp.unit + '\t' + (unitPriceNoVat != null ? fmtNum(unitPriceNoVat) : '-') + '\t0.00\t' + (hasVat ? 18 : 0) + '\t' + (unitPrice != null ? fmtNum(unitPrice) : '-') + '\t' + (lineTotal > 0 ? fmtNum(lineTotal) : '-')
-        })
+        .map((item, idx) => invoiceItemRowTabs(item, idx))
         .join('\n')
 
       const fullInvoiceText =
@@ -1632,15 +1674,15 @@ export default {
         (order.phone ? 'Telefon: ' + order.phone + '\n' : '') + '\n' +
         'Data fatura\tKushtet\tData e skadimit\tUser\tReferenca\tLokacioni\n' +
         invoiceDateFormatted + '\t\t' + expDate + '\tKlient\t\t' + (order.location_unit_name || '-') + '\n\n' +
-        'No\tBarcode\tEmertimi\tSasia\tNjesia\tCmimi pa TVSH\tRabati %\tTVSH %\tCmimi me TVSH\tVlera me TVSH\n' +
+        itemsHeaderTabs + '\n' +
         itemsTextLines + '\n\n' +
-        'Normat Tatimore\tBaza\tTVSH\tVlera\n' +
-        'TVSH 0%\t0.00\t0.00\t0.00\n' +
-        'TVSH 18%\t' + taxBase18 + '\t' + taxVat18 + '\t' + taxVal18 + '\n\n' +
-        'Vlera para zbritjes\t' + valBeforeDiscount + '\n' +
-        'Rabati\t' + discountVal + '\n' +
-        'Vlera pa TVSH\t' + valNoVat + '\n' +
-        'TVSH\t' + taxVat18 + '\n' +
+        (hasVat
+          ? 'Normat Tatimore\tBaza\tTVSH\tVlera\n' +
+            'TVSH 0%\t0.00\t0.00\t0.00\n' +
+            'TVSH 18%\t' + taxBase18 + '\t' + taxVat18 + '\t' + taxVal18 + '\n\n'
+          : '') +
+        (hasDiscount ? 'Vlera para zbritjes\t' + valBeforeDiscount + '\nRabati\t' + discountVal + '\n' : '') +
+        (hasVat ? 'Vlera pa TVSH\t' + valNoVat + '\nTVSH\t' + taxVat18 + '\n' : '') +
         'Vlera për pagesë (EUR)\t' + totalForPay + '\n' +
         'Pagesa\t' + paymentDone + '\n' +
         'Mbetja\t' + mbetjaVal + '\n\n' +
@@ -1656,7 +1698,7 @@ export default {
         '*{box-sizing:border-box}' +
         'body{font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;padding:24px 32px;color:#111827;font-size:13px;line-height:1.4;max-width:900px;margin:0 auto}' +
         '.inv-table-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch;margin-bottom:16px}' +
-        '@media (max-width:768px){body{padding:12px 16px;font-size:12px;max-width:100%}.inv-header{flex-direction:column;gap:16px;align-items:stretch}.inv-seller{min-width:auto}.inv-company{font-size:16px}.inv-header>div:last-child{text-align:left}.inv-nr{text-align:left}.inv-meta{font-size:11px}.inv-meta th,.inv-meta td{padding:6px 8px}.inv-table-wrap{margin-left:-16px;margin-right:-16px;padding:0 16px}.inv-table{font-size:11px;min-width:720px}.inv-table th,.inv-table td{padding:6px 4px}.inv-tax{max-width:100%;font-size:11px}.inv-totals{max-width:100%;font-size:12px}.inv-footer{flex-direction:column;gap:24px;margin-top:24px;align-items:stretch}.inv-sig{min-width:auto;text-align:left}.inv-sig .line{margin-top:16px}.no-print{margin-top:16px;padding:12px}.no-print h3{font-size:13px}.no-print .btns{flex-direction:column;gap:8px}.no-print button{width:100%;padding:12px 18px;font-size:13px}}' +
+        '@media (max-width:768px){body{padding:12px 16px;font-size:12px;max-width:100%}.inv-header{flex-direction:column;gap:16px;align-items:stretch}.inv-seller{min-width:auto}.inv-company{font-size:16px}.inv-header>div:last-child{text-align:left}.inv-nr{text-align:left}.inv-meta{font-size:11px}.inv-meta th,.inv-meta td{padding:6px 8px}.inv-table-wrap{margin-left:-16px;margin-right:-16px;padding:0 16px}.inv-table{font-size:11px;min-width:720px}.inv-table.inv-table--simple{min-width:480px}.inv-table th,.inv-table td{padding:6px 4px}.inv-tax{max-width:100%;font-size:11px}.inv-totals{max-width:100%;font-size:12px}.inv-footer{flex-direction:column;gap:24px;margin-top:24px;align-items:stretch}.inv-sig{min-width:auto;text-align:left}.inv-sig .line{margin-top:16px}.no-print{margin-top:16px;padding:12px}.no-print h3{font-size:13px}.no-print .btns{flex-direction:column;gap:8px}.no-print button{width:100%;padding:12px 18px;font-size:13px}}' +
         '@media print{body{padding:12px 16px}.no-print{display:none !important}}' +
         '.inv-header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:20px;padding-bottom:16px;border-bottom:2px solid #0d9488}' +
         '.inv-title{font-size:11px;color:#6b7280;text-transform:uppercase;letter-spacing:0.05em;margin-bottom:2px}' +
@@ -1672,9 +1714,8 @@ export default {
         '.inv-table th{background:#0d9488;color:#fff;font-weight:600;text-align:center}' +
         '.inv-table .inv-num{text-align:right}.inv-table .inv-desc{text-align:left}.inv-table .inv-code{text-align:center}' +
         '.inv-table .inv-qty{text-align:right;vertical-align:top}.inv-qty-stack{display:block;text-align:right}' +
-        '.inv-qty-total{display:block;font-weight:700;font-variant-numeric:tabular-nums;color:#0f172a;font-size:12px}' +
-        '.inv-qty-breakdown{display:block;font-size:10px;color:#64748b;margin-top:4px;line-height:1.35;font-weight:500;font-variant-numeric:tabular-nums}' +
-        '@media (max-width:768px){.inv-qty-total{font-size:11px}.inv-qty-breakdown{font-size:9px}}' +
+        '.inv-qty-breakdown{display:block;font-size:12px;line-height:1.35;font-weight:700;font-variant-numeric:tabular-nums;color:#0f172a;letter-spacing:-0.01em;white-space:nowrap}' +
+        '@media (max-width:768px){.inv-qty-breakdown{font-size:11px}}' +
         '.inv-tax{width:100%;max-width:320px;margin-left:auto;border-collapse:collapse;font-size:12px;margin-bottom:12px}' +
         '.inv-tax th,.inv-tax td{border:1px solid #e2e8f0;padding:6px 10px;text-align:right}' +
         '.inv-tax th{background:#f1f5f9;font-weight:600}' +
@@ -1720,21 +1761,24 @@ export default {
         '<tr><th>Data fatura</th><th>Kushtet</th><th>Data e skadimit</th><th>User</th><th>Referenca</th><th>Lokacioni</th></tr>' +
         '<tr><td>' + invoiceDateFormatted + '</td><td></td><td>' + expDate + '</td><td>Klient</td><td></td><td>' + (order.location_unit_name || '-') + '</td></tr>' +
         '</table></div>' +
-        '<div class="inv-table-wrap"><table class="inv-table">' +
-        '<thead><tr>' +
-        '<th>No</th><th>Barcode</th><th>Emertimi</th><th>Sasia</th><th>Njesia</th>' +
-        '<th>Cmimi pa TVSH</th><th>Rabati %</th><th>TVSH %</th><th>Cmimi me TVSH</th><th>Vlera me TVSH</th>' +
-        '</tr></thead><tbody>' + itemsRows + '</tbody></table></div>' +
-        '<table class="inv-tax">' +
-        '<tr><th>Normat Tatimore</th><th>Baza</th><th>TVSH</th><th>Vlera</th></tr>' +
-        '<tr><td>TVSH 0%</td><td>0.00</td><td>0.00</td><td>0.00</td></tr>' +
-        '<tr><td>TVSH 18%</td><td>' + taxBase18 + '</td><td>' + taxVat18 + '</td><td>' + taxVal18 + '</td></tr>' +
-        '</table>' +
+        '<div class="inv-table-wrap"><table class="inv-table' + (!hasVat && !hasDiscount ? ' inv-table--simple' : '') + '">' +
+        '<thead><tr>' + itemsHeaderHtml + '</tr></thead><tbody>' + itemsRows + '</tbody></table></div>' +
+        (hasVat
+          ? '<table class="inv-tax">' +
+            '<tr><th>Normat Tatimore</th><th>Baza</th><th>TVSH</th><th>Vlera</th></tr>' +
+            '<tr><td>TVSH 0%</td><td>0.00</td><td>0.00</td><td>0.00</td></tr>' +
+            '<tr><td>TVSH 18%</td><td>' + taxBase18 + '</td><td>' + taxVat18 + '</td><td>' + taxVal18 + '</td></tr>' +
+            '</table>'
+          : '') +
         '<div class="inv-totals">' +
-        '<div class="row"><span>Vlera para zbritjes</span><span>' + valBeforeDiscount + '</span></div>' +
-        '<div class="row"><span>Rabati</span><span>' + discountVal + '</span></div>' +
-        '<div class="row"><span>Vlera pa TVSH</span><span>' + valNoVat + '</span></div>' +
-        '<div class="row"><span>TVSH</span><span>' + taxVat18 + '</span></div>' +
+        (hasDiscount
+          ? '<div class="row"><span>Vlera para zbritjes</span><span>' + valBeforeDiscount + '</span></div>' +
+            '<div class="row"><span>Rabati</span><span>' + discountVal + '</span></div>'
+          : '') +
+        (hasVat
+          ? '<div class="row"><span>Vlera pa TVSH</span><span>' + valNoVat + '</span></div>' +
+            '<div class="row"><span>TVSH</span><span>' + taxVat18 + '</span></div>'
+          : '') +
         '<div class="row total"><span>Vlera për pagesë (EUR)</span><span>' + (order.total_amount ? fmtNum(parseFloat(order.total_amount)) : '-') + '</span></div>' +
         '<div class="row"><span>Pagesa</span><span>' + paymentDone + '</span></div>' +
         '<div class="row"><span>Mbetja</span><span>' + (order.total_amount ? (isPaid ? '0.00' : fmtNum(parseFloat(order.total_amount))) : '-') + '</span></div>' +
