@@ -19,24 +19,26 @@
       <div class="pointer-events-none absolute inset-x-0 bottom-0 h-16 bg-gradient-to-t from-black/35 via-black/10 to-transparent xl:h-24 xl:from-black/45"></div>
       <div
         v-if="displayPrice != null"
-        class="absolute left-1.5 top-1.5 z-10 flex max-w-[92%] flex-nowrap items-center gap-1 xl:left-3 xl:top-3 xl:gap-2"
+        class="absolute left-1 top-1 z-10 flex max-w-[min(58%,7rem)] flex-nowrap items-start gap-0 xl:left-3 xl:top-3 xl:max-w-[92%] xl:items-center xl:gap-2"
       >
-        <div class="inline-flex shrink-0 items-center gap-1 rounded-lg bg-gradient-to-r from-rose-600 to-red-600 px-2 py-1 text-[10px] font-bold text-white shadow-md ring-1 ring-red-800/40 backdrop-blur-sm xl:gap-1.5 xl:rounded-xl xl:px-3 xl:py-1.5 xl:text-sm xl:shadow-lg">
-          <span>{{ formatPrice(displayPrice) }}</span>
+        <div class="inline-flex shrink-0 items-center gap-0.5 rounded-md bg-gradient-to-r from-rose-600 to-red-600 px-1.5 py-0.5 text-[9px] font-bold tabular-nums leading-tight text-white shadow-sm ring-1 ring-red-900/30 backdrop-blur-sm xl:gap-1.5 xl:rounded-xl xl:px-3 xl:py-1.5 xl:text-sm xl:shadow-lg xl:ring-1 xl:ring-red-800/40">
+          <span class="max-xl:truncate">{{ formatPrice(displayPrice) }}</span>
           <button
             v-if="hasPackageInfo"
             @mouseenter="showInfoTooltip = true"
             @mouseleave="showInfoTooltip = false"
             @click.stop="showInfoTooltip = !showInfoTooltip"
-            class="relative shrink-0 w-5 h-5 rounded-full bg-blue-500 hover:bg-blue-600 active:bg-blue-700 text-white flex items-center justify-center text-xs font-bold shadow-md hover:shadow-lg ring-2 ring-blue-400/50 hover:ring-blue-300 transition-all duration-200 hover:scale-110 active:scale-95"
+            type="button"
+            class="relative shrink-0 flex h-3.5 w-3.5 items-center justify-center rounded-full bg-blue-600 text-[7px] font-bold leading-none text-white shadow ring-1 ring-blue-400/60 active:scale-95 xl:h-5 xl:w-5 xl:text-xs xl:shadow-md xl:ring-2 xl:ring-blue-400/50 xl:hover:scale-110"
             title="Informacion për çmimin"
+            aria-label="Shfaq llogaritjen e kompletit"
           >
             i
           </button>
           <!-- Tooltip me llogaritjen -->
           <div
             v-if="showInfoTooltip && hasPackageInfo"
-            class="absolute top-full left-0 mt-2 w-64 p-3 bg-gradient-to-br from-blue-50 to-blue-100 border-2 border-blue-300 text-blue-900 text-xs rounded-xl shadow-2xl z-20 whitespace-normal backdrop-blur-sm animate-in fade-in slide-in-from-top-2 duration-200"
+            class="absolute left-0 top-full z-20 mt-1.5 w-[min(calc(100vw-2rem),16rem)] max-xl:origin-top-left p-2.5 xl:mt-2 xl:w-64 xl:p-3 bg-gradient-to-br from-blue-50 to-blue-100 border-2 border-blue-300 text-blue-900 text-[11px] xl:text-xs rounded-lg xl:rounded-xl shadow-2xl whitespace-normal backdrop-blur-sm"
             @mouseenter="showInfoTooltip = true"
             @mouseleave="showInfoTooltip = false"
           >
@@ -52,22 +54,6 @@
             </div>
           </div>
         </div>
-        <!-- Telefon: tekst i plotë; tablet (sm–lg): i njëjti; desktop i gjerë: truncate -->
-        <span
-          v-if="cartStore.client"
-          class="inline-flex xl:hidden items-center px-2 py-0.5 rounded-full bg-black/65 text-[11px] font-semibold text-amber-100 max-w-[min(100%,14rem)]"
-          style="text-shadow: 0 0 1px rgba(0,0,0,0.6);"
-        >
-          Çmimet vetëm për {{ clientDisplayName }}
-        </span>
-        <span
-          v-if="cartStore.client"
-          class="hidden xl:inline-flex items-center px-2 py-0.5 rounded-full bg-black/55 text-[10px] font-semibold text-amber-100 min-w-0 max-w-[220px] truncate"
-          style="text-shadow: 0 0 1px rgba(0,0,0,0.6);"
-          :title="'Çmimet vetëm për ' + clientDisplayName"
-        >
-          Çmimet vetëm për {{ clientDisplayName }}
-        </span>
       </div>
       <div class="absolute bottom-1.5 right-1.5 z-10 xl:bottom-3 xl:right-3">
         <span class="inline-flex max-w-[calc(100%-0.5rem)] items-center truncate rounded-full bg-black/60 px-1.5 py-0.5 text-[9px] font-medium text-slate-100 backdrop-blur-sm xl:px-2.5 xl:py-1 xl:text-[11px]">
@@ -316,11 +302,6 @@ export default {
       if (sizeStr) return sizeStr
       if (litersStr) return litersStr
       return ''
-    },
-    // Emri i klientit për të shfaqur poshtë çmimit
-    clientDisplayName() {
-      if (!this.cartStore.client) return ''
-      return this.cartStore.client.store_name || this.cartStore.client.name || 'Klient'
     },
     // Çmimi për klientin e identifikuar: nga menaxhmenti GT ose nga produkti
     displayPrice() {
