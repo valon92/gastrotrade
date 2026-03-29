@@ -37,7 +37,7 @@
           </button>
         </div>
       </div>
-      <div class="absolute bottom-1.5 right-1.5 z-10 xl:bottom-3 xl:right-3">
+      <div class="absolute z-10 hidden xl:block xl:bottom-3 xl:right-3">
         <span class="inline-flex max-w-[calc(100%-0.5rem)] items-center truncate rounded-full bg-black/60 px-1.5 py-0.5 text-[9px] font-medium text-slate-100 backdrop-blur-sm xl:px-2.5 xl:py-1 xl:text-[11px]">
           {{ product.category?.name || 'Produkt' }}
         </span>
