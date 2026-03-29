@@ -739,9 +739,10 @@
               type="button"
               @click="downloadInvoice"
               :disabled="downloadingInvoicePdf"
+              title="Hap printimin; zgjidhni «Ruaj si PDF» për skedar vektor (tekst + ngjyra + vija si në ekran)."
               class="inline-flex items-center justify-center gap-1.5 min-h-[44px] px-4 py-2.5 rounded-xl bg-blue-600 text-white text-sm font-medium shadow-sm hover:bg-blue-700 active:scale-[0.98] transition-colors cursor-pointer touch-manipulation select-none disabled:opacity-60 disabled:pointer-events-none"
             >
-              {{ downloadingInvoicePdf ? '⏳ PDF gjenerim…' : '⬇️ Shkarko PDF' }}
+              {{ downloadingInvoicePdf ? '…' : '⬇️ PDF (Ruaj si PDF)' }}
             </button>
             <button
               type="button"
@@ -1736,10 +1737,9 @@ export default {
         '<title>Faturë ' + (order.order_number || 'N/A') + '</title>' +
         '<style>' +
         '*{box-sizing:border-box}' +
-        'body{font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;padding:24px 32px;color:#111827;font-size:13px;line-height:1.4;max-width:900px;margin:0 auto}' +
+        'html,body{-webkit-print-color-adjust:exact;print-color-adjust:exact;color-adjust:exact}' +
+        'body{font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;padding:24px 32px;color:#111827;font-size:13px;line-height:1.4;max-width:900px;margin:0 auto;background:#fff}' +
         '.inv-table-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch;margin-bottom:16px}' +
-        '@media (max-width:768px){body{padding:12px 16px;font-size:12px;max-width:100%}.inv-header{flex-direction:column;gap:16px;align-items:stretch}.inv-seller{min-width:auto}.inv-company{font-size:16px}.inv-header>div:last-child{text-align:left}.inv-nr{text-align:left}.inv-meta{font-size:11px}.inv-meta th,.inv-meta td{padding:6px 8px}.inv-table-wrap{margin-left:-16px;margin-right:-16px;padding:0 16px}.inv-table{font-size:11px;min-width:720px}.inv-table.inv-table--simple{min-width:480px}.inv-table th,.inv-table td{padding:6px 4px}.inv-tax{max-width:100%;font-size:11px}.inv-totals{max-width:100%;font-size:12px}.inv-footer{flex-direction:column;gap:24px;margin-top:24px;align-items:stretch}.inv-sig{min-width:auto;text-align:left}.inv-sig .line{margin-top:16px}.no-print{margin-top:16px;padding:12px}.no-print h3{font-size:13px}.no-print .btns{flex-direction:column;gap:8px}.no-print button{width:100%;padding:12px 18px;font-size:13px}}' +
-        '@media print{body{padding:12px 16px}.no-print{display:none !important}}' +
         '.inv-header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:20px;padding-bottom:16px;border-bottom:2px solid #0d9488}' +
         '.inv-title{font-size:11px;color:#6b7280;text-transform:uppercase;letter-spacing:0.05em;margin-bottom:2px}' +
         '.inv-seller{min-width:200px}.inv-company{font-weight:700;font-size:18px;color:#0f766e;margin:0 0 8px 0;display:block}' +
@@ -1759,7 +1759,6 @@ export default {
         '.inv-qty-stack--pkg .inv-qty-line1{font-size:12px;font-weight:600;color:#0f172a;letter-spacing:-0.02em}' +
         '.inv-qty-stack--pkg .inv-qty-line2{font-size:11px;font-weight:400;color:#64748b}' +
         '.inv-qty-stack--pkg .inv-qty-line3{font-size:12px;font-weight:800;color:#0f172a;letter-spacing:-0.02em}' +
-        '@media (max-width:768px){.inv-qty-stack--pkg{gap:4px}.inv-qty-stack--pkg .inv-qty-line1{font-size:11px;font-weight:600}.inv-qty-stack--pkg .inv-qty-line2{font-size:10px;font-weight:400;color:#64748b}.inv-qty-stack--pkg .inv-qty-line3{font-size:12px;font-weight:800;margin-top:1px}}' +
         '.inv-tax{width:100%;max-width:320px;margin-left:auto;border-collapse:collapse;font-size:12px;margin-bottom:12px}' +
         '.inv-tax th,.inv-tax td{border:1px solid #e2e8f0;padding:6px 10px;text-align:right}' +
         '.inv-tax th{background:#f1f5f9;font-weight:600}' +
@@ -1771,10 +1770,52 @@ export default {
         '.inv-sig .line{border-top:1px solid #111827;padding-top:4px;margin-top:32px;font-weight:600;font-size:12px}' +
         '.inv-sig .sub{font-size:11px;color:#64748b;margin-top:4px}' +
         '.inv-bank{font-size:12px;color:#64748b;margin-top:16px}' +
+        '.inv-pdf-hint{font-size:13px;color:#64748b;text-align:center;padding:20px 16px;margin:24px 0 0 0;border-top:1px solid #e2e8f0;background:#f8fafc;line-height:1.5}' +
+        '.inv-pdf-hint strong{color:#0f766e}' +
         '.no-print{margin-top:24px;padding:16px;border-top:2px solid #e2e8f0;text-align:center}' +
         '.no-print h3{margin-bottom:12px;font-size:14px;color:#475569}' +
         '.no-print .btns{display:flex;gap:8px;justify-content:center;flex-wrap:wrap}' +
         '.no-print button{padding:10px 18px;border:none;border-radius:8px;cursor:pointer;font-size:14px;font-weight:500}' +
+        '@page{size:A4;margin:12mm}' +
+        '@media print{' +
+        'body{padding:0!important;max-width:100%!important;margin:0!important;background:#fff!important}' +
+        '.inv-table-wrap{overflow:visible!important;margin-left:0!important;margin-right:0!important;padding:0!important;-webkit-overflow-scrolling:auto!important}' +
+        '.inv-table{min-width:0!important;width:100%!important;page-break-inside:auto}' +
+        '.inv-meta{page-break-inside:auto}' +
+        'thead{display:table-header-group}' +
+        'tbody tr{break-inside:avoid;page-break-inside:avoid}' +
+        '.inv-bleresi,.inv-totals,.inv-tax,.inv-footer,.inv-bank,.inv-sig{break-inside:avoid;page-break-inside:avoid}' +
+        '.inv-footer{border-top-color:#e2e8f0!important}' +
+        '.inv-header{border-bottom-color:#0d9488!important}' +
+        '.inv-table th{background:#0d9488!important;color:#fff!important}' +
+        '.inv-meta th,.inv-tax th{background:#f1f5f9!important}' +
+        '.inv-pdf-hint{display:none!important}' +
+        '.no-print{display:none!important}' +
+        '}' +
+        '@media (max-width:768px){' +
+        'body{padding:12px 16px;font-size:12px;max-width:100%}' +
+        '.inv-header{flex-direction:column;gap:16px;align-items:stretch}' +
+        '.inv-seller{min-width:auto}.inv-company{font-size:16px}' +
+        '.inv-header>div:last-child{text-align:left}.inv-nr{text-align:left}' +
+        '.inv-meta{font-size:11px}.inv-meta th,.inv-meta td{padding:6px 8px}' +
+        '.inv-table-wrap{margin-left:-16px;margin-right:-16px;padding:0 16px}' +
+        '.inv-table{font-size:11px;min-width:720px}' +
+        '.inv-table.inv-table--simple{min-width:480px}' +
+        '.inv-table th,.inv-table td{padding:6px 4px}' +
+        '.inv-tax{max-width:100%;font-size:11px}' +
+        '.inv-totals{max-width:100%;font-size:12px}' +
+        '.inv-footer{flex-direction:column;gap:24px;margin-top:24px;align-items:stretch}' +
+        '.inv-sig{min-width:auto;text-align:left}.inv-sig .line{margin-top:16px}' +
+        '.no-print{margin-top:16px;padding:12px}' +
+        '.no-print h3{font-size:13px}' +
+        '.no-print .btns{flex-direction:column;gap:8px}' +
+        '.no-print button{width:100%;padding:12px 18px;font-size:13px}' +
+        '.inv-pdf-hint{font-size:12px;padding:12px}' +
+        '.inv-qty-stack--pkg{gap:4px}' +
+        '.inv-qty-stack--pkg .inv-qty-line1{font-size:11px;font-weight:600}' +
+        '.inv-qty-stack--pkg .inv-qty-line2{font-size:10px;font-weight:400;color:#64748b}' +
+        '.inv-qty-stack--pkg .inv-qty-line3{font-size:12px;font-weight:800;margin-top:1px}' +
+        '}' +
         '</style></head><body data-invoice-text="' + (fullInvoiceText || '').replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;') + '">' +
         '<div class="inv-header">' +
         '<div class="inv-seller">' +
@@ -1881,117 +1922,39 @@ export default {
       setTimeout(() => { w.print(); w.close() }, 300)
     },
     /**
-     * Pritje për fonte / imazhe në dokumentin e faturës që PDF të përputhet me pamjen në ekran.
-     */
-    async waitForInvoiceDocReady(doc) {
-      if (!doc?.body) return
-      if (doc.fonts && doc.fonts.ready) {
-        await doc.fonts.ready.catch(() => {})
-      }
-      const imgs = [...(doc.images || [])]
-      await Promise.all(
-        imgs.map(
-          (img) =>
-            (img.complete && img.naturalHeight > 0) || (img.complete && !img.src)
-              ? Promise.resolve()
-              : new Promise((resolve) => {
-                  const done = () => resolve()
-                  const t = setTimeout(done, 5000)
-                  img.onload = () => {
-                    clearTimeout(t)
-                    done()
-                  }
-                  img.onerror = () => {
-                    clearTimeout(t)
-                    done()
-                  }
-                })
-        )
-      )
-      await new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)))
-    },
-    /**
-     * PDF nga i njëjti HTML që shihni në modal — iframe-i i dukshëm; html2canvas me rezolucion të lartë.
-     * (Rasterizim; për 100% vektor përdorni Printo → Ruaj si PDF.)
+     * PDF me cilësi maksimale: motori i printimit të shfletuesit (tekst vektor, ngjyra, kufij).
+     * Përdoruesi zgjedh «Ruaj si PDF» — identik me pamjen e printueshme A4, jo raster html2canvas.
      */
     async downloadInvoice() {
       if (!this.invoiceHtml || this.downloadingInvoicePdf) return
-      const fileBase = this.invoiceOrderNumber ? `Fature-${this.invoiceOrderNumber}` : 'Fature-AronTrade'
       this.downloadingInvoicePdf = true
-      let tempIframe = null
       try {
         await this.$nextTick()
-        let doc = null
-        const liveFrame = this.$refs.invoicePreviewFrame
-        if (liveFrame && liveFrame.contentDocument && liveFrame.contentDocument.body) {
-          doc = liveFrame.contentDocument
-        } else {
-          tempIframe = document.createElement('iframe')
-          tempIframe.setAttribute('title', 'pdf-source')
-          tempIframe.setAttribute(
-            'style',
-            'position:absolute;left:-9999px;top:0;width:900px;min-height:100vh;border:0;opacity:0;pointer-events:none;'
-          )
-          document.body.appendChild(tempIframe)
-          const d = tempIframe.contentDocument
-          if (!d) throw new Error('iframe document')
-          d.open()
-          d.write(this.invoiceHtml)
-          d.close()
-          await new Promise((resolve) => {
-            tempIframe.onload = () => resolve()
-            setTimeout(resolve, 500)
-          })
-          doc = d
+        const hintHtml =
+          '<p class="inv-pdf-hint" role="note"><strong>PDF cilësor:</strong> Në listën e printerave zgjidhni ' +
+          '<strong>Ruaj si PDF</strong> / <strong>Microsoft Print to PDF</strong> (ose ekuivalenti në macOS/iOS). ' +
+          'Mos përdorni skaner ose «Save as image» — dalja duhet të jetë PDF me tekst të zgjedhshëm.</p>'
+        const docHtml = this.invoiceHtml.replace('</body>', hintHtml + '</body>')
+        const w = window.open('', '_blank')
+        if (!w) {
+          alert('Lejoni hapjen e dritareve të reja për të krijuar PDF nga printimi.')
+          return
         }
-        const body = doc.body
-        if (!body) throw new Error('Invoice body missing')
-        await this.waitForInvoiceDocReady(doc)
-        const win = doc.defaultView
-        const innerW = Math.max(
-          doc.documentElement.clientWidth || 0,
-          body.scrollWidth || 0,
-          win?.innerWidth || 0,
-          400
-        )
-        const innerH = Math.max(
-          body.scrollHeight || 0,
-          body.offsetHeight || 0,
-          doc.documentElement.scrollHeight || 0,
-          200
-        )
-        const mod = await import('html2pdf.js')
-        const html2pdf = mod.default
-        await html2pdf()
-          .set({
-            margin: 0,
-            filename: `${fileBase}.pdf`,
-            image: { type: 'png', quality: 1 },
-            html2canvas: {
-              scale: 2,
-              logging: false,
-              useCORS: true,
-              allowTaint: false,
-              letterRendering: true,
-              backgroundColor: '#ffffff',
-              scrollX: 0,
-              scrollY: 0,
-              windowWidth: innerW,
-              windowHeight: innerH
-            },
-            jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait', compress: true },
-            pagebreak: { mode: ['avoid-all', 'css', 'legacy'] }
-          })
-          .from(body)
-          .save()
-      } catch (e) {
-        console.error('Invoice PDF:', e)
-        this.downloadInvoiceHtml()
-        alert('PDF nuk u gjenerua; u shkarkua .html. Për Viber/WhatsApp: Printo → Ruaj si PDF, pastaj bashkëngjitni atë skedar.')
+        w.document.open()
+        w.document.write(docHtml)
+        w.document.close()
+        w.focus()
+        const runPrint = () => {
+          try {
+            w.print()
+          } catch (e) {
+            console.error('Invoice PDF print:', e)
+            this.downloadInvoiceHtml()
+            alert('Printimi dështoi. U përpoq shkarkimi .html — ose përdorni butonin Printo.')
+          }
+        }
+        setTimeout(runPrint, 250)
       } finally {
-        if (tempIframe && tempIframe.parentNode) {
-          tempIframe.parentNode.removeChild(tempIframe)
-        }
         this.downloadingInvoicePdf = false
       }
     },
