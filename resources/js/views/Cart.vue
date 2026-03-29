@@ -956,11 +956,32 @@ export default {
     },
     formatOrderItemQuantity(item) {
       if (!item) return ''
-      if (item.sold_by_package && item.pieces_per_package) {
-        const totalPieces = item.quantity * item.pieces_per_package
-        return `${item.quantity} komplete (${totalPieces} copa)`
+      const soldPkg = item.sold_by_package === true || item.sold_by_package === 1
+      const ppk = Number(item.pieces_per_package)
+      const q = Number(item.quantity) || 0
+      if (soldPkg && ppk > 0) {
+        const total = q * ppk
+        return `${q} komplete × ${ppk} cp = ${total} cp`
       }
-      return `${item.quantity} copë`
+      return `${q} copë`
+    },
+    /** Rreshti i faturës: sasia e dukshme + njësia (kompletet zbërthehen në copë) */
+    invoiceLineQtyParts(item, fmtQty) {
+      const soldPkg = item.sold_by_package === true || item.sold_by_package === 1
+      const ppk = parseInt(item.pieces_per_package, 10)
+      const q = parseFloat(item.quantity) || 0
+      if (soldPkg && ppk > 0) {
+        const total = q * ppk
+        const html =
+          '<span class="inv-qty-stack">' +
+          '<span class="inv-qty-total">' + fmtQty(total) + '</span>' +
+          '<span class="inv-qty-breakdown">' +
+          fmtQty(q) + ' komplete × ' + ppk + ' cp = ' + fmtQty(total) + ' cp' +
+          '</span></span>'
+        const plain = fmtQty(q) + ' komplete × ' + ppk + ' cp = ' + fmtQty(total) + ' cp'
+        return { qtyHtml: html, qtyPlain: plain, unit: 'Copë' }
+      }
+      return { qtyHtml: fmtQty(q), qtyPlain: fmtQty(q), unit: 'Copë' }
     },
     getItemBaseTotal(item) {
       if (!item.price) return 0
@@ -1539,16 +1560,20 @@ export default {
         .map((item, idx) => {
           const barcode = (item.barcode != null && item.barcode !== '') ? String(item.barcode) : (item.product && item.product.barcode != null && item.product.barcode !== '' ? String(item.product.barcode) : '')
           const qty = parseFloat(item.quantity) || 1
+          const qp = this.invoiceLineQtyParts(item, fmtQty)
+          const soldPkg = item.sold_by_package === true || item.sold_by_package === 1
+          const ppk = parseInt(item.pieces_per_package, 10)
+          const piecesForLine = soldPkg && ppk > 0 ? qty * ppk : qty
           const unitPrice = item.unit_price != null ? parseFloat(item.unit_price) : null
-          const lineTotal = item.total_price != null ? parseFloat(item.total_price) : (unitPrice ? unitPrice * qty : 0)
+          const lineTotal = item.total_price != null ? parseFloat(item.total_price) : (unitPrice ? unitPrice * piecesForLine : 0)
           const unitPriceNoVat = hasVat && unitPrice ? unitPrice / 1.18 : unitPrice
           const discountPct = 0
           return '<tr>' +
             '<td class="inv-num">' + (idx + 1) + '</td>' +
             '<td class="inv-code">' + (barcode || '-') + '</td>' +
             '<td class="inv-desc">' + (item.product_name || '') + '</td>' +
-            '<td class="inv-qty">' + fmtQty(qty) + '</td>' +
-            '<td class="inv-unit">Copë</td>' +
+            '<td class="inv-qty">' + qp.qtyHtml + '</td>' +
+            '<td class="inv-unit">' + qp.unit + '</td>' +
             '<td class="inv-num">' + (unitPriceNoVat != null ? fmtNum(unitPriceNoVat) : '-') + '</td>' +
             '<td class="inv-num">' + fmtNum(discountPct) + '</td>' +
             '<td class="inv-num">' + (hasVat ? vatRate : 0) + '</td>' +
@@ -1578,10 +1603,14 @@ export default {
         .map((item, idx) => {
           const barcode = (item.barcode != null && item.barcode !== '') ? String(item.barcode) : (item.product && item.product.barcode ? String(item.product.barcode) : '-')
           const qty = parseFloat(item.quantity) || 1
+          const qp = this.invoiceLineQtyParts(item, fmtQty)
+          const soldPkg = item.sold_by_package === true || item.sold_by_package === 1
+          const ppk = parseInt(item.pieces_per_package, 10)
+          const piecesForLine = soldPkg && ppk > 0 ? qty * ppk : qty
           const unitPrice = item.unit_price != null ? parseFloat(item.unit_price) : null
-          const lineTotal = item.total_price != null ? parseFloat(item.total_price) : (unitPrice ? unitPrice * qty : 0)
+          const lineTotal = item.total_price != null ? parseFloat(item.total_price) : (unitPrice ? unitPrice * piecesForLine : 0)
           const unitPriceNoVat = hasVat && unitPrice ? unitPrice / 1.18 : unitPrice
-          return (idx + 1) + '\t' + (barcode || '-') + '\t' + (item.product_name || '') + '\t' + fmtQty(qty) + '\tCopë\t' + (unitPriceNoVat != null ? fmtNum(unitPriceNoVat) : '-') + '\t0.00\t' + (hasVat ? 18 : 0) + '\t' + (unitPrice != null ? fmtNum(unitPrice) : '-') + '\t' + (lineTotal > 0 ? fmtNum(lineTotal) : '-')
+          return (idx + 1) + '\t' + (barcode || '-') + '\t' + (item.product_name || '') + '\t' + qp.qtyPlain + '\t' + qp.unit + '\t' + (unitPriceNoVat != null ? fmtNum(unitPriceNoVat) : '-') + '\t0.00\t' + (hasVat ? 18 : 0) + '\t' + (unitPrice != null ? fmtNum(unitPrice) : '-') + '\t' + (lineTotal > 0 ? fmtNum(lineTotal) : '-')
         })
         .join('\n')
 
@@ -1642,6 +1671,10 @@ export default {
         '.inv-table th,.inv-table td{border:1px solid #e2e8f0;padding:6px 8px}' +
         '.inv-table th{background:#0d9488;color:#fff;font-weight:600;text-align:center}' +
         '.inv-table .inv-num{text-align:right}.inv-table .inv-desc{text-align:left}.inv-table .inv-code{text-align:center}' +
+        '.inv-table .inv-qty{text-align:right;vertical-align:top}.inv-qty-stack{display:block;text-align:right}' +
+        '.inv-qty-total{display:block;font-weight:700;font-variant-numeric:tabular-nums;color:#0f172a;font-size:12px}' +
+        '.inv-qty-breakdown{display:block;font-size:10px;color:#64748b;margin-top:4px;line-height:1.35;font-weight:500;font-variant-numeric:tabular-nums}' +
+        '@media (max-width:768px){.inv-qty-total{font-size:11px}.inv-qty-breakdown{font-size:9px}}' +
         '.inv-tax{width:100%;max-width:320px;margin-left:auto;border-collapse:collapse;font-size:12px;margin-bottom:12px}' +
         '.inv-tax th,.inv-tax td{border:1px solid #e2e8f0;padding:6px 10px;text-align:right}' +
         '.inv-tax th{background:#f1f5f9;font-weight:600}' +
