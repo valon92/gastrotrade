@@ -560,20 +560,71 @@
                       <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
                       {{ projectLibraryUploading ? 'Duke ngarkuar në skedar...' : 'Shto foto në Skedar' }}
                     </button>
-                    <span class="text-xs text-gray-500">Ngarkon foton në `public/images/Uploads` dhe e zgjedh automatikisht.</span>
+                    <span class="text-xs text-gray-500">Ngarkon në <code class="text-[11px] bg-gray-100 px-1 rounded">public/images/Uploads</code>. Mund të fshini foto të palexuara (jo të lidhura me produkt) për të mos mbushur skedarin.</span>
                   </div>
                   <div v-if="projectImagesLoading" class="text-sm text-gray-500">Duke ngarkuar...</div>
-                  <div v-else-if="projectImages.length" class="grid grid-cols-4 sm:grid-cols-6 md:grid-cols-8 gap-2 max-h-[70vh] overflow-y-auto">
-                    <button
-                      v-for="item in projectImages"
-                      :key="item.path"
-                      type="button"
-                      :class="['rounded-lg border-2 overflow-hidden flex-shrink-0 focus:outline-none focus:ring-2 focus:ring-primary-500', productForm.existingImagePath === item.path ? 'border-primary-600 ring-2 ring-primary-400' : 'border-gray-200 hover:border-primary-300']"
-                      @click="selectProjectImage(item.path, item.thumb_url)"
-                    >
-                      <img :src="item.thumb_url" :alt="item.path" class="w-full aspect-square object-cover" @error="$event.target.style.display='none'">
-                    </button>
-                  </div>
+                  <template v-else-if="projectImages.length">
+                    <div class="mb-3 flex flex-wrap items-center gap-2">
+                      <span class="text-xs font-medium text-gray-600">Shfaq bibliotekën:</span>
+                      <div class="inline-flex rounded-lg border border-gray-200 p-0.5 bg-gray-50">
+                        <button
+                          type="button"
+                          class="px-3 py-1.5 text-xs font-medium rounded-md transition-colors"
+                          :class="projectImageFilter === 'all' ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-600 hover:text-gray-900'"
+                          @click="projectImageFilter = 'all'"
+                        >
+                          Të gjitha
+                        </button>
+                        <button
+                          type="button"
+                          class="px-3 py-1.5 text-xs font-medium rounded-md transition-colors"
+                          :class="projectImageFilter === 'uploads' ? 'bg-white text-primary-800 shadow-sm ring-1 ring-primary-200' : 'text-gray-600 hover:text-gray-900'"
+                          @click="projectImageFilter = 'uploads'"
+                        >
+                          Vetëm Uploads
+                        </button>
+                      </div>
+                      <span v-if="projectImageFilter === 'uploads'" class="text-xs text-gray-500">Redakto / fshi vetëm ngarkimet; foto të tjera të projektit nuk preken.</span>
+                    </div>
+                    <div v-if="!filteredProjectImages.length" class="text-xs text-gray-500 py-4 text-center border border-dashed border-gray-200 rounded-lg">
+                      Nuk ka foto në këtë pamje. Kaloni te «Të gjitha» ose ngarkoni një foto të re.
+                    </div>
+                    <div v-else class="grid grid-cols-4 sm:grid-cols-6 md:grid-cols-8 gap-2 max-h-[70vh] overflow-y-auto">
+                      <div
+                        v-for="item in filteredProjectImages"
+                        :key="item.path"
+                        class="relative rounded-lg border-2 overflow-hidden flex-shrink-0 transition-shadow"
+                        :class="productForm.existingImagePath === item.path ? 'border-primary-600 ring-2 ring-primary-400 shadow-md' : 'border-gray-200 hover:border-primary-300'"
+                      >
+                        <button
+                          type="button"
+                          class="block w-full aspect-square focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-inset"
+                          @click="selectProjectImage(item.path, item.thumb_url)"
+                        >
+                          <img :src="item.thumb_url" :alt="item.path" class="w-full h-full object-cover min-h-[4rem]" @error="$event.target.style.display='none'">
+                        </button>
+                        <span
+                          v-if="item.in_use"
+                          class="absolute bottom-0 left-0 right-0 bg-black/65 text-white text-[10px] leading-tight px-0.5 py-0.5 text-center font-medium truncate"
+                          title="Përdoret si foto e një produkti"
+                        >
+                          Në përdorim
+                        </span>
+                        <button
+                          v-if="item.can_delete"
+                          type="button"
+                          :disabled="deletingLibraryPath === item.path"
+                          class="absolute top-1 right-1 flex h-7 w-7 items-center justify-center rounded-full bg-red-600 text-white shadow-md hover:bg-red-700 disabled:opacity-50 z-10"
+                          title="Fshi nga skedari (Uploads, pa produkt)"
+                          aria-label="Fshi foton nga skedari"
+                          @click.stop="deleteLibraryImage(item)"
+                        >
+                          <svg v-if="deletingLibraryPath !== item.path" class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+                          <span v-else class="inline-block h-3.5 w-3.5 border-2 border-white border-t-transparent rounded-full animate-spin" aria-hidden="true" />
+                        </button>
+                      </div>
+                    </div>
+                  </template>
                   <p v-else class="text-xs text-gray-500">Nuk u gjetën foto në public/images.</p>
                 </div>
               </div>
@@ -668,6 +719,8 @@ export default {
       addCategoryError: null,
       imageConverting: false,
       projectLibraryUploading: false,
+      projectImageFilter: 'all',
+      deletingLibraryPath: null,
       showCategoryManager: false,
       editingCategoryId: null,
       categoryForm: {
@@ -743,6 +796,13 @@ export default {
         opts.push({ value: n, disabled, label })
       }
       return opts
+    },
+    /** Foto nga biblioteka: të gjitha vs vetëm të ngarkuara (Uploads) për pastrim */
+    filteredProjectImages() {
+      if (this.projectImageFilter === 'uploads') {
+        return this.projectImages.filter(i => i.is_upload)
+      }
+      return this.projectImages
     }
   },
   async mounted() {
@@ -901,6 +961,7 @@ export default {
       this.newCategoryName = ''
       this.addCategoryError = null
       this.showModal = true
+      this.projectImageFilter = 'all'
       this.loadProjectImages()
       this.$nextTick(() => {
         if (this.$refs.productImageInput) this.$refs.productImageInput.value = ''
@@ -928,6 +989,7 @@ export default {
       this.saveError = null
       this.uploadProgress = -1
       this.showModal = true
+      this.projectImageFilter = 'all'
       this.loadProjectImages()
       this.$nextTick(() => {
         if (this.$refs.productImageInput) this.$refs.productImageInput.value = ''
@@ -962,6 +1024,32 @@ export default {
       this.newCategoryName = ''
       this.addCategoryError = null
       this.projectLibraryUploading = false
+      this.projectImageFilter = 'all'
+      this.deletingLibraryPath = null
+    },
+    async deleteLibraryImage(item) {
+      if (!item || !item.can_delete) return
+      const short = item.path.length > 56 ? item.path.slice(0, 54) + '…' : item.path
+      if (!confirm(`Fshi përgjithmonë këtë skedar nga serveri?\n\n${short}\n\nVetëm foto në Uploads pa produkt lejohen.`)) return
+      this.deletingLibraryPath = item.path
+      this.saveError = null
+      try {
+        await axios.delete('/api/admin/project-images', {
+          data: { path: item.path },
+          headers: { Accept: 'application/json' }
+        })
+        if (this.productForm.existingImagePath === item.path) {
+          this.clearProductImage()
+        }
+        await this.loadProjectImages()
+        await this.loadProducts()
+      } catch (err) {
+        const msg = err.response?.data?.message || 'Fshirja e fotos dështoi.'
+        this.saveError = msg
+        alert(msg)
+      } finally {
+        this.deletingLibraryPath = null
+      }
     },
     async loadProjectImages() {
       this.projectImagesLoading = true

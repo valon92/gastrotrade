@@ -721,6 +721,7 @@
           </div>
           <iframe
             v-if="invoiceHtml"
+            ref="invoicePreviewFrame"
             :srcdoc="invoiceHtml"
             class="flex-1 w-full border-0 min-h-0"
             title="Faturë"
@@ -1880,60 +1881,117 @@ export default {
       setTimeout(() => { w.print(); w.close() }, 300)
     },
     /**
-     * Shkarkim si PDF — Viber/WhatsApp e pranojnë PDF; .html shpesh “corrupted”.
-     * Gmail (mailto me tekst) mbetet i paprekur.
+     * Pritje për fonte / imazhe në dokumentin e faturës që PDF të përputhet me pamjen në ekran.
+     */
+    async waitForInvoiceDocReady(doc) {
+      if (!doc?.body) return
+      if (doc.fonts && doc.fonts.ready) {
+        await doc.fonts.ready.catch(() => {})
+      }
+      const imgs = [...(doc.images || [])]
+      await Promise.all(
+        imgs.map(
+          (img) =>
+            (img.complete && img.naturalHeight > 0) || (img.complete && !img.src)
+              ? Promise.resolve()
+              : new Promise((resolve) => {
+                  const done = () => resolve()
+                  const t = setTimeout(done, 5000)
+                  img.onload = () => {
+                    clearTimeout(t)
+                    done()
+                  }
+                  img.onerror = () => {
+                    clearTimeout(t)
+                    done()
+                  }
+                })
+        )
+      )
+      await new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)))
+    },
+    /**
+     * PDF nga i njëjti HTML që shihni në modal — iframe-i i dukshëm; html2canvas me rezolucion të lartë.
+     * (Rasterizim; për 100% vektor përdorni Printo → Ruaj si PDF.)
      */
     async downloadInvoice() {
       if (!this.invoiceHtml || this.downloadingInvoicePdf) return
       const fileBase = this.invoiceOrderNumber ? `Fature-${this.invoiceOrderNumber}` : 'Fature-AronTrade'
       this.downloadingInvoicePdf = true
-      let iframe = null
+      let tempIframe = null
       try {
-        iframe = document.createElement('iframe')
-        iframe.setAttribute('title', 'pdf-source')
-        iframe.setAttribute(
-          'style',
-          'position:fixed;left:-9999px;top:0;width:840px;height:2000px;border:0;opacity:0;pointer-events:none'
-        )
-        document.body.appendChild(iframe)
-        const doc = iframe.contentDocument
-        if (!doc) throw new Error('iframe document')
-        doc.open()
-        doc.write(this.invoiceHtml)
-        doc.close()
-        await new Promise((resolve) => {
-          const finish = () => resolve()
-          iframe.onload = finish
-          setTimeout(finish, 400)
-        })
-        if (doc.fonts && doc.fonts.ready) {
-          await doc.fonts.ready.catch(() => {})
+        await this.$nextTick()
+        let doc = null
+        const liveFrame = this.$refs.invoicePreviewFrame
+        if (liveFrame && liveFrame.contentDocument && liveFrame.contentDocument.body) {
+          doc = liveFrame.contentDocument
+        } else {
+          tempIframe = document.createElement('iframe')
+          tempIframe.setAttribute('title', 'pdf-source')
+          tempIframe.setAttribute(
+            'style',
+            'position:absolute;left:-9999px;top:0;width:900px;min-height:100vh;border:0;opacity:0;pointer-events:none;'
+          )
+          document.body.appendChild(tempIframe)
+          const d = tempIframe.contentDocument
+          if (!d) throw new Error('iframe document')
+          d.open()
+          d.write(this.invoiceHtml)
+          d.close()
+          await new Promise((resolve) => {
+            tempIframe.onload = () => resolve()
+            setTimeout(resolve, 500)
+          })
+          doc = d
         }
+        const body = doc.body
+        if (!body) throw new Error('Invoice body missing')
+        await this.waitForInvoiceDocReady(doc)
+        const win = doc.defaultView
+        const innerW = Math.max(
+          doc.documentElement.clientWidth || 0,
+          body.scrollWidth || 0,
+          win?.innerWidth || 0,
+          400
+        )
+        const innerH = Math.max(
+          body.scrollHeight || 0,
+          body.offsetHeight || 0,
+          doc.documentElement.scrollHeight || 0,
+          200
+        )
         const mod = await import('html2pdf.js')
         const html2pdf = mod.default
         await html2pdf()
           .set({
-            margin: [6, 6, 6, 6],
+            margin: 0,
             filename: `${fileBase}.pdf`,
-            image: { type: 'jpeg', quality: 0.94 },
+            image: { type: 'png', quality: 1 },
             html2canvas: {
               scale: 2,
               logging: false,
               useCORS: true,
+              allowTaint: false,
               letterRendering: true,
-              allowTaint: false
+              backgroundColor: '#ffffff',
+              scrollX: 0,
+              scrollY: 0,
+              windowWidth: innerW,
+              windowHeight: innerH
             },
-            jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
-            pagebreak: { mode: ['css', 'legacy'] }
+            jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait', compress: true },
+            pagebreak: { mode: ['avoid-all', 'css', 'legacy'] }
           })
-          .from(doc.body)
+          .from(body)
           .save()
       } catch (e) {
         console.error('Invoice PDF:', e)
         this.downloadInvoiceHtml()
         alert('PDF nuk u gjenerua; u shkarkua .html. Për Viber/WhatsApp: Printo → Ruaj si PDF, pastaj bashkëngjitni atë skedar.')
       } finally {
-        if (iframe && iframe.parentNode) iframe.parentNode.removeChild(iframe)
+        if (tempIframe && tempIframe.parentNode) {
+          tempIframe.parentNode.removeChild(tempIframe)
+        }
         this.downloadingInvoicePdf = false
       }
     },

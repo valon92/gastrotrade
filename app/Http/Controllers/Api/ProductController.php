@@ -490,6 +490,13 @@ class ProductController extends Controller
         }
         arsort($pathsWithMtime);
 
+        $usedImagePaths = Product::query()
+            ->whereNotNull('image_path')
+            ->pluck('image_path')
+            ->map(static fn ($p) => (string) $p)
+            ->all();
+        $usedSet = array_fill_keys($usedImagePaths, true);
+
         $ordered = [];
         if ($this->hasProjectImagesTable()) {
             $dbFirst = ProjectImage::query()
@@ -511,6 +518,8 @@ class ProductController extends Controller
         $signedTtl = now()->addHours(24);
         $data = [];
         foreach ($ordered as $path) {
+            $inUse = isset($usedSet[$path]);
+            $isUpload = Str::startsWith($path, '/images/Uploads/');
             $data[] = [
                 'path' => $path,
                 'thumb_url' => URL::temporarySignedRoute(
@@ -518,6 +527,9 @@ class ProductController extends Controller
                     $signedTtl,
                     ['path' => $path]
                 ),
+                'in_use' => $inUse,
+                'is_upload' => $isUpload,
+                'can_delete' => $isUpload && !$inUse,
             ];
         }
 
@@ -636,6 +648,56 @@ class ProductController extends Controller
                 'product' => $updatedProduct,
             ],
         ], 201);
+    }
+
+    /**
+     * Admin: fshi skedarin e fotos vetëm nën public/images/Uploads dhe vetëm nëse askush nuk e përdor si image_path.
+     */
+    public function deleteProjectImage(Request $request)
+    {
+        $validated = $request->validate([
+            'path' => ['required', 'string', 'max:500'],
+        ]);
+
+        $path = $validated['path'];
+        if (!Str::startsWith($path, '/images/Uploads/')) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Vetëm fotot e ngarkuara në «Uploads» mund të fshihen nga skedari. Fotot e tjera të projektit janë të mbrojtura.',
+            ], 422);
+        }
+
+        if (Product::query()->where('image_path', $path)->exists()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Kjo foto është e lidhur me një produkt — hiqe nga produkti ose zëvendësoje para fshirjes.',
+            ], 422);
+        }
+
+        $rel = ltrim($path, '/');
+        $full = realpath(public_path($rel));
+        $uploadsRoot = realpath(public_path('images/Uploads'));
+        if ($uploadsRoot === false || $full === false || !is_file($full) || !Str::startsWith($full, $uploadsRoot . DIRECTORY_SEPARATOR)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Skedari nuk u gjet ose nuk lejohet fshirja.',
+            ], 404);
+        }
+
+        try {
+            File::delete($full);
+        } catch (\Throwable $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Fshirja e skedarit dështoi.',
+            ], 422);
+        }
+
+        if ($this->hasProjectImagesTable()) {
+            ProjectImage::query()->where('file_path', $path)->delete();
+        }
+
+        return response()->json(['success' => true, 'message' => 'Foto u fshi nga skedari.']);
     }
 
     private function syncProjectImageLibrary(string $filePath, ?int $productId = null, ?array $meta = null): void
