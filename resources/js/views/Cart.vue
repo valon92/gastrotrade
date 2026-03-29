@@ -954,25 +954,62 @@ export default {
         timeStyle: 'short'
       })
     },
+    /** Rreshti në DB është komplet vetëm kur sold_by_package dhe jo shitje me copë (unit_type cp) */
+    orderItemIsPackageSale(item) {
+      if (!item) return false
+      const ut = (item.unit_type || '').toString().toLowerCase().trim()
+      if (ut === 'cp' || ut === 'piece') return false
+      return item.sold_by_package === true || item.sold_by_package === 1
+    },
+    /**
+     * Llogarit sasinë në copë për një rresht porosie/fature.
+     * Nëse për komplet të nominal nuk përputhet vlera me totalin e rreshtit, përdoret numri i nënkuptuar i copave (rreshta legacy).
+     */
+    orderItemInvoiceQty(item) {
+      const q = parseFloat(item.quantity) || 0
+      const ppk = parseInt(item.pieces_per_package, 10)
+      const unitPrice = item.unit_price != null ? parseFloat(item.unit_price) : null
+      const lineTotal = item.total_price != null ? parseFloat(item.total_price) : null
+      let mode = this.orderItemIsPackageSale(item) && ppk > 0 ? 'package' : 'piece'
+      let packageCount = q
+      let pieceCount = mode === 'package' ? q * ppk : q
+      const lineDiscount = parseFloat(item.discount_amount) || 0
+      if (
+        mode === 'package' &&
+        lineDiscount < 0.01 &&
+        unitPrice != null &&
+        lineTotal != null &&
+        !isNaN(unitPrice) &&
+        !isNaN(lineTotal) &&
+        unitPrice > 0
+      ) {
+        const expected = pieceCount * unitPrice
+        if (Math.abs(expected - lineTotal) > 0.05) {
+          const implied = Math.round(lineTotal / unitPrice)
+          if (implied > 0 && Math.abs(implied * unitPrice - lineTotal) <= 0.05) {
+            mode = 'piece'
+            pieceCount = implied
+          }
+        }
+      }
+      return { mode, packageCount, ppk, pieceCount }
+    },
     formatOrderItemQuantity(item) {
       if (!item) return ''
-      const soldPkg = item.sold_by_package === true || item.sold_by_package === 1
-      const ppk = Number(item.pieces_per_package)
-      const q = Number(item.quantity) || 0
-      if (soldPkg && ppk > 0) {
-        const total = q * ppk
-        return `${q} komplete × ${ppk} cp = ${total} cp`
+      const iq = this.orderItemInvoiceQty(item)
+      if (iq.mode === 'package' && iq.ppk > 0) {
+        return `${iq.packageCount} komplete × ${iq.ppk} cp = ${iq.pieceCount} cp`
       }
-      return `${q} copë`
+      return `${iq.pieceCount} copë`
     },
     /** Rreshti i faturës: sasia e dukshme + njësia (kompletet zbërthehen në copë) */
     invoiceLineQtyParts(item, fmtQty) {
-      const soldPkg = item.sold_by_package === true || item.sold_by_package === 1
-      const ppk = parseInt(item.pieces_per_package, 10)
-      const q = parseFloat(item.quantity) || 0
-      if (soldPkg && ppk > 0) {
-        const total = q * ppk
+      const iq = this.orderItemInvoiceQty(item)
+      if (iq.mode === 'package' && iq.ppk > 0) {
         const nbsp = '\u00A0'
+        const q = iq.packageCount
+        const total = iq.pieceCount
+        const ppk = iq.ppk
         const html =
           '<span class="inv-qty-stack">' +
           '<span class="inv-qty-breakdown">' +
@@ -981,12 +1018,13 @@ export default {
         const plain = fmtQty(q) + ' komplete × ' + ppk + ' cp = ' + fmtQty(total) + ' cp'
         return { qtyHtml: html, qtyPlain: plain, unit: 'Copë' }
       }
-      return { qtyHtml: fmtQty(q), qtyPlain: fmtQty(q), unit: 'Copë' }
+      const pcs = iq.pieceCount
+      return { qtyHtml: fmtQty(pcs), qtyPlain: fmtQty(pcs), unit: 'Copë' }
     },
     getItemBaseTotal(item) {
       if (!item.price) return 0
-      if (this.canBuyByPieces(item) && item.actual_pieces) {
-        return item.price * item.actual_pieces
+      if (this.canBuyByPieces(item)) {
+        return item.price * this.getPiecesQuantity(item)
       }
       if (item.sold_by_package && item.pieces_per_package) {
         return item.price * item.quantity * item.pieces_per_package
@@ -1390,22 +1428,17 @@ export default {
             viber: this.customerData.phone || null
           },
           items: this.cartStore.items.map(item => {
-            // If customer bought by pieces (has actual_pieces), send actual_pieces as quantity
-            // and set sold_by_package to false so backend knows quantity is already in pieces
-            const canBuyByPieces = this.canBuyByPieces(item) && item.actual_pieces
-            const quantity = canBuyByPieces ? item.actual_pieces : item.quantity
-            const soldByPackage = canBuyByPieces ? false : !!item.sold_by_package
-            
-            // Determine unit_type based on how the item was bought
-            // If bought by pieces, unit_type is 'cp' (copa)
-            // If bought by package, unit_type is 'package' (kompleti)
+            // Kur klienti blen me copë: sasia = copët (getPiecesQuantity), sold_by_package=false, unit_type=cp
+            const boughtByPieces = this.canBuyByPieces(item)
+            const quantity = boughtByPieces ? this.getPiecesQuantity(item) : item.quantity
+            const soldByPackage = boughtByPieces ? false : !!item.sold_by_package
             let unitType = null
-            if (canBuyByPieces) {
-              unitType = 'cp' // Bought by pieces
+            if (boughtByPieces) {
+              unitType = 'cp'
             } else if (item.sold_by_package && item.pieces_per_package) {
-              unitType = 'package' // Bought by package
+              unitType = 'package'
             } else {
-              unitType = 'cp' // Default to pieces
+              unitType = 'cp'
             }
             
             return {
@@ -1561,11 +1594,8 @@ export default {
 
       const invoiceItemRowCells = (item, idx) => {
         const barcode = (item.barcode != null && item.barcode !== '') ? String(item.barcode) : (item.product && item.product.barcode != null && item.product.barcode !== '' ? String(item.product.barcode) : '')
-        const qty = parseFloat(item.quantity) || 1
         const qp = this.invoiceLineQtyParts(item, fmtQty)
-        const soldPkg = item.sold_by_package === true || item.sold_by_package === 1
-        const ppk = parseInt(item.pieces_per_package, 10)
-        const piecesForLine = soldPkg && ppk > 0 ? qty * ppk : qty
+        const piecesForLine = this.orderItemInvoiceQty(item).pieceCount
         const unitPrice = item.unit_price != null ? parseFloat(item.unit_price) : null
         const lineTotal = item.total_price != null ? parseFloat(item.total_price) : (unitPrice ? unitPrice * piecesForLine : 0)
         const unitPriceNoVat = hasVat && unitPrice ? unitPrice / 1.18 : unitPrice
@@ -1592,11 +1622,8 @@ export default {
 
       const invoiceItemRowTabs = (item, idx) => {
         const barcode = (item.barcode != null && item.barcode !== '') ? String(item.barcode) : (item.product && item.product.barcode ? String(item.product.barcode) : '-')
-        const qty = parseFloat(item.quantity) || 1
         const qp = this.invoiceLineQtyParts(item, fmtQty)
-        const soldPkg = item.sold_by_package === true || item.sold_by_package === 1
-        const ppk = parseInt(item.pieces_per_package, 10)
-        const piecesForLine = soldPkg && ppk > 0 ? qty * ppk : qty
+        const piecesForLine = this.orderItemInvoiceQty(item).pieceCount
         const unitPrice = item.unit_price != null ? parseFloat(item.unit_price) : null
         const lineTotal = item.total_price != null ? parseFloat(item.total_price) : (unitPrice ? unitPrice * piecesForLine : 0)
         const unitPriceNoVat = hasVat && unitPrice ? unitPrice / 1.18 : unitPrice
@@ -1944,37 +1971,29 @@ export default {
         is_paid: false,
         paid_at: null,
         items: this.cartStore.items.map(item => {
-          // Format quantity correctly
-          let quantityText = ''
-          if (item.sold_by_package && item.pieces_per_package) {
-            if (this.canBuyByPieces(item) && item.actual_pieces) {
-              const packages = Math.ceil(item.actual_pieces / item.pieces_per_package)
-              quantityText = `${packages} komplete (${item.actual_pieces} copa)`
-            } else {
-              const totalPieces = item.quantity * item.pieces_per_package
-              quantityText = `${item.quantity} komplete (${totalPieces} copa)`
-            }
-          } else {
-            quantityText = `${item.quantity} copë`
-          }
-          
-          return {
+          const boughtByPieces = this.canBuyByPieces(item)
+          const qty = boughtByPieces ? this.getPiecesQuantity(item) : item.quantity
+          const soldByPackageFlag = boughtByPieces ? false : !!item.sold_by_package
+          let unitType = null
+          if (boughtByPieces) unitType = 'cp'
+          else if (item.sold_by_package && item.pieces_per_package) unitType = 'package'
+          else unitType = 'cp'
+          const row = {
             id: item.id,
             product_name: item.name,
             barcode: item.barcode != null ? item.barcode : '',
-            quantity: item.quantity,
-            quantity_text: quantityText,
-            sold_by_package: item.sold_by_package || false,
+            quantity: qty,
+            sold_by_package: soldByPackageFlag,
             pieces_per_package: item.pieces_per_package || null,
+            unit_type: unitType,
             unit_price: item.price || null,
             discount_amount: item.discount_amount || 0,
             discount_type: item.discount_type || null,
             discount_value: item.discount_value || 0,
-            total_price: this.getItemTotal(item),
-            pieces_per_package: item.pieces_per_package || null,
-            unit_price: item.price,
             total_price: item.price ? this.getItemTotal(item) : null
           }
+          row.quantity_text = this.formatOrderItemQuantity(row)
+          return row
         })
       }
 
@@ -1997,22 +2016,21 @@ export default {
 
       ;(order.items || []).forEach((item, index) => {
         const itemName = item.product_name || `Produkti ${index + 1}`
-        const quantity = item.quantity || 1
+        const iq = this.orderItemInvoiceQty(item)
         message += `${index + 1}. ${itemName}\n`
 
         if (item.unit_price !== null && item.unit_price !== undefined && !isNaN(item.unit_price) && item.unit_price > 0) {
-          if (item.sold_by_package && item.pieces_per_package) {
-            const itemTotal = item.total_price || (item.unit_price * quantity * item.pieces_per_package)
-            message += `   €${parseFloat(item.unit_price).toFixed(2)} × ${quantity}(komplete) × ${item.pieces_per_package}cp = €${parseFloat(itemTotal).toFixed(2)}\n`
+          const itemTotal = item.total_price != null ? parseFloat(item.total_price) : (iq.pieceCount * parseFloat(item.unit_price))
+          if (iq.mode === 'package' && iq.ppk > 0) {
+            message += `   €${parseFloat(item.unit_price).toFixed(2)} × ${iq.packageCount}(komplete) × ${iq.ppk}cp = €${itemTotal.toFixed(2)}\n`
           } else {
-            const itemTotal = item.total_price || (item.unit_price * quantity)
-            message += `   €${parseFloat(item.unit_price).toFixed(2)} × ${quantity} = €${parseFloat(itemTotal).toFixed(2)}\n`
+            message += `   €${parseFloat(item.unit_price).toFixed(2)} × ${iq.pieceCount}copa = €${itemTotal.toFixed(2)}\n`
           }
         } else {
-          if (item.sold_by_package && item.pieces_per_package) {
-            message += `   Sasia: ${quantity} komplete (${quantity * item.pieces_per_package} copa)\n`
+          if (iq.mode === 'package' && iq.ppk > 0) {
+            message += `   Sasia: ${iq.packageCount} komplete (${iq.pieceCount} copa)\n`
           } else {
-            message += `   Sasia: ${quantity} copë\n`
+            message += `   Sasia: ${iq.pieceCount} copë\n`
           }
           message += '   Çmimi: Sipas kërkesës\n'
         }
