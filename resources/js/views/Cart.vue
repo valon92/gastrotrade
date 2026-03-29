@@ -1011,10 +1011,11 @@ export default {
         const total = iq.pieceCount
         const ppk = iq.ppk
         const html =
-          '<span class="inv-qty-stack">' +
-          '<span class="inv-qty-breakdown">' +
-          fmtQty(q) + nbsp + 'komplete' + nbsp + '×' + nbsp + ppk + nbsp + 'cp' + nbsp + '=' + nbsp + fmtQty(total) + nbsp + 'cp' +
-          '</span></span>'
+          '<span class="inv-qty-stack inv-qty-stack--pkg">' +
+          '<span class="inv-qty-line inv-qty-line1">' + fmtQty(q) + nbsp + 'komplete</span>' +
+          '<span class="inv-qty-line inv-qty-line2">×' + nbsp + ppk + nbsp + 'cp</span>' +
+          '<span class="inv-qty-line inv-qty-line3">=' + nbsp + fmtQty(total) + nbsp + 'cp</span>' +
+          '</span>'
         const plain = fmtQty(q) + ' komplete × ' + ppk + ' cp = ' + fmtQty(total) + ' cp'
         return { qtyHtml: html, qtyPlain: plain, unit: 'Copë' }
       }
@@ -1741,8 +1742,12 @@ export default {
         '.inv-table th{background:#0d9488;color:#fff;font-weight:600;text-align:center}' +
         '.inv-table .inv-num{text-align:right}.inv-table .inv-desc{text-align:left}.inv-table .inv-code{text-align:center}' +
         '.inv-table .inv-qty{text-align:right;vertical-align:top}.inv-qty-stack{display:block;text-align:right}' +
-        '.inv-qty-breakdown{display:block;font-size:12px;line-height:1.35;font-weight:700;font-variant-numeric:tabular-nums;color:#0f172a;letter-spacing:-0.01em;white-space:nowrap}' +
-        '@media (max-width:768px){.inv-qty-breakdown{font-size:11px}}' +
+        '.inv-qty-stack--pkg{display:flex;flex-direction:column;align-items:flex-end;gap:3px;text-align:right}' +
+        '.inv-qty-stack--pkg .inv-qty-line{font-variant-numeric:tabular-nums;line-height:1.3;display:block}' +
+        '.inv-qty-stack--pkg .inv-qty-line1{font-size:12px;font-weight:600;color:#0f172a;letter-spacing:-0.02em}' +
+        '.inv-qty-stack--pkg .inv-qty-line2{font-size:11px;font-weight:400;color:#64748b}' +
+        '.inv-qty-stack--pkg .inv-qty-line3{font-size:12px;font-weight:800;color:#0f172a;letter-spacing:-0.02em}' +
+        '@media (max-width:768px){.inv-qty-stack--pkg{gap:4px}.inv-qty-stack--pkg .inv-qty-line1{font-size:11px;font-weight:600}.inv-qty-stack--pkg .inv-qty-line2{font-size:10px;font-weight:400;color:#64748b}.inv-qty-stack--pkg .inv-qty-line3{font-size:12px;font-weight:800;margin-top:1px}}' +
         '.inv-tax{width:100%;max-width:320px;margin-left:auto;border-collapse:collapse;font-size:12px;margin-bottom:12px}' +
         '.inv-tax th,.inv-tax td{border:1px solid #e2e8f0;padding:6px 10px;text-align:right}' +
         '.inv-tax th{background:#f1f5f9;font-weight:600}' +
