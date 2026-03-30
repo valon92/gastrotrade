@@ -60,15 +60,48 @@
       </div>
       <!-- Barcode dhe butoni -->
       <div class="mt-auto flex flex-col gap-2 xl:gap-3">
-        <div class="flex w-full flex-col items-center gap-0.5 rounded-lg border border-slate-100 bg-slate-50 px-1.5 py-1.5 xl:gap-1 xl:rounded-xl xl:px-2 xl:py-2">
+        <div class="flex w-full flex-col items-center gap-0.5 rounded-lg border border-slate-100 bg-slate-50 px-2 py-1.5 xl:gap-1 xl:rounded-xl xl:px-2 xl:py-2">
           <span class="hidden text-[9px] font-semibold uppercase tracking-wider text-slate-500 xl:inline xl:text-[10px]">Barcode</span>
-          <!-- Telefon & tablet & iPad (deri xl): vetëm numri në një rresht; rrëshqitje nëse është i gjatë -->
-          <div class="flex w-full min-w-0 justify-center overflow-x-auto overscroll-x-contain [-webkit-overflow-scrolling:touch] xl:hidden">
-            <p class="whitespace-nowrap px-0.5 text-center font-mono text-[9px] font-semibold leading-none tabular-nums tracking-tight text-slate-800 min-[360px]:text-[10px] sm:text-[11px] sm:tracking-normal">
-              {{ product.barcode != null && String(product.barcode).trim() !== '' ? product.barcode : '—' }}
-            </p>
-          </div>
-          <BarcodeDisplay :value="product.barcode" compact class="hidden xl:inline-flex" />
+          <!-- Mobile: një rresht, padding anësor që të mos priten shifrat; prek për ekran të plotë -->
+          <template v-if="hasScannableBarcode">
+            <button
+              type="button"
+              class="flex w-full min-w-0 touch-manipulation select-none flex-col items-stretch rounded-md outline-none ring-primary-500/0 transition hover:bg-slate-100/80 active:bg-slate-100 focus-visible:ring-2 xl:hidden"
+              aria-label="Hap barkodin në ekran të plotë"
+              @click="showBarcodeSheet = true"
+            >
+              <span class="mb-0.5 text-center text-[9px] font-medium uppercase tracking-wider text-primary-700">
+                Prek për të zmadhuar
+              </span>
+              <div
+                class="flex w-full min-w-0 scroll-pl-3 scroll-pr-3 justify-center overflow-x-auto overscroll-x-contain px-1 [-webkit-overflow-scrolling:touch] [scrollbar-width:thin]"
+              >
+                <span
+                  class="inline-block whitespace-nowrap px-2 py-1 text-center font-mono text-[11px] font-semibold leading-normal tabular-nums tracking-normal text-slate-900 min-[400px]:text-xs sm:text-[13px]"
+                >
+                  {{ displayBarcodeDigits }}
+                </span>
+              </div>
+            </button>
+            <BarcodeExpandOverlay
+              v-model="showBarcodeSheet"
+              :value="product.barcode"
+              :subtitle="product.name"
+            />
+          </template>
+          <p
+            v-else
+            class="w-full py-1 text-center font-mono text-xs text-slate-400 xl:hidden"
+          >
+            —
+          </p>
+          <BarcodeDisplay
+            :value="product.barcode"
+            compact
+            expandable
+            :expand-subtitle="product.name"
+            class="hidden xl:inline-flex"
+          />
         </div>
         <button 
           @click="onMainButtonClick"
@@ -297,13 +330,14 @@
 <script>
 import cartStore from '../store/cart'
 import BarcodeDisplay from './BarcodeDisplay.vue'
+import BarcodeExpandOverlay from './BarcodeExpandOverlay.vue'
 
 // Placeholder si data URL që të mos bëhen kërkesa HTTP (nuk mbushet terminali i PHP)
 const PLACEHOLDER_IMAGE_DATA_URL = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200' viewBox='0 0 200 200'%3E%3Crect fill='%23e5e7eb' width='200' height='200'/%3E%3C/svg%3E"
 
 export default {
   name: 'ProductCard',
-  components: { BarcodeDisplay },
+  components: { BarcodeDisplay, BarcodeExpandOverlay },
   props: {
     product: {
       type: Object,
@@ -320,6 +354,7 @@ export default {
       showInfoTooltip: false,
       showOrderModal: false,
       showImageLightbox: false,
+      showBarcodeSheet: false,
       orderMode: 'packages',
       orderPackages: 1,
       orderPieces: 1
@@ -381,6 +416,13 @@ export default {
       const pieces = this.product.pieces_per_package
       const price = this.displayPrice
       return this.formatPrice(pieces * price)
+    },
+    displayBarcodeDigits() {
+      const raw = this.product.barcode != null ? String(this.product.barcode).trim() : ''
+      return raw || ''
+    },
+    hasScannableBarcode() {
+      return this.displayBarcodeDigits.replace(/\D/g, '').length >= 7
     },
     // Numri total i copave bazuar në numrin e kompleteve
     totalPiecesFromPackages() {

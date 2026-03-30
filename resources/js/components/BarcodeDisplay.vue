@@ -1,24 +1,43 @@
 <template>
-  <div class="barcode-display inline-flex max-w-full min-w-0 flex-col items-center justify-center">
-    <svg v-if="validValue" ref="barcodeSvg" class="barcode-svg max-w-full h-auto" :class="{ 'compact': compact }"></svg>
-    <div
-      v-if="validValue"
-      class="mt-0.5 flex w-full max-w-full min-w-0 justify-center overflow-x-auto overscroll-x-contain [-webkit-overflow-scrolling:touch] sm:mt-1"
+  <div class="inline-flex max-w-full min-w-0 flex-col items-center justify-center">
+    <component
+      :is="expandable && validValue ? 'button' : 'div'"
+      :type="expandable && validValue ? 'button' : undefined"
+      class="barcode-display flex max-w-full min-w-0 flex-col items-center justify-center outline-none"
+      :class="expandable && validValue
+        ? 'touch-manipulation cursor-pointer rounded-xl p-1 ring-primary-500/0 transition hover:bg-slate-50 focus-visible:ring-2 active:scale-[0.99] sm:p-1.5'
+        : ''"
+      :aria-label="expandable && validValue ? 'Hap barkodin në ekran të plotë' : undefined"
+      @click="onActivate"
     >
-      <span
-        class="barcode-number whitespace-nowrap px-0.5 text-center font-mono text-slate-700 antialiased"
-        :class="compact ? 'text-[9px] tracking-tight sm:text-[10px] sm:tracking-wide' : 'text-[10px] tracking-tight sm:text-xs sm:tracking-widest'"
-      >{{ value }}</span>
-    </div>
-    <span v-else class="text-[10px] text-slate-400 sm:text-xs">{{ value || '—' }}</span>
+      <svg v-if="validValue" ref="barcodeSvg" class="barcode-svg max-w-full h-auto" :class="{ 'compact': compact }"></svg>
+      <div
+        v-if="validValue"
+        class="mt-0.5 flex w-full max-w-full min-w-0 justify-center overflow-x-auto overscroll-x-contain scroll-pl-2 scroll-pr-2 px-0.5 [-webkit-overflow-scrolling:touch] sm:mt-1"
+      >
+        <span
+          class="barcode-number whitespace-nowrap px-1.5 py-0.5 text-center font-mono text-slate-700 antialiased leading-normal"
+          :class="compact ? 'text-[10px] tracking-normal sm:text-[11px] sm:tracking-wide' : 'text-[11px] tracking-normal sm:text-xs sm:tracking-widest'"
+        >{{ value }}</span>
+      </div>
+      <span v-else class="text-[10px] text-slate-400 leading-normal sm:text-xs">{{ value || '—' }}</span>
+    </component>
+    <BarcodeExpandOverlay
+      v-if="expandable"
+      v-model="showExpand"
+      :value="value"
+      :subtitle="expandSubtitle"
+    />
   </div>
 </template>
 
 <script>
 import JsBarcode from 'jsbarcode'
+import BarcodeExpandOverlay from './BarcodeExpandOverlay.vue'
 
 export default {
   name: 'BarcodeDisplay',
+  components: { BarcodeExpandOverlay },
   props: {
     value: {
       type: [String, Number],
@@ -27,6 +46,21 @@ export default {
     compact: {
       type: Boolean,
       default: false
+    },
+    /** Prek për panel të plotë (mobile + desktop) */
+    expandable: {
+      type: Boolean,
+      default: false
+    },
+    /** Emër produkti etj. në panel */
+    expandSubtitle: {
+      type: String,
+      default: ''
+    }
+  },
+  data() {
+    return {
+      showExpand: false
     }
   },
   computed: {
@@ -48,6 +82,10 @@ export default {
     this.render()
   },
   methods: {
+    onActivate() {
+      if (!this.expandable || !this.validValue) return
+      this.showExpand = true
+    },
     render() {
       if (!this.validValue || !this.$refs.barcodeSvg) return
       const el = this.$refs.barcodeSvg

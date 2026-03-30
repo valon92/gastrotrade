@@ -65,7 +65,7 @@
             <!-- Barcode gjithmonë aty (çmimi është mbi imazh) -->
             <div class="flex flex-col items-start gap-2 mb-6">
               <span class="text-xs text-gray-500 uppercase tracking-wide">Barcode</span>
-              <BarcodeDisplay :value="product.barcode" />
+              <BarcodeDisplay :value="product.barcode" expandable :expand-subtitle="product.name" />
             </div>
           </div>
 
@@ -92,7 +92,7 @@
               </div>
               <div class="pt-2 border-t border-gray-200">
                 <span class="text-gray-600 block mb-2">Barcode</span>
-                <BarcodeDisplay :value="product.barcode" />
+                <BarcodeDisplay :value="product.barcode" expandable :expand-subtitle="product.name" />
               </div>
               <div class="flex justify-between">
                 <span class="text-gray-600">Kategoria:</span>
