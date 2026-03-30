@@ -1,11 +1,15 @@
 <template>
-  <div class="barcode-display inline-flex max-w-full flex-col items-center justify-center">
+  <div class="barcode-display inline-flex max-w-full min-w-0 flex-col items-center justify-center">
     <svg v-if="validValue" ref="barcodeSvg" class="barcode-svg max-w-full h-auto" :class="{ 'compact': compact }"></svg>
-    <span
+    <div
       v-if="validValue"
-      class="barcode-number mt-0.5 max-w-full truncate text-center font-mono text-slate-700 antialiased sm:mt-1"
-      :class="compact ? 'text-[9px] tracking-wide sm:text-xs sm:tracking-widest' : 'text-xs tracking-widest'"
-    >{{ value }}</span>
+      class="mt-0.5 flex w-full max-w-full min-w-0 justify-center overflow-x-auto overscroll-x-contain [-webkit-overflow-scrolling:touch] sm:mt-1"
+    >
+      <span
+        class="barcode-number whitespace-nowrap px-0.5 text-center font-mono text-slate-700 antialiased"
+        :class="compact ? 'text-[9px] tracking-tight sm:text-[10px] sm:tracking-wide' : 'text-[10px] tracking-tight sm:text-xs sm:tracking-widest'"
+      >{{ value }}</span>
+    </div>
     <span v-else class="text-[10px] text-slate-400 sm:text-xs">{{ value || '—' }}</span>
   </div>
 </template>
@@ -78,7 +82,10 @@ export default {
 .barcode-svg.compact {
   min-height: 20px;
 }
-.barcode-number {
-  letter-spacing: 0.15em;
+/* Hapësira ekstra vetëm në ekrane më të gjërë; në mobile mbetet një rresht */
+@media (min-width: 640px) {
+  .barcode-number {
+    letter-spacing: 0.12em;
+  }
 }
 </style>

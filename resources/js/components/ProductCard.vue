@@ -62,10 +62,12 @@
       <div class="mt-auto flex flex-col gap-2 xl:gap-3">
         <div class="flex w-full flex-col items-center gap-0.5 rounded-lg border border-slate-100 bg-slate-50 px-1.5 py-1.5 xl:gap-1 xl:rounded-xl xl:px-2 xl:py-2">
           <span class="hidden text-[9px] font-semibold uppercase tracking-wider text-slate-500 xl:inline xl:text-[10px]">Barcode</span>
-          <!-- Telefon & tablet & iPad (deri xl): vetëm numri; desktop i gjerë: grafiku -->
-          <p class="w-full text-center font-mono text-[11px] font-semibold tabular-nums tracking-wide text-slate-800 break-all xl:hidden">
-            {{ product.barcode != null && String(product.barcode).trim() !== '' ? product.barcode : '—' }}
-          </p>
+          <!-- Telefon & tablet & iPad (deri xl): vetëm numri në një rresht; rrëshqitje nëse është i gjatë -->
+          <div class="flex w-full min-w-0 justify-center overflow-x-auto overscroll-x-contain [-webkit-overflow-scrolling:touch] xl:hidden">
+            <p class="whitespace-nowrap px-0.5 text-center font-mono text-[9px] font-semibold leading-none tabular-nums tracking-tight text-slate-800 min-[360px]:text-[10px] sm:text-[11px] sm:tracking-normal">
+              {{ product.barcode != null && String(product.barcode).trim() !== '' ? product.barcode : '—' }}
+            </p>
+          </div>
           <BarcodeDisplay :value="product.barcode" compact class="hidden xl:inline-flex" />
         </div>
         <button 
