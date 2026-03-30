@@ -10,7 +10,7 @@
     >
       <div
         v-if="modelValue"
-        class="fixed inset-0 z-[120] flex items-end justify-center sm:items-center p-0 sm:p-4"
+        class="fixed inset-0 z-[200] flex items-end justify-center sm:items-center p-0 sm:p-4"
         role="dialog"
         aria-modal="true"
         :aria-labelledby="titleId"
@@ -21,7 +21,7 @@
           @click="close"
         />
         <div
-          class="relative z-10 w-full max-w-lg max-h-[min(92vh,640px)] overflow-y-auto rounded-t-3xl border border-slate-200/90 bg-white shadow-2xl ring-1 ring-primary-900/5 sm:rounded-3xl sm:max-h-[90vh]"
+          class="relative z-10 flex max-h-[min(96dvh,100%)] min-h-[52dvh] w-full max-w-lg flex-col overflow-y-auto rounded-t-3xl border border-slate-200/90 bg-white shadow-2xl ring-1 ring-primary-900/5 sm:max-h-[90vh] sm:min-h-0 sm:rounded-3xl"
           :class="'pb-[max(1rem,env(safe-area-inset-bottom))] pt-6 px-5 sm:px-8 sm:py-8'"
           @click.stop
         >

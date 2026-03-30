@@ -62,24 +62,23 @@
       <div class="mt-auto flex flex-col gap-2 xl:gap-3">
         <div class="flex w-full flex-col items-center gap-0.5 rounded-lg border border-slate-100 bg-slate-50 px-2 py-1.5 xl:gap-1 xl:rounded-xl xl:px-2 xl:py-2">
           <span class="hidden text-[9px] font-semibold uppercase tracking-wider text-slate-500 xl:inline xl:text-[10px]">Barcode</span>
-          <!-- Mobile: një rresht, padding anësor që të mos priten shifrat; prek për ekran të plotë -->
+          <!-- Mobile: vetëm numri i grupuar (EAN); prek për panel fixed mbi ekran -->
           <template v-if="hasScannableBarcode">
             <button
               type="button"
-              class="flex w-full min-w-0 touch-manipulation select-none flex-col items-stretch rounded-md outline-none ring-primary-500/0 transition hover:bg-slate-100/80 active:bg-slate-100 focus-visible:ring-2 xl:hidden"
+              title="Prek për barkodin e madh"
+              class="flex w-full min-w-0 touch-manipulation select-none items-center justify-center rounded-md py-2 outline-none ring-primary-500/0 transition hover:bg-slate-100/80 active:bg-slate-100 focus-visible:ring-2 xl:hidden"
               aria-label="Hap barkodin në ekran të plotë"
               @click="showBarcodeSheet = true"
             >
-              <span class="mb-0.5 text-center text-[9px] font-medium uppercase tracking-wider text-primary-700">
-                Prek për të zmadhuar
-              </span>
               <div
-                class="flex w-full min-w-0 scroll-pl-3 scroll-pr-3 justify-center overflow-x-auto overscroll-x-contain px-1 [-webkit-overflow-scrolling:touch] [scrollbar-width:thin]"
+                class="flex w-full min-w-0 scroll-pl-2 scroll-pr-2 justify-center overflow-x-auto overscroll-x-contain [-webkit-overflow-scrolling:touch] [scrollbar-width:thin]"
               >
                 <span
-                  class="inline-block whitespace-nowrap px-2 py-1 text-center font-mono text-[11px] font-semibold leading-normal tabular-nums tracking-normal text-slate-900 min-[400px]:text-xs sm:text-[13px]"
+                  class="inline-block px-1 text-center font-mono text-[clamp(9px,3.35vw,12px)] font-semibold leading-snug tabular-nums tracking-wide text-slate-900 [font-variant-numeric:tabular-nums]"
+                  style="word-spacing: 0.04em"
                 >
-                  {{ displayBarcodeDigits }}
+                  {{ mobileBarcodeGrouped }}
                 </span>
               </div>
             </button>
@@ -423,6 +422,18 @@ export default {
     },
     hasScannableBarcode() {
       return this.displayBarcodeDigits.replace(/\D/g, '').length >= 7
+    },
+    /** Grupim lexues EAN-13 / EAN-12 (si në overlay), për një rresht në mobile */
+    mobileBarcodeGrouped() {
+      const s = this.displayBarcodeDigits.replace(/\D/g, '')
+      if (!s) return ''
+      if (s.length === 13) {
+        return `${s.slice(0, 3)} ${s.slice(3, 7)} ${s.slice(7, 12)} ${s.slice(12)}`
+      }
+      if (s.length === 12) {
+        return `${s.slice(0, 3)} ${s.slice(3, 7)} ${s.slice(7, 11)} ${s.slice(11)}`
+      }
+      return s.replace(/(.{4})/g, '$1 ').trim()
     },
     // Numri total i copave bazuar në numrin e kompleteve
     totalPiecesFromPackages() {
