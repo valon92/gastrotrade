@@ -72,11 +72,11 @@
               @click="showBarcodeSheet = true"
             >
               <div
-                class="flex w-full min-w-0 scroll-pl-2 scroll-pr-2 justify-center overflow-x-auto overscroll-x-contain [-webkit-overflow-scrolling:touch] [scrollbar-width:thin]"
+                class="w-full min-w-0 overflow-x-auto overflow-y-hidden overscroll-x-contain [-webkit-overflow-scrolling:touch] [scrollbar-width:thin]"
               >
+                <!-- whitespace-nowrap: pa të, hapësirat EAN thyhen në 2–3 rreshta në mobile -->
                 <span
-                  class="inline-block px-1 text-center font-mono text-[clamp(9px,3.35vw,12px)] font-semibold leading-snug tabular-nums tracking-wide text-slate-900 [font-variant-numeric:tabular-nums]"
-                  style="word-spacing: 0.04em"
+                  class="mx-auto block w-max max-w-none whitespace-nowrap px-0.5 text-center font-mono text-[clamp(8px,2.85vw,11px)] font-semibold leading-none tabular-nums tracking-tight text-slate-900 [font-variant-numeric:tabular-nums] min-[400px]:text-[11px] min-[400px]:tracking-wide"
                 >
                   {{ mobileBarcodeGrouped }}
                 </span>
