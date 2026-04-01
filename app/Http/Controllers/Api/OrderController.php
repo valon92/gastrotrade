@@ -14,6 +14,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Str;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\Schema;
 
 class OrderController extends Controller
 {
@@ -144,7 +145,7 @@ class OrderController extends Controller
         
         if (!empty($validated['client_location_id'])) {
             // Verify that the location belongs to the client
-            if ($client && \Illuminate\Support\Facades\Schema::hasTable('client_locations')) {
+            if ($client && Schema::hasTable('client_locations')) {
                 $location = \App\Models\ClientLocation::where('id', $validated['client_location_id'])
                     ->where('client_id', $client->id)
                     ->whereNull('deleted_at')
@@ -175,8 +176,10 @@ class OrderController extends Controller
             'business_name' => $businessName,
             'fiscal_number' => $fiscalNumber,
             'city' => $customer['city'],
-            'phone' => $customer['phone'] ?? null,
-            'viber' => $customer['viber'] ?? null,
+            'phone' => trim((string) ($customer['phone'] ?? '')),
+            'viber' => isset($customer['viber']) && $customer['viber'] !== '' && $customer['viber'] !== null
+                ? trim((string) $customer['viber'])
+                : null,
             'total_items' => $totals['total_items'],
             'subtotal' => $totals['subtotal'] ?? null,
             'discount_amount' => $totals['discount_amount'] ?? 0,
@@ -196,7 +199,7 @@ class OrderController extends Controller
         ];
         
         // Only add location fields if columns exist
-        if (\Illuminate\Support\Facades\Schema::hasColumn('orders', 'location_unit_name')) {
+        if (Schema::hasColumn('orders', 'location_unit_name')) {
             $orderData['location_unit_name'] = $locationData['location_unit_name'];
             $orderData['location_street_number'] = $locationData['location_street_number'];
             $orderData['location_phone'] = $locationData['location_phone'];
@@ -204,9 +207,12 @@ class OrderController extends Controller
             $orderData['location_city'] = $locationData['location_city'];
         }
 
-        if (!\Illuminate\Support\Facades\Schema::hasColumn('orders', 'client_location_id')) {
+        if (!Schema::hasColumn('orders', 'client_location_id')) {
             unset($orderData['client_location_id']);
         }
+
+        // Vetëm kolona që ekzistojnë në DB (prod mund të ketë migracione të pjesëshme)
+        $orderData = self::filterToTableColumns('orders', $orderData);
 
         try {
             $order = null;
@@ -220,102 +226,94 @@ class OrderController extends Controller
                     $order = DB::transaction(function () use ($payload, $items) {
                         $order = Order::create($payload);
 
-                foreach ($items as $item) {
-                    $order->items()->create([
-                        'product_id' => $item['product_id'] ?? null,
-                        'product_name' => $item['name'],
-                        'quantity' => $item['quantity'],
-                        'sold_by_package' => $item['sold_by_package'],
-                        'pieces_per_package' => $item['pieces_per_package'] ?? null,
-                        'unit_type' => $item['unit_type'] ?? null,
-                        'unit_price' => $item['unit_price'] ?? null,
-                        'total_price' => $item['total_price'] ?? null,
-                        'discount_amount' => $item['discount_amount'] ?? 0,
-                        'discount_type' => $item['discount_type'] ?? null,
-                        'discount_value' => $item['discount_value'] ?? 0,
-                    ]);
+                        foreach ($items as $item) {
+                            $itemPayload = self::filterToTableColumns('order_items', [
+                                'product_id' => $item['product_id'] ?? null,
+                                'product_name' => $item['name'],
+                                'quantity' => $item['quantity'],
+                                'sold_by_package' => $item['sold_by_package'],
+                                'pieces_per_package' => $item['pieces_per_package'] ?? null,
+                                'unit_type' => $item['unit_type'] ?? null,
+                                'unit_price' => $item['unit_price'] ?? null,
+                                'total_price' => $item['total_price'] ?? null,
+                                'discount_amount' => $item['discount_amount'] ?? 0,
+                                'discount_type' => $item['discount_type'] ?? null,
+                                'discount_value' => $item['discount_value'] ?? 0,
+                            ]);
+                            $order->items()->create($itemPayload);
 
-                    // Update stock if product exists
-                    if ($item['product_id']) {
-                        $product = Product::find($item['product_id']);
-                        if ($product) {
-                            $quantityToDeduct = $item['sold_by_package'] && $item['pieces_per_package']
-                                ? $item['quantity'] * $item['pieces_per_package']
-                                : $item['quantity'];
+                            if (!empty($item['product_id'])) {
+                                $product = Product::lockForUpdate()->find($item['product_id']);
+                                if ($product && Schema::hasColumn('products', 'stock_quantity')) {
+                                    $quantityToDeduct = $item['sold_by_package'] && $item['pieces_per_package']
+                                        ? (int) $item['quantity'] * (int) $item['pieces_per_package']
+                                        : (int) $item['quantity'];
 
-                            $stockBefore = $product->stock_quantity;
+                                    $stockBefore = (int) ($product->stock_quantity ?? 0);
 
-                            // Llogarit stokun pas zbritjes (nuk lejojmë më pak se 0 në produkt)
-                            $stockAfter = max(0, $stockBefore - $quantityToDeduct);
-                            $product->stock_quantity = $stockAfter;
-                            $product->save();
+                                    $stockAfter = max(0, $stockBefore - $quantityToDeduct);
+                                    $product->stock_quantity = $stockAfter;
+                                    $product->save();
 
-                            // Sasia reale që mund të shitet nga stoku aktual
-                            $effectiveDeduct = min($quantityToDeduct, $stockBefore);
+                                    $effectiveDeduct = min($quantityToDeduct, $stockBefore);
 
-                            // Krijo lëvizjen kryesore të stokut për shitje
-                            if ($effectiveDeduct > 0) {
-                                StockMovement::create([
-                                    'product_id' => $product->id,
-                                    'movement_type' => 'sale',
-                                    'order_id' => $order->id,
-                                    'quantity' => -$effectiveDeduct,
-                                    'unit_cost' => $product->cost_price,
-                                    'total_cost' => $product->cost_price ? $product->cost_price * $effectiveDeduct : null,
-                                    'stock_before' => $stockBefore,
-                                    'stock_after' => $stockAfter,
-                                    'notes' => 'Shitje - Porosia #' . $order->order_number,
-                                ]);
-                            }
+                                    if ($effectiveDeduct > 0 && Schema::hasTable('stock_movements')) {
+                                        StockMovement::create(self::filterToTableColumns('stock_movements', [
+                                            'product_id' => $product->id,
+                                            'movement_type' => 'sale',
+                                            'stock_receipt_id' => null,
+                                            'order_id' => $order->id,
+                                            'quantity' => -$effectiveDeduct,
+                                            'unit_cost' => $product->cost_price,
+                                            'total_cost' => $product->cost_price ? $product->cost_price * $effectiveDeduct : null,
+                                            'stock_before' => $stockBefore,
+                                            'stock_after' => $stockAfter,
+                                            'notes' => 'Shitje - Porosia #' . $order->order_number,
+                                        ]));
+                                    }
 
-                            // Nëse ka mungesë stoku (p.sh. stoku ishte 0, porosia 60cp),
-                            // regjistrojmë mungesën si lëvizje të veçantë
-                            $missing = $quantityToDeduct - $stockBefore;
-                            if ($missing > 0) {
-                                $missingCp = $missing;
+                                    $missing = $quantityToDeduct - $stockBefore;
+                                    if ($missing > 0 && Schema::hasTable('stock_movements')) {
+                                        $missingCp = $missing;
 
-                                // Nëse produkti shitet me paketim, llogarisim edhe në komplete
-                                $missingPackages = null;
-                                if (!empty($item['sold_by_package']) && !empty($item['pieces_per_package'])) {
-                                    $missingPackages = $missingCp / $item['pieces_per_package'];
+                                        $missingPackages = null;
+                                        if (!empty($item['sold_by_package']) && !empty($item['pieces_per_package'])) {
+                                            $missingPackages = $missingCp / $item['pieces_per_package'];
+                                        }
+
+                                        $categoryName = $product->category?->name;
+
+                                        $notes = 'Mungesë stoku - ' . $product->name;
+                                        if ($categoryName) {
+                                            $notes .= ' - ' . $categoryName;
+                                        }
+
+                                        if ($missingPackages !== null) {
+                                            $notes .= sprintf(
+                                                ' -%s komplete -%dcp',
+                                                rtrim(rtrim(number_format($missingPackages, 2, '.', ''), '0'), '.'),
+                                                $missingCp
+                                            );
+                                        } else {
+                                            $notes .= sprintf(' -%dcp', $missingCp);
+                                        }
+
+                                        StockMovement::create(self::filterToTableColumns('stock_movements', [
+                                            'product_id' => $product->id,
+                                            'movement_type' => 'shortage',
+                                            'stock_receipt_id' => null,
+                                            'order_id' => $order->id,
+                                            'quantity' => -$missingCp,
+                                            'unit_cost' => $product->cost_price,
+                                            'total_cost' => $product->cost_price ? $product->cost_price * $missingCp : null,
+                                            'stock_before' => $stockAfter,
+                                            'stock_after' => $stockAfter,
+                                            'notes' => $notes,
+                                        ]));
+                                    }
                                 }
-
-                                $categoryName = $product->category?->name;
-
-                                // Shembull i dëshiruar nga përdoruesi:
-                                // "-Foli Najlloni  Të Tjera -5 komplete -60cp"
-                                $notes = 'Mungesë stoku - ' . $product->name;
-                                if ($categoryName) {
-                                    $notes .= ' - ' . $categoryName;
-                                }
-
-                                if ($missingPackages !== null) {
-                                    // Formatim i thjeshtë për komplete (mund të jetë edhe jo numër i plotë)
-                                    $notes .= sprintf(
-                                        ' -%s komplete -%dcp',
-                                        rtrim(rtrim(number_format($missingPackages, 2, '.', ''), '0'), '.'),
-                                        $missingCp
-                                    );
-                                } else {
-                                    $notes .= sprintf(' -%dcp', $missingCp);
-                                }
-
-                                StockMovement::create([
-                                    'product_id' => $product->id,
-                                    'movement_type' => 'shortage', // tip i veçantë për mungesë
-                                    'order_id' => $order->id,
-                                    // Ruajmë mungesën në copa (cp), stokun nuk e ulim nën 0
-                                    'quantity' => -$missingCp,
-                                    'unit_cost' => $product->cost_price,
-                                    'total_cost' => $product->cost_price ? $product->cost_price * $missingCp : null,
-                                    'stock_before' => $stockAfter,
-                                    'stock_after' => $stockAfter,
-                                    'notes' => $notes,
-                                ]);
                             }
                         }
-                    }
-                }
 
                         return $order;
                     });
@@ -358,6 +356,8 @@ class OrderController extends Controller
                 'message' => $e->getMessage(),
                 'file' => $e->getFile(),
                 'line' => $e->getLine(),
+                'previous' => $e->getPrevious() ? $e->getPrevious()->getMessage() : null,
+                'trace' => substr($e->getTraceAsString(), 0, 6000),
             ]);
 
             return response()->json([
@@ -699,6 +699,21 @@ class OrderController extends Controller
         ]);
     }
 
+    /**
+     * @param  array<string, mixed>  $row
+     * @return array<string, mixed>
+     */
+    private static function filterToTableColumns(string $table, array $row): array
+    {
+        if (!Schema::hasTable($table)) {
+            return [];
+        }
+
+        $allowed = array_flip(Schema::getColumnListing($table));
+
+        return array_intersect_key($row, $allowed);
+    }
+
     private function generateOrderNumber(): string
     {
         $datePart = now()->format('Ymd');
@@ -721,7 +736,8 @@ class OrderController extends Controller
     private function isDuplicateOrderNumberConstraint(QueryException $e): bool
     {
         $message = $e->getMessage();
-        if (!str_contains(strtolower($message), 'order_number')) {
+        $lower = strtolower($message);
+        if (!str_contains($lower, 'order_number') && !str_contains($lower, 'orders_order_number')) {
             return false;
         }
 
