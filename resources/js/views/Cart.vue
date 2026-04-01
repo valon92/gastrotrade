@@ -2138,8 +2138,8 @@ export default {
         vat_amount: this.hasVat && this.cartStore.totalPrice > 0 ? this.vatAmount : null,
         amount_before_vat: this.hasVat && this.cartStore.totalPrice > 0 ? this.amountBeforeVat : null,
         created_at: new Date().toISOString(),
-        is_paid: false,
-        paid_at: null,
+        is_paid: !!this.isPaid,
+        paid_at: this.isPaid ? new Date().toISOString() : null,
         items: this.cartStore.items.map(item => {
           const boughtByPieces = this.canBuyByPieces(item)
           const qty = boughtByPieces ? this.getPiecesQuantity(item) : item.quantity
