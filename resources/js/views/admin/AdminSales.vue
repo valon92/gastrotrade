@@ -57,7 +57,7 @@
           <label class="block text-xs font-semibold text-gray-600 mb-1">Statusi</label>
           <select 
             v-model="filters.status"
-            @change="loadSales"
+            @change="loadSales(1)"
             class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
           >
             <option value="">Të Gjitha</option>
@@ -72,7 +72,7 @@
           <label class="block text-xs font-semibold text-gray-600 mb-1">Statusi i Pagesës</label>
           <select 
             v-model="filters.payment"
-            @change="loadSales"
+            @change="loadSales(1)"
             class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
           >
             <option value="">Të Gjitha</option>
@@ -85,7 +85,7 @@
           <input 
             v-model="filters.date_from"
             type="date"
-            @change="loadSales"
+            @change="loadSales(1)"
             class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
           >
         </div>
@@ -539,7 +539,8 @@ export default {
           params.status = this.filters.status
         }
         if (this.filters.payment) {
-          params.is_paid = this.filters.payment === 'paid' ? 1 : 0
+          // API expects boolean; send true/false instead of 1/0
+          params.is_paid = this.filters.payment === 'paid'
         }
         if (this.filters.date_from) {
           params.date_from = this.filters.date_from
