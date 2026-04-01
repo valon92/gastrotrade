@@ -3,6 +3,7 @@
 namespace App\Http\Requests;
 
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rule;
 
 class StoreOrderRequest extends FormRequest
 {
@@ -24,7 +25,13 @@ class StoreOrderRequest extends FormRequest
         return [
             'client_id' => ['nullable', 'exists:clients,id'],
             'client_location_id' => ['nullable', 'exists:client_locations,id'],
-            'order_number' => ['nullable', 'string', 'max:255', 'unique:orders,order_number'],
+            // Vetëm porositë jo të fshira (soft delete): përndryshe UNIQUE në DB dështon me 500
+            'order_number' => [
+                'nullable',
+                'string',
+                'max:255',
+                Rule::unique('orders', 'order_number')->whereNull('deleted_at'),
+            ],
             'customer.name' => ['required', 'string', 'max:255'],
             'customer.business_name' => ['required', 'string', 'max:255'],
             'customer.fiscal_number' => ['required', 'string', 'max:255'],
@@ -36,6 +43,7 @@ class StoreOrderRequest extends FormRequest
             'items.*.name' => ['required', 'string', 'max:255'],
             'items.*.quantity' => ['required', 'integer', 'min:1'],
             'items.*.sold_by_package' => ['required', 'boolean'],
+            'items.*.unit_type' => ['nullable', 'string', 'max:32'],
             'items.*.pieces_per_package' => ['nullable', 'integer', 'min:1'],
             'items.*.unit_price' => ['nullable', 'numeric', 'min:0'],
             'items.*.total_price' => ['nullable', 'numeric', 'min:0'],

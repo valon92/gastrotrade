@@ -203,110 +203,141 @@ class OrderController extends Controller
             $orderData['location_viber'] = $locationData['location_viber'];
             $orderData['location_city'] = $locationData['location_city'];
         }
-        
-        $order = Order::create($orderData);
 
-        foreach ($items as $item) {
-            $orderItem = $order->items()->create([
-                'product_id' => $item['product_id'] ?? null,
-                'product_name' => $item['name'],
-                'quantity' => $item['quantity'],
-                'sold_by_package' => $item['sold_by_package'],
-                'pieces_per_package' => $item['pieces_per_package'] ?? null,
-                'unit_type' => $item['unit_type'] ?? null,
-                'unit_price' => $item['unit_price'] ?? null,
-                'total_price' => $item['total_price'] ?? null,
-                'discount_amount' => $item['discount_amount'] ?? 0,
-                'discount_type' => $item['discount_type'] ?? null,
-                'discount_value' => $item['discount_value'] ?? 0,
-            ]);
+        try {
+            $order = DB::transaction(function () use ($orderData, $items) {
+                $order = Order::create($orderData);
 
-            // Update stock if product exists
-            if ($item['product_id']) {
-                $product = Product::find($item['product_id']);
-                if ($product) {
-                    $quantityToDeduct = $item['sold_by_package'] && $item['pieces_per_package']
-                        ? $item['quantity'] * $item['pieces_per_package']
-                        : $item['quantity'];
+                foreach ($items as $item) {
+                    $order->items()->create([
+                        'product_id' => $item['product_id'] ?? null,
+                        'product_name' => $item['name'],
+                        'quantity' => $item['quantity'],
+                        'sold_by_package' => $item['sold_by_package'],
+                        'pieces_per_package' => $item['pieces_per_package'] ?? null,
+                        'unit_type' => $item['unit_type'] ?? null,
+                        'unit_price' => $item['unit_price'] ?? null,
+                        'total_price' => $item['total_price'] ?? null,
+                        'discount_amount' => $item['discount_amount'] ?? 0,
+                        'discount_type' => $item['discount_type'] ?? null,
+                        'discount_value' => $item['discount_value'] ?? 0,
+                    ]);
 
-                    $stockBefore = $product->stock_quantity;
+                    // Update stock if product exists
+                    if ($item['product_id']) {
+                        $product = Product::find($item['product_id']);
+                        if ($product) {
+                            $quantityToDeduct = $item['sold_by_package'] && $item['pieces_per_package']
+                                ? $item['quantity'] * $item['pieces_per_package']
+                                : $item['quantity'];
 
-                    // Llogarit stokun pas zbritjes (nuk lejojmë më pak se 0 në produkt)
-                    $stockAfter = max(0, $stockBefore - $quantityToDeduct);
-                    $product->stock_quantity = $stockAfter;
-                    $product->save();
+                            $stockBefore = $product->stock_quantity;
 
-                    // Sasia reale që mund të shitet nga stoku aktual
-                    $effectiveDeduct = min($quantityToDeduct, $stockBefore);
+                            // Llogarit stokun pas zbritjes (nuk lejojmë më pak se 0 në produkt)
+                            $stockAfter = max(0, $stockBefore - $quantityToDeduct);
+                            $product->stock_quantity = $stockAfter;
+                            $product->save();
 
-                    // Krijo lëvizjen kryesore të stokut për shitje
-                    if ($effectiveDeduct > 0) {
-                        StockMovement::create([
-                            'product_id' => $product->id,
-                            'movement_type' => 'sale',
-                            'order_id' => $order->id,
-                            'quantity' => -$effectiveDeduct,
-                            'unit_cost' => $product->cost_price,
-                            'total_cost' => $product->cost_price ? $product->cost_price * $effectiveDeduct : null,
-                            'stock_before' => $stockBefore,
-                            'stock_after' => $stockAfter,
-                            'notes' => 'Shitje - Porosia #' . $order->order_number,
-                        ]);
-                    }
+                            // Sasia reale që mund të shitet nga stoku aktual
+                            $effectiveDeduct = min($quantityToDeduct, $stockBefore);
 
-                    // Nëse ka mungesë stoku (p.sh. stoku ishte 0, porosia 60cp),
-                    // regjistrojmë mungesën si lëvizje të veçantë
-                    $missing = $quantityToDeduct - $stockBefore;
-                    if ($missing > 0) {
-                        $missingCp = $missing;
+                            // Krijo lëvizjen kryesore të stokut për shitje
+                            if ($effectiveDeduct > 0) {
+                                StockMovement::create([
+                                    'product_id' => $product->id,
+                                    'movement_type' => 'sale',
+                                    'order_id' => $order->id,
+                                    'quantity' => -$effectiveDeduct,
+                                    'unit_cost' => $product->cost_price,
+                                    'total_cost' => $product->cost_price ? $product->cost_price * $effectiveDeduct : null,
+                                    'stock_before' => $stockBefore,
+                                    'stock_after' => $stockAfter,
+                                    'notes' => 'Shitje - Porosia #' . $order->order_number,
+                                ]);
+                            }
 
-                        // Nëse produkti shitet me paketim, llogarisim edhe në komplete
-                        $missingPackages = null;
-                        if (!empty($item['sold_by_package']) && !empty($item['pieces_per_package'])) {
-                            $missingPackages = $missingCp / $item['pieces_per_package'];
+                            // Nëse ka mungesë stoku (p.sh. stoku ishte 0, porosia 60cp),
+                            // regjistrojmë mungesën si lëvizje të veçantë
+                            $missing = $quantityToDeduct - $stockBefore;
+                            if ($missing > 0) {
+                                $missingCp = $missing;
+
+                                // Nëse produkti shitet me paketim, llogarisim edhe në komplete
+                                $missingPackages = null;
+                                if (!empty($item['sold_by_package']) && !empty($item['pieces_per_package'])) {
+                                    $missingPackages = $missingCp / $item['pieces_per_package'];
+                                }
+
+                                $categoryName = $product->category?->name;
+
+                                // Shembull i dëshiruar nga përdoruesi:
+                                // "-Foli Najlloni  Të Tjera -5 komplete -60cp"
+                                $notes = 'Mungesë stoku - ' . $product->name;
+                                if ($categoryName) {
+                                    $notes .= ' - ' . $categoryName;
+                                }
+
+                                if ($missingPackages !== null) {
+                                    // Formatim i thjeshtë për komplete (mund të jetë edhe jo numër i plotë)
+                                    $notes .= sprintf(
+                                        ' -%s komplete -%dcp',
+                                        rtrim(rtrim(number_format($missingPackages, 2, '.', ''), '0'), '.'),
+                                        $missingCp
+                                    );
+                                } else {
+                                    $notes .= sprintf(' -%dcp', $missingCp);
+                                }
+
+                                StockMovement::create([
+                                    'product_id' => $product->id,
+                                    'movement_type' => 'shortage', // tip i veçantë për mungesë
+                                    'order_id' => $order->id,
+                                    // Ruajmë mungesën në copa (cp), stokun nuk e ulim nën 0
+                                    'quantity' => -$missingCp,
+                                    'unit_cost' => $product->cost_price,
+                                    'total_cost' => $product->cost_price ? $product->cost_price * $missingCp : null,
+                                    'stock_before' => $stockAfter,
+                                    'stock_after' => $stockAfter,
+                                    'notes' => $notes,
+                                ]);
+                            }
                         }
-
-                        $categoryName = $product->category->name ?? null;
-
-                        // Shembull i dëshiruar nga përdoruesi:
-                        // "-Foli Najlloni  Të Tjera -5 komplete -60cp"
-                        $notes = 'Mungesë stoku - ' . $product->name;
-                        if ($categoryName) {
-                            $notes .= ' - ' . $categoryName;
-                        }
-
-                        if ($missingPackages !== null) {
-                            // Formatim i thjeshtë për komplete (mund të jetë edhe jo numër i plotë)
-                            $notes .= sprintf(
-                                ' -%s komplete -%dcp',
-                                rtrim(rtrim(number_format($missingPackages, 2, '.', ''), '0'), '.'),
-                                $missingCp
-                            );
-                        } else {
-                            $notes .= sprintf(' -%dcp', $missingCp);
-                        }
-
-                        StockMovement::create([
-                            'product_id' => $product->id,
-                            'movement_type' => 'shortage', // tip i veçantë për mungesë
-                            'order_id' => $order->id,
-                            // Ruajmë mungesën në copa (cp), stokun nuk e ulim nën 0
-                            'quantity' => -$missingCp,
-                            'unit_cost' => $product->cost_price,
-                            'total_cost' => $product->cost_price ? $product->cost_price * $missingCp : null,
-                            'stock_before' => $stockAfter,
-                            'stock_after' => $stockAfter,
-                            'notes' => $notes,
-                        ]);
                     }
                 }
-            }
-        }
 
-        return response()->json([
-            'success' => true,
-            'data' => $order->load(['items.product', 'clientLocation']),
-        ], 201);
+                return $order;
+            });
+
+            $order->load(['items.product']);
+            if (
+                \Illuminate\Support\Facades\Schema::hasTable('client_locations')
+                && \Illuminate\Support\Facades\Schema::hasColumn('orders', 'client_location_id')
+            ) {
+                try {
+                    $order->load('clientLocation');
+                } catch (\Throwable $e) {
+                    \Log::warning('Order store: clientLocation load failed', ['message' => $e->getMessage()]);
+                }
+            }
+
+            return response()->json([
+                'success' => true,
+                'data' => $order,
+            ], 201);
+        } catch (\Throwable $e) {
+            \Log::error('Order store failed', [
+                'message' => $e->getMessage(),
+                'file' => $e->getFile(),
+                'line' => $e->getLine(),
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'message' => config('app.debug')
+                    ? $e->getMessage()
+                    : 'Ruajtja e porosisë dështoi. Ju lutem provoni përsëri ose kontaktoni mbështetjen.',
+            ], 500);
+        }
     }
 
     public function history(Request $request)

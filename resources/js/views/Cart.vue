@@ -1403,7 +1403,9 @@ export default {
       
       return `GT-${datePart}-${countPart}${randomPart}`
     },
-    async saveOrder() {
+    async saveOrder(options = {}) {
+      const skipSuccessAlert = !!options.skipSuccessAlert
+
       if (!this.isFormValid) {
         alert('Ju lutem plotësoni të gjitha fushat e detyrueshme!')
         return
@@ -1428,6 +1430,8 @@ export default {
       }
 
       this.savingOrder = true
+      this.saveSuccess = false
+      this.savedOrder = null
       try {
         const payload = {
           client_id: this.cartStore.client ? this.cartStore.client.id : null,
@@ -1485,7 +1489,11 @@ export default {
         }
 
         const response = await axios.post('/api/orders', payload)
-        this.savedOrder = response.data.data
+        const orderPayload = response.data?.data
+        if (!orderPayload || !orderPayload.order_number) {
+          throw new Error('Përgjigje e pavlefshme nga serveri (mungon porosia).')
+        }
+        this.savedOrder = orderPayload
         this.saveSuccess = true
         
         // Clear pending order number after successful save
@@ -1512,13 +1520,15 @@ export default {
           }
         }
         
-        // Show success notification with link to admin sales
-        const orderNumber = response.data.data.order_number
+        // Show success notification with link to admin sales (jo kur vjen nga «Dërgo Porosin»)
+        const orderNumber = orderPayload.order_number
         const adminToken = localStorage.getItem('admin_token')
-        const viewInAdmin = adminToken ? 
-          `\n\n🔗 Shiko në Admin: ${window.location.origin}/admin/sales?order=${orderNumber}` : 
-          ''
-        alert(`✅ Porosia #${orderNumber} u ruajt me sukses!${viewInAdmin}`)
+        if (!skipSuccessAlert) {
+          const viewInAdmin = adminToken ? 
+            `\n\n🔗 Shiko në Admin: ${window.location.origin}/admin/sales?order=${orderNumber}` : 
+            ''
+          alert(`✅ Porosia #${orderNumber} u ruajt me sukses!${viewInAdmin}`)
+        }
         
         // Store order number for potential navigation
         if (adminToken) {
@@ -1546,6 +1556,8 @@ export default {
             errorMessage = error.response.data.error
           }
         }
+        this.saveSuccess = false
+        this.savedOrder = null
         alert(errorMessage)
       } finally {
         this.savingOrder = false
@@ -2182,8 +2194,8 @@ export default {
       this.submittingOrder = true
       
       try {
-        // First save the order
-        await this.saveOrder()
+        // I njëjti API si «Ruaj Porosinë»; pa alert suksesi — kalon te konfirmimi
+        await this.saveOrder({ skipSuccessAlert: true })
         
         // After successful save, navigate to OrderConfirmation page
         if (this.saveSuccess && this.savedOrder) {
