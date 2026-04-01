@@ -12,32 +12,59 @@ use App\Models\SupplierInvoiceItem;
 use App\Helpers\UnitConverter;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 
 class StockReceiptController extends Controller
 {
     public function index(Request $request)
     {
-        $query = StockReceipt::with(['supplier', 'items.product']);
+        if (!Schema::hasTable('stock_receipts')) {
+            return response()->json([
+                'success' => true,
+                'data' => [],
+            ]);
+        }
+
+        $query = StockReceipt::query();
+        try {
+            $query->with(['supplier', 'items.product']);
+        } catch (\Throwable $e) {
+            \Log::warning('StockReceipt index: eager load failed', ['message' => $e->getMessage()]);
+        }
 
         if ($request->has('supplier_id')) {
-            $query->where('supplier_id', $request->supplier_id);
+            if (Schema::hasColumn('stock_receipts', 'supplier_id')) {
+                $query->where('supplier_id', $request->supplier_id);
+            }
         }
 
         if ($request->has('status')) {
-            $query->where('status', $request->status);
+            if (Schema::hasColumn('stock_receipts', 'status')) {
+                $query->where('status', $request->status);
+            }
         }
 
         if ($request->has('date_from')) {
-            $query->whereDate('receipt_date', '>=', $request->date_from);
+            if (Schema::hasColumn('stock_receipts', 'receipt_date')) {
+                $query->whereDate('receipt_date', '>=', $request->date_from);
+            }
         }
 
         if ($request->has('date_to')) {
-            $query->whereDate('receipt_date', '<=', $request->date_to);
+            if (Schema::hasColumn('stock_receipts', 'receipt_date')) {
+                $query->whereDate('receipt_date', '<=', $request->date_to);
+            }
         }
 
-        $receipts = $query->orderBy('receipt_date', 'desc')
-            ->orderBy('created_at', 'desc')
-            ->get();
+        try {
+            $receipts = $query
+                ->when(Schema::hasColumn('stock_receipts', 'receipt_date'), fn($q) => $q->orderBy('receipt_date', 'desc'))
+                ->when(Schema::hasColumn('stock_receipts', 'created_at'), fn($q) => $q->orderBy('created_at', 'desc'))
+                ->get();
+        } catch (\Throwable $e) {
+            \Log::warning('StockReceipt index failed', ['message' => $e->getMessage()]);
+            $receipts = [];
+        }
 
         return response()->json([
             'success' => true,

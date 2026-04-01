@@ -8,34 +8,62 @@ use App\Models\SupplierInvoiceItem;
 use App\Models\StockReceipt;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 
 class SupplierInvoiceController extends Controller
 {
     public function index(Request $request)
     {
+        if (!Schema::hasTable('supplier_invoices')) {
+            return response()->json([
+                'success' => true,
+                'data' => [],
+            ]);
+        }
+
         // Only show non-deleted invoices (exclude soft-deleted invoices)
-        $query = SupplierInvoice::whereNull('deleted_at')
-            ->with(['supplier', 'stockReceipt', 'items.product']);
+        $query = SupplierInvoice::query();
+        if (Schema::hasColumn('supplier_invoices', 'deleted_at')) {
+            $query->whereNull('deleted_at');
+        }
+
+        try {
+            $query->with(['supplier', 'stockReceipt', 'items.product']);
+        } catch (\Throwable $e) {
+            \Log::warning('SupplierInvoice index: eager load failed', ['message' => $e->getMessage()]);
+        }
 
         if ($request->has('supplier_id')) {
             $query->where('supplier_id', $request->supplier_id);
         }
 
         if ($request->has('status')) {
-            $query->where('status', $request->status);
+            if (Schema::hasColumn('supplier_invoices', 'status')) {
+                $query->where('status', $request->status);
+            }
         }
 
         if ($request->has('date_from')) {
-            $query->whereDate('invoice_date', '>=', $request->date_from);
+            if (Schema::hasColumn('supplier_invoices', 'invoice_date')) {
+                $query->whereDate('invoice_date', '>=', $request->date_from);
+            }
         }
 
         if ($request->has('date_to')) {
-            $query->whereDate('invoice_date', '<=', $request->date_to);
+            if (Schema::hasColumn('supplier_invoices', 'invoice_date')) {
+                $query->whereDate('invoice_date', '<=', $request->date_to);
+            }
         }
 
-        $invoices = $query->orderBy('invoice_date', 'desc')
-            ->orderBy('created_at', 'desc')
-            ->get();
+        try {
+            $invoices = $query
+                ->when(Schema::hasColumn('supplier_invoices', 'invoice_date'), fn($q) => $q->orderBy('invoice_date', 'desc'))
+                ->when(Schema::hasColumn('supplier_invoices', 'created_at'), fn($q) => $q->orderBy('created_at', 'desc'))
+                ->get();
+        } catch (\Throwable $e) {
+            \Log::warning('SupplierInvoice index failed', ['message' => $e->getMessage()]);
+            $invoices = [];
+        }
 
         return response()->json([
             'success' => true,

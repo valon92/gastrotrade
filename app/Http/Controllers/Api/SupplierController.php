@@ -5,28 +5,49 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Models\Supplier;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Schema;
 
 class SupplierController extends Controller
 {
     public function index(Request $request)
     {
+        if (!Schema::hasTable('suppliers')) {
+            return response()->json([
+                'success' => true,
+                'data' => [],
+            ]);
+        }
+
         $query = Supplier::query();
 
         if ($request->has('search')) {
             $search = $request->search;
             $query->where(function ($q) use ($search) {
-                $q->where('name', 'like', '%' . $search . '%')
-                    ->orWhere('contact_person', 'like', '%' . $search . '%')
-                    ->orWhere('email', 'like', '%' . $search . '%')
-                    ->orWhere('phone', 'like', '%' . $search . '%');
+                $q->where('name', 'like', '%' . $search . '%');
+                if (Schema::hasColumn('suppliers', 'contact_person')) {
+                    $q->orWhere('contact_person', 'like', '%' . $search . '%');
+                }
+                if (Schema::hasColumn('suppliers', 'email')) {
+                    $q->orWhere('email', 'like', '%' . $search . '%');
+                }
+                if (Schema::hasColumn('suppliers', 'phone')) {
+                    $q->orWhere('phone', 'like', '%' . $search . '%');
+                }
             });
         }
 
         if ($request->has('active_only') && $request->active_only) {
-            $query->where('is_active', true);
+            if (Schema::hasColumn('suppliers', 'is_active')) {
+                $query->where('is_active', true);
+            }
         }
 
-        $suppliers = $query->orderBy('name')->get();
+        try {
+            $suppliers = $query->orderBy('name')->get();
+        } catch (\Throwable $e) {
+            \Log::warning('Suppliers index failed', ['message' => $e->getMessage()]);
+            $suppliers = [];
+        }
 
         return response()->json([
             'success' => true,
