@@ -478,6 +478,7 @@ class OrderController extends Controller
             'vat_amount' => ['sometimes', 'nullable', 'numeric', 'min:0'],
             'amount_before_vat' => ['sometimes', 'nullable', 'numeric', 'min:0'],
             'is_paid' => ['sometimes', 'boolean'],
+            'paid_at' => ['sometimes', 'nullable', 'date'],
             'items' => ['sometimes', 'array'],
             'items.*.id' => ['nullable', 'exists:order_items,id'],
             'items.*.product_id' => ['nullable', 'exists:products,id'],
@@ -510,6 +511,7 @@ class OrderController extends Controller
             'vat_amount',
             'amount_before_vat',
             'is_paid',
+            'paid_at',
         ]);
         
         // NEVER allow order_number to be changed - it must remain the same from creation
@@ -517,12 +519,19 @@ class OrderController extends Controller
             unset($updateData['order_number']);
         }
 
-        // If marking as paid, set paid_at timestamp
+        // Payment status: allow manual paid_at (e.g. paid later than invoice date)
         if ($request->has('is_paid')) {
-            if ($request->input('is_paid') && !$order->is_paid) {
-                $updateData['paid_at'] = now();
-            } elseif (!$request->input('is_paid') && $order->is_paid) {
+            if (!$request->boolean('is_paid')) {
                 $updateData['paid_at'] = null;
+            } else {
+                // If client provided a paid_at, keep it. Otherwise set on transition unpaid -> paid.
+                if (!$request->has('paid_at') || $request->input('paid_at') === null || $request->input('paid_at') === '') {
+                    if (!$order->is_paid) {
+                        $updateData['paid_at'] = now();
+                    } else {
+                        unset($updateData['paid_at']); // keep existing paid_at
+                    }
+                }
             }
         }
 

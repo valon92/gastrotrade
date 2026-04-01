@@ -794,6 +794,35 @@
                 </div>
               </div>
 
+              <!-- Payment Controls -->
+              <div class="mb-6 p-4 bg-emerald-50 rounded-lg border border-emerald-200">
+                <h4 class="font-semibold text-gray-900 mb-3">Pagesa</h4>
+                <div class="flex flex-col sm:flex-row sm:items-start gap-3">
+                  <label class="flex items-center gap-2 cursor-pointer pt-1">
+                    <input
+                      type="checkbox"
+                      v-model="editingOrder.is_paid"
+                      class="w-5 h-5 rounded border-gray-300 text-emerald-600 focus:ring-emerald-500"
+                    >
+                    <span class="text-sm font-medium text-gray-700">
+                      {{ editingOrder.is_paid ? '✓ E Paguar' : 'E PaPaguar' }}
+                    </span>
+                  </label>
+                  <div class="flex-1">
+                    <label class="block text-xs font-medium text-gray-700 mb-1">Data/Ora e pagesës</label>
+                    <input
+                      type="datetime-local"
+                      v-model="editingOrder.paid_at_local"
+                      :disabled="!editingOrder.is_paid"
+                      class="w-full px-3 py-2 border border-gray-300 rounded-md text-sm bg-white disabled:opacity-60"
+                    >
+                    <p class="text-xs text-gray-500 mt-1">
+                      Nëse lihet bosh, do vendoset automatikisht koha aktuale kur ruhet si “E Paguar”.
+                    </p>
+                  </div>
+                </div>
+              </div>
+
               <!-- General Discount Controls -->
               <div class="mb-6 p-4 bg-amber-50 rounded-lg">
                 <h4 class="font-semibold text-gray-900 mb-3">Zbritja e Përgjithshme (vetëm admin)</h4>
@@ -1646,7 +1675,8 @@ export default {
         has_vat: clonedOrder.has_vat || false,
         vat_amount: clonedOrder.vat_amount || null,
         amount_before_vat: clonedOrder.amount_before_vat || null,
-        fiscal_number: clonedOrder.fiscal_number ? String(clonedOrder.fiscal_number).trim().toUpperCase() : ''
+        fiscal_number: clonedOrder.fiscal_number ? String(clonedOrder.fiscal_number).trim().toUpperCase() : '',
+        paid_at_local: clonedOrder.paid_at ? this.toDatetimeLocalValue(clonedOrder.paid_at) : ''
       }
       this.editingOrderItems = (clonedOrder.items || []).map(item => ({
         ...item,
@@ -1865,6 +1895,10 @@ export default {
           has_vat: this.editingOrder.has_vat || false,
           vat_amount: vatAmount,
           amount_before_vat: amountBeforeVat,
+          is_paid: !!this.editingOrder.is_paid,
+          paid_at: this.editingOrder.is_paid
+            ? (this.editingOrder.paid_at_local ? new Date(this.editingOrder.paid_at_local).toISOString() : new Date().toISOString())
+            : null,
           items
         }
 
@@ -1910,6 +1944,13 @@ export default {
     calculateItemTotalValue(item) {
       if (!item.unit_price) return null
       return this.getOrderItemTotal(item)
+    },
+
+    toDatetimeLocalValue(value) {
+      if (!value) return ''
+      const d = new Date(value)
+      const pad = (n) => String(n).padStart(2, '0')
+      return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`
     }
   }
 }
