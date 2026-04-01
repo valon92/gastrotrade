@@ -7,22 +7,40 @@ use App\Models\Product;
 use App\Models\StockMovement;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 
 class StockController extends Controller
 {
     public function index(Request $request)
     {
+        if (!Schema::hasTable('products')) {
+            return response()->json([
+                'success' => true,
+                'data' => [],
+            ]);
+        }
+
+        $hasStockQuantity = Schema::hasColumn('products', 'stock_quantity');
+        $hasMinStockLevel = Schema::hasColumn('products', 'min_stock_level');
+        $hasSupplierId = Schema::hasColumn('products', 'supplier_id');
+        $hasDescription = Schema::hasColumn('products', 'description');
+
         $query = Product::with(['supplier', 'category']);
 
-        if ($request->has('low_stock') && $request->low_stock) {
+        if (
+            $hasStockQuantity
+            && $hasMinStockLevel
+            && $request->has('low_stock')
+            && $request->low_stock
+        ) {
             $query->whereRaw('stock_quantity <= min_stock_level');
         }
 
-        if ($request->has('out_of_stock') && $request->out_of_stock) {
+        if ($hasStockQuantity && $request->has('out_of_stock') && $request->out_of_stock) {
             $query->where('stock_quantity', '<=', 0);
         }
 
-        if ($request->has('supplier_id')) {
+        if ($hasSupplierId && $request->has('supplier_id')) {
             $query->where('supplier_id', $request->supplier_id);
         }
 
@@ -34,15 +52,27 @@ class StockController extends Controller
             $search = $request->search;
             $query->where(function ($q) use ($search) {
                 $q->where('name', 'like', '%' . $search . '%')
-                    ->orWhere('description', 'like', '%' . $search . '%');
+                    ->when($hasDescription, function ($q) use ($search) {
+                        $q->orWhere('description', 'like', '%' . $search . '%');
+                    });
             });
         }
 
         $products = $query->orderBy('name')->get();
 
         // Sync stock for all products before calculating (ensure accuracy)
-        foreach ($products as $product) {
-            $product->syncStockFromMovements();
+        // Guard for production environments with partial migrations (missing stock tables/columns).
+        if (Schema::hasTable('stock_movements') && $hasStockQuantity) {
+            foreach ($products as $product) {
+                try {
+                    $product->syncStockFromMovements();
+                } catch (\Throwable $e) {
+                    \Log::warning('Stock sync failed for product', [
+                        'product_id' => $product->id,
+                        'message' => $e->getMessage(),
+                    ]);
+                }
+            }
         }
 
         // Reload products to get synced stock
@@ -56,29 +86,49 @@ class StockController extends Controller
         // - If unit_type = 'cp' or sold_by_package = 0, quantity is already in pieces (customer bought by pieces)
         // - If unit_type is NULL (old orders), use sold_by_package as fallback
         // Cart.vue now sends actual_pieces as quantity, sets sold_by_package = false, and unit_type = 'cp' when customer buys by pieces
-        $totalOrdered = \App\Models\OrderItem::select('order_items.product_id', DB::raw('SUM(
-            CASE 
-                WHEN (order_items.unit_type = \'package\' OR (order_items.unit_type IS NULL AND order_items.sold_by_package = 1)) 
-                     AND order_items.pieces_per_package IS NOT NULL 
-                THEN order_items.quantity * order_items.pieces_per_package 
-                ELSE order_items.quantity 
-            END
-        ) as total_ordered_pieces'))
-            ->join('orders', 'order_items.order_id', '=', 'orders.id')
-            ->whereNotNull('order_items.product_id')
-            ->whereNotNull('orders.client_id') // Only count orders with a client
-            ->whereIn('orders.status', ['ruajtur', 'konfirmuar', 'dërguar', 'kompletuar'])
-            ->whereNull('orders.deleted_at')
-            ->groupBy('order_items.product_id')
-            ->pluck('total_ordered_pieces', 'product_id');
+        $totalOrdered = collect();
+        if (Schema::hasTable('order_items') && Schema::hasTable('orders')) {
+            $hasUnitType = Schema::hasColumn('order_items', 'unit_type');
+            $hasSoldByPackage = Schema::hasColumn('order_items', 'sold_by_package');
+            $hasPiecesPerPackage = Schema::hasColumn('order_items', 'pieces_per_package');
+
+            $sumExpr = 'SUM(order_items.quantity)';
+            if ($hasUnitType && $hasSoldByPackage && $hasPiecesPerPackage) {
+                $sumExpr = "SUM(\n            CASE \n                WHEN (order_items.unit_type = 'package' OR (order_items.unit_type IS NULL AND order_items.sold_by_package = 1)) \n                     AND order_items.pieces_per_package IS NOT NULL \n                THEN order_items.quantity * order_items.pieces_per_package \n                ELSE order_items.quantity \n            END\n        )";
+            }
+
+            try {
+                $totalOrdered = \App\Models\OrderItem::select('order_items.product_id', DB::raw("$sumExpr as total_ordered_pieces"))
+                    ->join('orders', 'order_items.order_id', '=', 'orders.id')
+                    ->whereNotNull('order_items.product_id')
+                    ->when(Schema::hasColumn('orders', 'client_id'), fn($q) => $q->whereNotNull('orders.client_id'))
+                    ->when(Schema::hasColumn('orders', 'status'), fn($q) => $q->whereIn('orders.status', ['ruajtur', 'konfirmuar', 'dërguar', 'kompletuar']))
+                    ->when(Schema::hasColumn('orders', 'deleted_at'), fn($q) => $q->whereNull('orders.deleted_at'))
+                    ->groupBy('order_items.product_id')
+                    ->pluck('total_ordered_pieces', 'product_id');
+            } catch (\Throwable $e) {
+                \Log::warning('Stock totalOrdered query failed', ['message' => $e->getMessage()]);
+                $totalOrdered = collect();
+            }
+        }
 
         // Calculate profit and attach shortage info for each product
         $products = $products->map(function ($product) use ($totalOrdered) {
-            // Get real stock (calculated from movements)
-            $realStock = $product->calculateRealStock();
+            $realStock = $product->stock_quantity ?? 0;
+            if (Schema::hasTable('stock_movements') && Schema::hasColumn('products', 'stock_quantity')) {
+                try {
+                    $realStock = $product->calculateRealStock();
+                } catch (\Throwable $e) {
+                    \Log::warning('Product calculateRealStock failed', [
+                        'product_id' => $product->id,
+                        'message' => $e->getMessage(),
+                    ]);
+                    $realStock = (int) ($product->stock_quantity ?? 0);
+                }
+            }
             
             // Ensure stock_quantity is synced
-            if ($product->stock_quantity !== $realStock) {
+            if (Schema::hasColumn('products', 'stock_quantity') && $product->stock_quantity !== $realStock) {
                 $product->stock_quantity = $realStock;
                 $product->saveQuietly(); // Save without triggering events
             }
@@ -161,6 +211,13 @@ class StockController extends Controller
 
     public function movements(Request $request)
     {
+        if (!Schema::hasTable('stock_movements')) {
+            return response()->json([
+                'success' => true,
+                'data' => [],
+            ]);
+        }
+
         $query = StockMovement::with(['product', 'stockReceipt', 'order']);
 
         if ($request->has('product_id')) {
@@ -191,20 +248,54 @@ class StockController extends Controller
 
     public function report(Request $request)
     {
-        // Sync all products before generating report
-        Product::chunk(100, function ($products) {
-            foreach ($products as $product) {
-                $product->syncStockFromMovements();
-            }
-        });
+        if (!Schema::hasTable('products')) {
+            return response()->json([
+                'success' => true,
+                'data' => [
+                    'total_products' => 0,
+                    'total_stock_value' => 0,
+                    'low_stock_products' => 0,
+                    'out_of_stock_products' => 0,
+                    'total_profit_potential' => 0,
+                ],
+            ]);
+        }
+
+        $hasStockQuantity = Schema::hasColumn('products', 'stock_quantity');
+        $hasCostPrice = Schema::hasColumn('products', 'cost_price');
+        $hasPrice = Schema::hasColumn('products', 'price');
+        $hasMinStockLevel = Schema::hasColumn('products', 'min_stock_level');
+
+        // Sync all products before generating report (only when tables/columns exist)
+        if (Schema::hasTable('stock_movements') && $hasStockQuantity) {
+            Product::chunk(100, function ($products) {
+                foreach ($products as $product) {
+                    try {
+                        $product->syncStockFromMovements();
+                    } catch (\Throwable $e) {
+                        \Log::warning('Report stock sync failed', [
+                            'product_id' => $product->id,
+                            'message' => $e->getMessage(),
+                        ]);
+                    }
+                }
+            });
+        }
 
         $totalProducts = Product::count();
-        $totalStockValue = Product::sum(DB::raw('stock_quantity * COALESCE(cost_price, 0)'));
-        $lowStockProducts = Product::whereRaw('stock_quantity <= min_stock_level')->count();
-        $outOfStockProducts = Product::where('stock_quantity', '<=', 0)->count();
+        $totalStockValue = ($hasStockQuantity && $hasCostPrice)
+            ? Product::sum(DB::raw('stock_quantity * COALESCE(cost_price, 0)'))
+            : 0;
+        $lowStockProducts = ($hasStockQuantity && $hasMinStockLevel)
+            ? Product::whereRaw('stock_quantity <= min_stock_level')->count()
+            : 0;
+        $outOfStockProducts = ($hasStockQuantity)
+            ? Product::where('stock_quantity', '<=', 0)->count()
+            : 0;
 
-        // Calculate total profit potential (if all stock is sold)
-        $totalProfitPotential = Product::sum(DB::raw('stock_quantity * (COALESCE(price, 0) - COALESCE(cost_price, 0))'));
+        $totalProfitPotential = ($hasStockQuantity && $hasPrice && $hasCostPrice)
+            ? Product::sum(DB::raw('stock_quantity * (COALESCE(price, 0) - COALESCE(cost_price, 0))'))
+            : 0;
 
         return response()->json([
             'success' => true,

@@ -11,6 +11,7 @@ use App\Models\SupplierInvoice;
 use App\Models\StockReceipt;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 
 class TrashController extends Controller
 {
@@ -21,114 +22,156 @@ class TrashController extends Controller
         $trash = [];
         
         if ($type === 'all' || $type === 'orders') {
-            $trash['orders'] = Order::onlyTrashed()
-                ->with(['client'])
-                ->orderBy('deleted_at', 'desc')
-                ->get()
-                ->map(function ($order) {
-                    return [
-                        'id' => $order->id,
-                        'type' => 'order',
-                        'name' => $order->order_number,
-                        'description' => "Klienti: {$order->customer_name} - {$order->business_name}",
-                        'amount' => $order->total_amount,
-                        'deleted_at' => $order->deleted_at,
-                    ];
-                });
+            $trash['orders'] = collect();
+            if (Schema::hasTable('orders')) {
+                try {
+                    $trash['orders'] = Order::onlyTrashed()
+                        ->with(['client'])
+                        ->orderBy('deleted_at', 'desc')
+                        ->get()
+                        ->map(function ($order) {
+                            return [
+                                'id' => $order->id,
+                                'type' => 'order',
+                                'name' => $order->order_number,
+                                'description' => "Klienti: {$order->customer_name} - {$order->business_name}",
+                                'amount' => $order->total_amount,
+                                'deleted_at' => $order->deleted_at,
+                            ];
+                        });
+                } catch (\Throwable $e) {
+                    \Log::warning('Trash orders load failed', ['message' => $e->getMessage()]);
+                }
+            }
         }
         
         if ($type === 'all' || $type === 'clients') {
-            $trash['clients'] = Client::onlyTrashed()
-                ->orderBy('deleted_at', 'desc')
-                ->get()
-                ->map(function ($client) {
-                    return [
-                        'id' => $client->id,
-                        'type' => 'client',
-                        'name' => $client->store_name ?? $client->name,
-                        'description' => "Nr. Fiskal: {$client->fiscal_number} - {$client->city}",
-                        'amount' => null,
-                        'deleted_at' => $client->deleted_at,
-                    ];
-                });
+            $trash['clients'] = collect();
+            if (Schema::hasTable('clients')) {
+                try {
+                    $trash['clients'] = Client::onlyTrashed()
+                        ->orderBy('deleted_at', 'desc')
+                        ->get()
+                        ->map(function ($client) {
+                            return [
+                                'id' => $client->id,
+                                'type' => 'client',
+                                'name' => $client->store_name ?? $client->name,
+                                'description' => "Nr. Fiskal: {$client->fiscal_number} - {$client->city}",
+                                'amount' => null,
+                                'deleted_at' => $client->deleted_at,
+                            ];
+                        });
+                } catch (\Throwable $e) {
+                    \Log::warning('Trash clients load failed', ['message' => $e->getMessage()]);
+                }
+            }
         }
         
         if ($type === 'all' || $type === 'products') {
-            $trash['products'] = Product::onlyTrashed()
-                ->with(['category'])
-                ->orderBy('deleted_at', 'desc')
-                ->get()
-                ->map(function ($product) {
-                    return [
-                        'id' => $product->id,
-                        'type' => 'product',
-                        'name' => $product->name,
-                        'description' => $product->category ? "Kategoria: {$product->category->name}" : '',
-                        'amount' => $product->price,
-                        'deleted_at' => $product->deleted_at,
-                    ];
-                });
+            $trash['products'] = collect();
+            if (Schema::hasTable('products')) {
+                try {
+                    $trash['products'] = Product::onlyTrashed()
+                        ->with(['category'])
+                        ->orderBy('deleted_at', 'desc')
+                        ->get()
+                        ->map(function ($product) {
+                            return [
+                                'id' => $product->id,
+                                'type' => 'product',
+                                'name' => $product->name,
+                                'description' => $product->category ? "Kategoria: {$product->category->name}" : '',
+                                'amount' => $product->price,
+                                'deleted_at' => $product->deleted_at,
+                            ];
+                        });
+                } catch (\Throwable $e) {
+                    \Log::warning('Trash products load failed', ['message' => $e->getMessage()]);
+                }
+            }
         }
         
         if ($type === 'all' || $type === 'suppliers') {
-            $trash['suppliers'] = Supplier::onlyTrashed()
-                ->orderBy('deleted_at', 'desc')
-                ->get()
-                ->map(function ($supplier) {
-                    return [
-                        'id' => $supplier->id,
-                        'type' => 'supplier',
-                        'name' => $supplier->name,
-                        'description' => $supplier->contact_person ? "Kontakti: {$supplier->contact_person}" : '',
-                        'amount' => null,
-                        'deleted_at' => $supplier->deleted_at,
-                    ];
-                });
+            $trash['suppliers'] = collect();
+            if (Schema::hasTable('suppliers')) {
+                try {
+                    $trash['suppliers'] = Supplier::onlyTrashed()
+                        ->orderBy('deleted_at', 'desc')
+                        ->get()
+                        ->map(function ($supplier) {
+                            return [
+                                'id' => $supplier->id,
+                                'type' => 'supplier',
+                                'name' => $supplier->name,
+                                'description' => $supplier->contact_person ? "Kontakti: {$supplier->contact_person}" : '',
+                                'amount' => null,
+                                'deleted_at' => $supplier->deleted_at,
+                            ];
+                        });
+                } catch (\Throwable $e) {
+                    \Log::warning('Trash suppliers load failed', ['message' => $e->getMessage()]);
+                }
+            }
         }
         
         if ($type === 'all' || $type === 'supplier_invoices') {
-            $trash['supplier_invoices'] = SupplierInvoice::onlyTrashed()
-                ->with(['supplier', 'items'])
-                ->orderBy('deleted_at', 'desc')
-                ->get()
-                ->map(function ($invoice) {
-                    return [
-                        'id' => $invoice->id,
-                        'type' => 'supplier_invoice',
-                        'name' => $invoice->invoice_number,
-                        'description' => $invoice->supplier ? "Prodhuesi: {$invoice->supplier->name}" : '',
-                        'amount' => $invoice->total_amount,
-                        'deleted_at' => $invoice->deleted_at,
-                        'deleted_reason' => $invoice->deleted_reason,
-                        'deleted_by' => $invoice->deleted_by,
-                        'restored_at' => $invoice->restored_at,
-                        'restored_reason' => $invoice->restored_reason,
-                        'invoice_date' => $invoice->invoice_date,
-                        'status' => $invoice->status,
-                        'supplier' => $invoice->supplier,
-                        'items' => $invoice->items,
-                        'subtotal' => $invoice->subtotal,
-                        'vat_amount' => $invoice->vat_amount,
-                        'total_amount' => $invoice->total_amount,
-                    ];
-                });
+            $trash['supplier_invoices'] = collect();
+            if (Schema::hasTable('supplier_invoices')) {
+                try {
+                    $trash['supplier_invoices'] = SupplierInvoice::onlyTrashed()
+                        ->with(['supplier', 'items'])
+                        ->orderBy('deleted_at', 'desc')
+                        ->get()
+                        ->map(function ($invoice) {
+                            return [
+                                'id' => $invoice->id,
+                                'type' => 'supplier_invoice',
+                                'name' => $invoice->invoice_number,
+                                'description' => $invoice->supplier ? "Prodhuesi: {$invoice->supplier->name}" : '',
+                                'amount' => $invoice->total_amount,
+                                'deleted_at' => $invoice->deleted_at,
+                                'deleted_reason' => $invoice->deleted_reason,
+                                'deleted_by' => $invoice->deleted_by,
+                                'restored_at' => $invoice->restored_at,
+                                'restored_reason' => $invoice->restored_reason,
+                                'invoice_date' => $invoice->invoice_date,
+                                'status' => $invoice->status,
+                                'supplier' => $invoice->supplier,
+                                'items' => $invoice->items,
+                                'subtotal' => $invoice->subtotal,
+                                'vat_amount' => $invoice->vat_amount,
+                                'total_amount' => $invoice->total_amount,
+                            ];
+                        });
+                } catch (\Throwable $e) {
+                    \Log::warning('Trash supplier_invoices load failed', ['message' => $e->getMessage()]);
+                }
+            }
         }
         
         if ($type === 'all' || $type === 'stock_receipts') {
-            $trash['stock_receipts'] = StockReceipt::onlyTrashed()
-                ->with(['supplier'])
-                ->orderBy('deleted_at', 'desc')
-                ->get()
-                ->map(function ($receipt) {
-                    return [
-                        'id' => $receipt->id,
-                        'type' => 'stock_receipt',
-                        'name' => $receipt->receipt_number,
-                        'description' => $receipt->supplier ? "Prodhuesi: {$receipt->supplier->name}" : '',
-                        'amount' => $receipt->total_amount,
-                        'deleted_at' => $receipt->deleted_at,
-                    ];
-                });
+            $trash['stock_receipts'] = collect();
+            if (Schema::hasTable('stock_receipts')) {
+                try {
+                    $trash['stock_receipts'] = StockReceipt::onlyTrashed()
+                        ->with(['supplier'])
+                        ->orderBy('deleted_at', 'desc')
+                        ->get()
+                        ->map(function ($receipt) {
+                            return [
+                                'id' => $receipt->id,
+                                'type' => 'stock_receipt',
+                                'name' => $receipt->receipt_number,
+                                'description' => $receipt->supplier ? "Prodhuesi: {$receipt->supplier->name}" : '',
+                                'amount' => $receipt->total_amount,
+                                'deleted_at' => $receipt->deleted_at,
+                            ];
+                        });
+                } catch (\Throwable $e) {
+                    \Log::warning('Trash stock_receipts load failed', ['message' => $e->getMessage()]);
+                }
+            }
         }
         
         // Flatten and combine all trash items
