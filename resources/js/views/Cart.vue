@@ -706,10 +706,10 @@
           v-if="showInvoiceModal"
           class="fixed inset-0 z-[9999] flex flex-col bg-white"
           role="dialog"
-          aria-label="Faturë"
+          aria-label="Parapamje fature"
         >
           <div class="flex items-center justify-between flex-shrink-0 px-4 py-3 border-b border-gray-200 bg-gray-50">
-            <h2 class="text-lg font-semibold text-gray-900">Faturë</h2>
+            <h2 class="text-lg font-semibold text-gray-900">Parapamje fature</h2>
             <button
               type="button"
               @click="closeInvoiceModal"
@@ -724,7 +724,7 @@
             ref="invoicePreviewFrame"
             :srcdoc="invoiceHtml"
             class="flex-1 w-full border-0 min-h-0"
-            title="Faturë"
+            title="Parapamje fature"
             sandbox="allow-scripts allow-same-origin allow-popups"
           />
           <div class="flex-shrink-0 px-3 py-3 border-t border-gray-200 bg-gray-50 flex flex-wrap gap-2 justify-center">
@@ -1764,14 +1764,18 @@ export default {
         'html,body{-webkit-print-color-adjust:exact;print-color-adjust:exact;color-adjust:exact}' +
         'body{font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;padding:24px 32px;color:#111827;font-size:13px;line-height:1.4;max-width:900px;margin:0 auto;background:#fff}' +
         '.inv-table-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch;margin-bottom:16px}' +
-        '.inv-header{display:flex;justify-content:space-between;align-items:flex-start;gap:16px;margin-bottom:20px;padding-bottom:16px;border-bottom:2px solid #0d9488}' +
-        '.inv-header-right{text-align:right;flex:1;max-width:55%;display:flex;flex-direction:column;align-items:flex-end}' +
-        '.inv-doc-label{font-weight:700;font-size:17px;color:#0f766e;margin:0 0 8px 0;line-height:1.15;text-align:right}' +
-        '.inv-header-right>.inv-title{margin-top:8px}.inv-doc-label+.inv-title{margin-top:0}' +
-        '.inv-invoice-no-block{margin-top:10px;padding-top:8px;border-top:1px solid #e2e8f0;width:100%;max-width:280px}' +
+        '.inv-header{display:flex;flex-direction:column;gap:0;margin-bottom:20px;padding-bottom:16px;border-bottom:2px solid #0d9488}' +
+        '.inv-header-row1{display:flex;justify-content:space-between;align-items:flex-start;gap:20px;width:100%;margin-bottom:14px}' +
+        '.inv-header-row2{display:flex;justify-content:space-between;align-items:flex-start;gap:20px;width:100%}' +
+        '.inv-header-address{text-align:right;flex:1;max-width:52%;display:flex;flex-direction:column;align-items:flex-end}' +
+        '.inv-header-address .inv-title{margin-top:8px}.inv-header-address .inv-title:first-child{margin-top:0}' +
+        '.inv-header-address>div:not(.inv-title){max-width:100%;word-break:break-word}' +
+        '.inv-seller-contact{flex:1;min-width:200px;max-width:48%}' +
+        '.inv-seller-contact .inv-title{margin-top:8px}.inv-seller-contact .inv-title:first-child{margin-top:0}' +
+        '.inv-invoice-no-block{margin:0;padding:0;border:none;width:auto;max-width:280px;text-align:right;flex-shrink:0}' +
         '.inv-invoice-no-block .inv-nr{text-align:right;margin-top:4px}' +
         '.inv-title{font-size:11px;color:#6b7280;text-transform:uppercase;letter-spacing:0.05em;margin-bottom:2px}' +
-        '.inv-seller{min-width:200px;flex:0 1 auto}.inv-company{font-weight:700;font-size:18px;color:#0f766e;margin:0 0 8px 0;display:block}' +
+        '.inv-company{font-weight:700;font-size:18px;color:#0f766e;margin:0;padding:0;line-height:1.2;display:block;flex-shrink:0}' +
         '.inv-nr{text-align:right;font-weight:700;font-size:14px;color:#0d9488}' +
         '.inv-bleresi{background:#f8fafc;padding:12px 16px;border-radius:8px;margin-bottom:16px;border:1px solid #e2e8f0}' +
         '.inv-bleresi h3{font-size:12px;text-transform:uppercase;color:#64748b;margin:0 0 8px 0}' +
@@ -1830,11 +1834,13 @@ export default {
         '}' +
         '@media (max-width:768px){' +
         'body{padding:12px 16px;font-size:12px;max-width:100%}' +
-        '.inv-header{flex-direction:column;gap:16px;align-items:stretch}' +
-        '.inv-seller{min-width:auto}.inv-company{font-size:16px}' +
-        '.inv-header-right{max-width:100%;align-items:flex-start;text-align:left}' +
-        '.inv-doc-label{text-align:left}' +
-        '.inv-invoice-no-block{max-width:100%}.inv-invoice-no-block .inv-nr{text-align:left}' +
+        '.inv-header-row1{flex-direction:column;align-items:stretch;gap:12px;margin-bottom:12px}' +
+        '.inv-header-row2{flex-direction:column;align-items:stretch;gap:14px}' +
+        '.inv-header-address{max-width:100%;align-items:flex-start;text-align:left}' +
+        '.inv-header-address .inv-title:first-child{margin-top:0}' +
+        '.inv-seller-contact{max-width:100%}' +
+        '.inv-company{font-size:16px}' +
+        '.inv-invoice-no-block{max-width:100%;text-align:left}.inv-invoice-no-block .inv-nr{text-align:left}' +
         '.inv-nr{text-align:left}' +
         '.inv-meta{font-size:11px}.inv-meta th,.inv-meta td{padding:6px 8px}' +
         '.inv-table-wrap{margin-left:-16px;margin-right:-16px;padding:0 16px}' +
@@ -1858,17 +1864,19 @@ export default {
         '}' +
         '</style></head><body data-invoice-text="' + (fullInvoiceText || '').replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;') + '">' +
         '<div class="inv-header">' +
-        '<div class="inv-seller">' +
+        '<div class="inv-header-row1">' +
         '<h2 class="inv-company">Aron Trade</h2>' +
+        '<div class="inv-header-address">' +
+        '<div class="inv-title">Adresë</div><div>Ferizaj, Kosovë, Rruga Lidhja e Prizrenit</div>' +
+        '<div class="inv-title">Nrb</div><div>' + (order.company_nrb || '—') + '</div>' +
+        '<div class="inv-title">Tvsh</div><div>' + (order.company_tvsh || '—') + '</div>' +
+        '</div></div>' +
+        '<div class="inv-header-row2">' +
+        '<div class="inv-seller-contact">' +
         '<div class="inv-title">Nrf / NIPT</div><div>' + (order.company_nrf || '—') + '</div>' +
         '<div class="inv-title">tel</div><div>+383 48 75 66 46 / +383 44 82 43 14</div>' +
         '<div class="inv-title">email</div><div>svalon95@gmail.com</div>' +
         '</div>' +
-        '<div class="inv-header-right">' +
-        '<div class="inv-doc-label">Faturë</div>' +
-        '<div class="inv-title">Adresë</div><div>Ferizaj, Kosovë, Rruga Lidhja e Prizrenit</div>' +
-        '<div class="inv-title">Nrb</div><div>' + (order.company_nrb || '—') + '</div>' +
-        '<div class="inv-title">Tvsh</div><div>' + (order.company_tvsh || '—') + '</div>' +
         '<div class="inv-invoice-no-block">' +
         '<div class="inv-title">Nr. Faturës</div>' +
         '<div class="inv-nr">' + (order.order_number || 'N/A') + '</div>' +
