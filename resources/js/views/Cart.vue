@@ -1699,7 +1699,7 @@ export default {
         (hasVat ? '<th>TVSH %</th><th>Çmimi me TVSH</th><th>Vlera me TVSH</th>' : '<th>Çmimi</th><th>Vlera</th>')
 
       const itemsRows = (order.items || [])
-        .map((item, idx) => '<tr>' + invoiceItemRowCells(item, idx) + '</tr>')
+        .map((item, idx) => '<tbody class="inv-tbody-item" style="page-break-inside:avoid;break-inside:avoid;-webkit-region-break:avoid"><tr>' + invoiceItemRowCells(item, idx) + '</tr></tbody>')
         .join('')
 
       const buyerName = (order.business_name || order.customer_name || 'N/A').trim()
@@ -1752,10 +1752,9 @@ export default {
         'Vlera për pagesë (EUR)\t' + totalForPay + '\n' +
         'Pagesa\t' + paymentDone + '\n' +
         'Mbetja\t' + mbetjaVal + '\n\n' +
-        'Faturoi: Aron Trade\n' +
-        'Dergoi: Aron Trade\n' +
+        'Dërgoi: Aron Trade\n' +
         'Pranoi: ' + buyerName + '\n\n' +
-        'Llogaria bankare: (vendosni nëse keni)'
+        'Llogaria bankare:'
 
       const htmlContent = '<!DOCTYPE html><html lang="sq">' +
         '<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">' +
@@ -1765,9 +1764,14 @@ export default {
         'html,body{-webkit-print-color-adjust:exact;print-color-adjust:exact;color-adjust:exact}' +
         'body{font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;padding:24px 32px;color:#111827;font-size:13px;line-height:1.4;max-width:900px;margin:0 auto;background:#fff}' +
         '.inv-table-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch;margin-bottom:16px}' +
-        '.inv-header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:20px;padding-bottom:16px;border-bottom:2px solid #0d9488}' +
+        '.inv-header{display:flex;justify-content:space-between;align-items:flex-start;gap:16px;margin-bottom:20px;padding-bottom:16px;border-bottom:2px solid #0d9488}' +
+        '.inv-header-right{text-align:right;flex:1;max-width:55%;display:flex;flex-direction:column;align-items:flex-end}' +
+        '.inv-doc-label{font-weight:700;font-size:17px;color:#0f766e;margin:0 0 8px 0;line-height:1.15;text-align:right}' +
+        '.inv-header-right>.inv-title{margin-top:8px}.inv-doc-label+.inv-title{margin-top:0}' +
+        '.inv-invoice-no-block{margin-top:10px;padding-top:8px;border-top:1px solid #e2e8f0;width:100%;max-width:280px}' +
+        '.inv-invoice-no-block .inv-nr{text-align:right;margin-top:4px}' +
         '.inv-title{font-size:11px;color:#6b7280;text-transform:uppercase;letter-spacing:0.05em;margin-bottom:2px}' +
-        '.inv-seller{min-width:200px}.inv-company{font-weight:700;font-size:18px;color:#0f766e;margin:0 0 8px 0;display:block}' +
+        '.inv-seller{min-width:200px;flex:0 1 auto}.inv-company{font-weight:700;font-size:18px;color:#0f766e;margin:0 0 8px 0;display:block}' +
         '.inv-nr{text-align:right;font-weight:700;font-size:14px;color:#0d9488}' +
         '.inv-bleresi{background:#f8fafc;padding:12px 16px;border-radius:8px;margin-bottom:16px;border:1px solid #e2e8f0}' +
         '.inv-bleresi h3{font-size:12px;text-transform:uppercase;color:#64748b;margin:0 0 8px 0}' +
@@ -1790,8 +1794,10 @@ export default {
         '.inv-totals{max-width:280px;margin-left:auto;font-size:13px}' +
         '.inv-totals .row{display:flex;justify-content:space-between;padding:4px 0;border-bottom:1px solid #e2e8f0}' +
         '.inv-totals .row.total{font-weight:700;font-size:15px;color:#0d9488;border-bottom:none;padding-top:8px;margin-top:4px;border-top:2px solid #0d9488}' +
-        '.inv-footer{display:flex;justify-content:space-between;align-items:flex-end;margin-top:40px;padding-top:24px;border-top:2px solid #e2e8f0}' +
-        '.inv-sig{text-align:center;min-width:180px}' +
+        '.inv-footer{display:flex;justify-content:space-between;align-items:flex-end;gap:24px;margin-top:40px;padding-top:24px;border-top:2px solid #e2e8f0}' +
+        '.inv-sig{min-width:200px;max-width:45%}' +
+        '.inv-sig--left{text-align:left}' +
+        '.inv-sig--right{text-align:right;margin-left:auto}' +
         '.inv-sig .line{border-top:1px solid #111827;padding-top:4px;margin-top:32px;font-weight:600;font-size:12px}' +
         '.inv-sig .sub{font-size:11px;color:#64748b;margin-top:4px}' +
         '.inv-bank{font-size:12px;color:#64748b;margin-top:16px}' +
@@ -1808,8 +1814,13 @@ export default {
         '.inv-table{min-width:0!important;width:100%!important;page-break-inside:auto}' +
         '.inv-meta{page-break-inside:auto}' +
         'thead{display:table-header-group}' +
-        'tbody tr{break-inside:avoid;page-break-inside:avoid}' +
+        'tbody.inv-tbody-item{break-inside:avoid!important;page-break-inside:avoid!important}' +
+        'tbody.inv-tbody-item tr{break-inside:avoid!important;page-break-inside:avoid!important}' +
+        'tbody.inv-tbody-item td{break-inside:avoid!important;page-break-inside:avoid!important}' +
         '.inv-bleresi,.inv-totals,.inv-tax,.inv-footer,.inv-bank,.inv-sig{break-inside:avoid;page-break-inside:avoid}' +
+        '.inv-footer{flex-direction:row!important;justify-content:space-between!important;align-items:flex-end!important;gap:32px!important}' +
+        '.inv-footer .inv-sig--right{margin-left:auto!important;text-align:right!important}' +
+        '.inv-footer .inv-sig--left{text-align:left!important}' +
         '.inv-footer{border-top-color:#e2e8f0!important}' +
         '.inv-header{border-bottom-color:#0d9488!important}' +
         '.inv-table th{background:#0d9488!important;color:#fff!important}' +
@@ -1821,7 +1832,10 @@ export default {
         'body{padding:12px 16px;font-size:12px;max-width:100%}' +
         '.inv-header{flex-direction:column;gap:16px;align-items:stretch}' +
         '.inv-seller{min-width:auto}.inv-company{font-size:16px}' +
-        '.inv-header>div:last-child{text-align:left}.inv-nr{text-align:left}' +
+        '.inv-header-right{max-width:100%;align-items:flex-start;text-align:left}' +
+        '.inv-doc-label{text-align:left}' +
+        '.inv-invoice-no-block{max-width:100%}.inv-invoice-no-block .inv-nr{text-align:left}' +
+        '.inv-nr{text-align:left}' +
         '.inv-meta{font-size:11px}.inv-meta th,.inv-meta td{padding:6px 8px}' +
         '.inv-table-wrap{margin-left:-16px;margin-right:-16px;padding:0 16px}' +
         '.inv-table{font-size:11px;min-width:720px}' +
@@ -1830,7 +1844,8 @@ export default {
         '.inv-tax{max-width:100%;font-size:11px}' +
         '.inv-totals{max-width:100%;font-size:12px}' +
         '.inv-footer{flex-direction:column;gap:24px;margin-top:24px;align-items:stretch}' +
-        '.inv-sig{min-width:auto;text-align:left}.inv-sig .line{margin-top:16px}' +
+        '.inv-sig{min-width:auto;max-width:100%;text-align:left}' +
+        '.inv-sig--right{margin-left:0;text-align:left}.inv-sig .line{margin-top:16px}' +
         '.no-print{margin-top:16px;padding:12px}' +
         '.no-print h3{font-size:13px}' +
         '.no-print .btns{flex-direction:column;gap:8px}' +
@@ -1849,15 +1864,15 @@ export default {
         '<div class="inv-title">tel</div><div>+383 48 75 66 46 / +383 44 82 43 14</div>' +
         '<div class="inv-title">email</div><div>svalon95@gmail.com</div>' +
         '</div>' +
-        '<div style="text-align:right">' +
+        '<div class="inv-header-right">' +
+        '<div class="inv-doc-label">Faturë</div>' +
         '<div class="inv-title">Adresë</div><div>Ferizaj, Kosovë, Rruga Lidhja e Prizrenit</div>' +
         '<div class="inv-title">Nrb</div><div>' + (order.company_nrb || '—') + '</div>' +
         '<div class="inv-title">Tvsh</div><div>' + (order.company_tvsh || '—') + '</div>' +
-        '</div>' +
-        '<div>' +
-        '<div class="inv-nr">' + (order.order_number || 'N/A') + '</div>' +
+        '<div class="inv-invoice-no-block">' +
         '<div class="inv-title">Nr. Faturës</div>' +
-        '</div></div>' +
+        '<div class="inv-nr">' + (order.order_number || 'N/A') + '</div>' +
+        '</div></div></div>' +
         '<div class="inv-bleresi">' +
         '<h3>Bleresi</h3>' +
         '<div><strong>' + buyerName + '</strong></div>' +
@@ -1872,7 +1887,7 @@ export default {
         '<tr><td>' + invoiceDateFormatted + '</td><td></td><td>' + expDate + '</td><td>Klient</td><td></td><td>' + (order.location_unit_name || '-') + '</td></tr>' +
         '</table></div>' +
         '<div class="inv-table-wrap"><table class="inv-table' + (!hasVat && !hasDiscount ? ' inv-table--simple' : '') + '">' +
-        '<thead><tr>' + itemsHeaderHtml + '</tr></thead><tbody>' + itemsRows + '</tbody></table></div>' +
+        '<thead><tr>' + itemsHeaderHtml + '</tr></thead>' + itemsRows + '</table></div>' +
         (hasVat
           ? '<table class="inv-tax">' +
             '<tr><th>Normat Tatimore</th><th>Baza</th><th>TVSH</th><th>Vlera</th></tr>' +
@@ -1894,11 +1909,10 @@ export default {
         '<div class="row"><span>Mbetja</span><span>' + (order.total_amount ? (isPaid ? '0.00' : fmtNum(parseFloat(order.total_amount))) : '-') + '</span></div>' +
         '</div>' +
         '<div class="inv-footer">' +
-        '<div class="inv-sig"><div class="line">Faturoi</div><div class="sub">Aron Trade</div></div>' +
-        '<div class="inv-sig"><div class="line">Dergoi</div><div class="sub">Aron Trade</div></div>' +
-        '<div class="inv-sig"><div class="line">Pranoi</div><div class="sub">' + buyerName + '</div></div>' +
+        '<div class="inv-sig inv-sig--left"><div class="line">Dërgoi</div><div class="sub">Aron Trade</div></div>' +
+        '<div class="inv-sig inv-sig--right"><div class="line">Pranoi</div><div class="sub">' + buyerName + '</div></div>' +
         '</div>' +
-        '<div class="inv-bank">Llogaria bankare: (vendosni nëse keni)</div>' +
+        '<div class="inv-bank">Llogaria bankare:</div>' +
         '</body>' +
         '</html>'
 
