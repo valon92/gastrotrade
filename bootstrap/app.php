@@ -17,6 +17,11 @@ return Application::configure(basePath: dirname(__DIR__))
             'admin.user' => \App\Http\Middleware\EnsureAdminUser::class,
             'no-cache-spa' => \App\Http\Middleware\NoCacheForSPA::class,
         ]);
+        // Sanctum “stateful” SPA + /api/*: CSRF shpesh refuzon POST (403/419) kur meta-token nuk përputhet me session.
+        // API përdor Bearer në header; CSRF për /api nuk është e nevojshme kundër faqeve të tjera (SOP).
+        $middleware->validateCsrfTokens(except: [
+            'api/*',
+        ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         //

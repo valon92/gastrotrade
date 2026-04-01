@@ -3,6 +3,7 @@
 namespace App\Http\Requests;
 
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Validation\Rule;
 
 class StoreOrderRequest extends FormRequest
@@ -22,16 +23,28 @@ class StoreOrderRequest extends FormRequest
      */
     public function rules(): array
     {
+        $orderNumberRules = ['nullable', 'string', 'max:255'];
+        if (Schema::hasTable('orders')) {
+            if (Schema::hasColumn('orders', 'deleted_at')) {
+                $orderNumberRules[] = Rule::unique('orders', 'order_number')->whereNull('deleted_at');
+            } else {
+                $orderNumberRules[] = Rule::unique('orders', 'order_number');
+            }
+        }
+
+        $clientLocationRules = ['nullable'];
+        if (Schema::hasTable('client_locations')) {
+            $exists = Rule::exists('client_locations', 'id');
+            if (Schema::hasColumn('client_locations', 'deleted_at')) {
+                $exists = $exists->whereNull('deleted_at');
+            }
+            $clientLocationRules[] = $exists;
+        }
+
         return [
             'client_id' => ['nullable', 'exists:clients,id'],
-            'client_location_id' => ['nullable', 'exists:client_locations,id'],
-            // Vetëm porositë jo të fshira (soft delete): përndryshe UNIQUE në DB dështon me 500
-            'order_number' => [
-                'nullable',
-                'string',
-                'max:255',
-                Rule::unique('orders', 'order_number')->whereNull('deleted_at'),
-            ],
+            'client_location_id' => $clientLocationRules,
+            'order_number' => $orderNumberRules,
             'customer.name' => ['required', 'string', 'max:255'],
             'customer.business_name' => ['required', 'string', 'max:255'],
             'customer.fiscal_number' => ['required', 'string', 'max:255'],
