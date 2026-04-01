@@ -490,7 +490,7 @@
                     class="w-5 h-5 rounded border-gray-300 text-emerald-600 focus:ring-emerald-500"
                   >
                   <span class="text-sm font-medium text-gray-700">
-                    {{ isPaid ? '✓ E paguar' : 'E papaguar' }}
+                    {{ isPaid ? '✓ E Paguar' : 'E PaPaguar' }}
                   </span>
                 </label>
                 <p class="text-xs text-gray-500 mt-1">
@@ -1736,8 +1736,8 @@ export default {
       const totalForPay = order.total_amount ? fmtNum(parseFloat(order.total_amount)) : '-'
       const mbetjaVal = order.total_amount ? (isPaid ? '0.00' : fmtNum(parseFloat(order.total_amount))) : '-'
       const paymentBadgeHtml = isPaid
-        ? '<span class="inv-paid inv-paid--yes">E paguar</span>'
-        : '<span class="inv-paid inv-paid--no">E papaguar</span>'
+        ? '<span class="inv-paid inv-paid--yes">E Paguar</span>'
+        : '<span class="inv-paid inv-paid--no">E PaPaguar</span>'
 
       const itemsTextLines = (order.items || [])
         .map((item, idx) => invoiceItemRowTabs(item, idx))
