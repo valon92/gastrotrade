@@ -183,11 +183,26 @@ class ClientAuthController extends Controller
             ], 403);
         }
 
-        $withRelations = ['prices.product'];
-        if (Schema::hasTable('client_locations')) {
-            $withRelations[] = 'locations';
+        $id = $user->getKey();
+        try {
+            $withRelations = ['prices.product'];
+            if (Schema::hasTable('client_locations')) {
+                $withRelations[] = 'locations';
+            }
+            $user->load($withRelations);
+        } catch (\Throwable $e) {
+            Log::warning('client/me: load relations failed', [
+                'client_id' => $id,
+                'message' => $e->getMessage(),
+            ]);
+            $user = Client::query()->find($id);
+            if (!$user) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Llogaria nuk u gjet.',
+                ], 404);
+            }
         }
-        $user->load($withRelations);
 
         return response()->json([
             'success' => true,

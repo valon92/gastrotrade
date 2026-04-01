@@ -910,14 +910,27 @@ export default {
 
     // Rifresko të dhënat e klientit nga API (që të merren ndryshimet nga admin: qytet, emër biznesi)
     const clientToken = localStorage.getItem('client_token')
-    if (clientToken) {
+    const adminToken = localStorage.getItem('admin_token')
+    // Mos dërgo /client/me me token admin (403); App.vue e trajton rifreskimin në hapje
+    if (clientToken && !adminToken) {
       try {
         const res = await axios.get('/api/client/me')
-        if (res.data.success && res.data.data) {
-          await this.cartStore.setClient(res.data.data)
+        if (res.data?.success && res.data?.data) {
+          try {
+            await this.cartStore.setClient(res.data.data)
+          } catch (inner) {
+            console.warn('Shporta setClient:', inner)
+          }
         }
-      } catch (_) {
-        // Token i pavlefshëm – mbaj të dhënat ekzistuese
+      } catch (e) {
+        const status = e.response?.status
+        if (status === 401 || status === 403) {
+          localStorage.removeItem('client_token')
+          this.cartStore.clearClient()
+          if (typeof window !== 'undefined' && window.axios?.defaults?.headers?.common?.Authorization) {
+            delete window.axios.defaults.headers.common.Authorization
+          }
+        }
       }
     }
 

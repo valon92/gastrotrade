@@ -31,17 +31,23 @@ export default {
     if (clientToken && !adminToken) {
       try {
         const res = await axios.get('/api/client/me')
-        if (res.data.success && res.data.data) {
-          await cartStore.setClient(res.data.data)
+        if (res.data?.success && res.data?.data) {
+          try {
+            await cartStore.setClient(res.data.data)
+          } catch (inner) {
+            console.warn('setClient pas /client/me:', inner)
+          }
         }
       } catch (e) {
-        if (e.response?.status === 401 || e.response?.status === 403) {
+        const status = e.response?.status
+        if (status === 401 || status === 403) {
           localStorage.removeItem('client_token')
           cartStore.clearClient()
           if (axios.defaults?.headers?.common?.Authorization) {
             delete axios.defaults.headers.common['Authorization']
           }
         }
+        // Mos e lësh rejection të papërpunuar (xhr stack në console)
       }
     }
   }

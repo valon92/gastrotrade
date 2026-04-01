@@ -21,7 +21,8 @@ export default defineConfig({
         }),
     ],
     build: {
-        chunkSizeWarningLimit: 650,
+        // heic2any ~1.35 MB — pritet; nuk është bug
+        chunkSizeWarningLimit: 1500,
         rollupOptions: {
             output: {
                 entryFileNames: `assets/[name]-[hash]-${buildId}.js`,
