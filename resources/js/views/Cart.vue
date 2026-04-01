@@ -1834,14 +1834,16 @@ export default {
         '}' +
         '@media (max-width:768px){' +
         'body{padding:12px 16px;font-size:12px;max-width:100%}' +
-        '.inv-header-row1{flex-direction:column;align-items:stretch;gap:12px;margin-bottom:12px}' +
-        '.inv-header-row2{flex-direction:column;align-items:stretch;gap:14px}' +
-        '.inv-header-address{max-width:100%;align-items:flex-start;text-align:left}' +
+        '.inv-header-row1{display:flex!important;flex-direction:row!important;justify-content:space-between!important;align-items:flex-start!important;gap:10px!important;margin-bottom:12px!important}' +
+        '.inv-header-row2{display:flex!important;flex-direction:row!important;justify-content:space-between!important;align-items:flex-start!important;gap:10px!important}' +
+        '.inv-company{font-size:15px!important;line-height:1.15!important;margin:0!important;max-width:44%!important;flex:0 1 auto!important;min-width:0!important;word-break:break-word!important}' +
+        '.inv-header-address{flex:1!important;min-width:0!important;max-width:56%!important;text-align:right!important;align-items:flex-end!important;font-size:11px!important}' +
         '.inv-header-address .inv-title:first-child{margin-top:0}' +
-        '.inv-seller-contact{max-width:100%}' +
-        '.inv-company{font-size:16px}' +
-        '.inv-invoice-no-block{max-width:100%;text-align:left}.inv-invoice-no-block .inv-nr{text-align:left}' +
-        '.inv-nr{text-align:left}' +
+        '.inv-header-address .inv-title{font-size:10px!important;letter-spacing:0.03em!important}' +
+        '.inv-seller-contact{flex:1!important;min-width:0!important;max-width:55%!important;font-size:11px!important}' +
+        '.inv-invoice-no-block{flex:0 0 auto!important;max-width:45%!important;text-align:right!important;min-width:0!important}' +
+        '.inv-invoice-no-block .inv-nr{text-align:right!important;font-size:13px!important}' +
+        '.inv-invoice-no-block .inv-title{text-align:right!important}' +
         '.inv-meta{font-size:11px}.inv-meta th,.inv-meta td{padding:6px 8px}' +
         '.inv-table-wrap{margin-left:-16px;margin-right:-16px;padding:0 16px}' +
         '.inv-table{font-size:11px;min-width:720px}' +
