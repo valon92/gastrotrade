@@ -481,6 +481,23 @@
                 </div>
               </div>
 
+              <!-- Paid Toggle -->
+              <div class="mb-4 p-3 bg-emerald-50 border border-emerald-200 rounded-lg">
+                <label class="flex items-center gap-2 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    v-model="isPaid"
+                    class="w-5 h-5 rounded border-gray-300 text-emerald-600 focus:ring-emerald-500"
+                  >
+                  <span class="text-sm font-medium text-gray-700">
+                    {{ isPaid ? '✓ E paguar' : 'E papaguar' }}
+                  </span>
+                </label>
+                <p class="text-xs text-gray-500 mt-1">
+                  Shënoni nëse porosia është paguar. Në faturë do të shfaqet statusi i pagesës.
+                </p>
+              </div>
+
               <!-- Pse butonat nuk punojnë? -->
               <div 
                 v-if="(!isFormValid || cartStore.items.length === 0) && !savingOrder && !submittingOrder" 
@@ -786,6 +803,7 @@ export default {
       saveSuccess: false,
       savedOrder: null,
       hasVat: false,
+      isPaid: false,
       ordersHistory: [],
       historyLoading: false,
       historyError: null,
@@ -1497,8 +1515,8 @@ export default {
           has_vat: this.hasVat,
           vat_amount: this.hasVat && this.cartStore.totalPrice > 0 ? this.vatAmount : null,
           amount_before_vat: this.hasVat && this.cartStore.totalPrice > 0 ? this.amountBeforeVat : null,
-          is_paid: false,
-          paid_at: null
+          is_paid: !!this.isPaid,
+          paid_at: this.isPaid ? new Date().toISOString() : null
         }
 
         const response = await axios.post('/api/orders', payload)
@@ -1717,6 +1735,9 @@ export default {
       const paymentDone = isPaid ? (order.total_amount ? fmtNum(parseFloat(order.total_amount)) : '0.00') : '0.00'
       const totalForPay = order.total_amount ? fmtNum(parseFloat(order.total_amount)) : '-'
       const mbetjaVal = order.total_amount ? (isPaid ? '0.00' : fmtNum(parseFloat(order.total_amount))) : '-'
+      const paymentBadgeHtml = isPaid
+        ? '<span class="inv-paid inv-paid--yes">E paguar</span>'
+        : '<span class="inv-paid inv-paid--no">E papaguar</span>'
 
       const itemsTextLines = (order.items || [])
         .map((item, idx) => invoiceItemRowTabs(item, idx))
@@ -1779,6 +1800,9 @@ export default {
         '.inv-nr{text-align:right;font-weight:700;font-size:14px;color:#0d9488}' +
         '.inv-bleresi{background:#f8fafc;padding:12px 16px;border-radius:8px;margin-bottom:16px;border:1px solid #e2e8f0}' +
         '.inv-bleresi h3{font-size:12px;text-transform:uppercase;color:#64748b;margin:0 0 8px 0}' +
+        '.inv-paid{display:inline-block;padding:4px 10px;border-radius:999px;font-size:11px;font-weight:700;letter-spacing:0.02em;border:1px solid transparent}' +
+        '.inv-paid--yes{background:#ecfdf5;color:#065f46;border-color:#a7f3d0}' +
+        '.inv-paid--no{background:#fff7ed;color:#9a3412;border-color:#fed7aa}' +
         '.inv-meta{width:100%;border-collapse:collapse;margin-bottom:16px;font-size:12px}' +
         '.inv-meta th,.inv-meta td{border:1px solid #e2e8f0;padding:6px 10px;text-align:left}' +
         '.inv-meta th{background:#f1f5f9;font-weight:600;color:#475569}' +
@@ -1797,6 +1821,7 @@ export default {
         '.inv-tax th{background:#f1f5f9;font-weight:600}' +
         '.inv-totals{max-width:280px;margin-left:auto;font-size:13px}' +
         '.inv-totals .row{display:flex;justify-content:space-between;padding:4px 0;border-bottom:1px solid #e2e8f0}' +
+        '.inv-totals .row.status{border-bottom:none;padding-bottom:6px}' +
         '.inv-totals .row.total{font-weight:700;font-size:15px;color:#0d9488;border-bottom:none;padding-top:8px;margin-top:4px;border-top:2px solid #0d9488}' +
         '.inv-footer{display:flex;justify-content:space-between;align-items:flex-end;gap:24px;margin-top:40px;padding-top:24px;border-top:2px solid #e2e8f0}' +
         '.inv-sig{min-width:200px;max-width:45%}' +
@@ -1906,6 +1931,7 @@ export default {
             '</table>'
           : '') +
         '<div class="inv-totals">' +
+        '<div class="row status"><span>Statusi</span><span>' + paymentBadgeHtml + '</span></div>' +
         (hasDiscount
           ? '<div class="row"><span>Vlera para zbritjes</span><span>' + valBeforeDiscount + '</span></div>' +
             '<div class="row"><span>Rabati</span><span>' + discountVal + '</span></div>'
