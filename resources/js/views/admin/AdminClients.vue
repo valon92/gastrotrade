@@ -1378,223 +1378,313 @@ export default {
       }
       return `${item.quantity} copë`
     },
+    /** Rreshti në DB është komplet vetëm kur sold_by_package dhe jo shitje me copë (unit_type cp) */
+    orderItemIsPackageSale(item) {
+      if (!item) return false
+      const ut = (item.unit_type || '').toString().toLowerCase().trim()
+      if (ut === 'cp' || ut === 'piece') return false
+      return item.sold_by_package === true || item.sold_by_package === 1
+    },
+    /**
+     * Llogarit sasinë në copë për një rresht porosie/fature.
+     * Nëse për komplet të nominal nuk përputhet vlera me totalin e rreshtit, përdoret numri i nënkuptuar i copave (rreshta legacy).
+     */
+    orderItemInvoiceQty(item) {
+      const q = parseFloat(item.quantity) || 0
+      const ppk = parseInt(item.pieces_per_package, 10)
+      const unitPrice = item.unit_price != null ? parseFloat(item.unit_price) : null
+      const lineTotal = item.total_price != null ? parseFloat(item.total_price) : null
+      let mode = this.orderItemIsPackageSale(item) && ppk > 0 ? 'package' : 'piece'
+      let packageCount = q
+      let pieceCount = mode === 'package' ? q * ppk : q
+      const lineDiscount = parseFloat(item.discount_amount) || 0
+      if (
+        mode === 'package' &&
+        lineDiscount < 0.01 &&
+        unitPrice != null &&
+        lineTotal != null &&
+        !isNaN(unitPrice) &&
+        !isNaN(lineTotal) &&
+        unitPrice > 0
+      ) {
+        const expected = pieceCount * unitPrice
+        if (Math.abs(expected - lineTotal) > 0.05) {
+          const implied = Math.round(lineTotal / unitPrice)
+          if (implied > 0 && Math.abs(implied * unitPrice - lineTotal) <= 0.05) {
+            mode = 'piece'
+            pieceCount = implied
+          }
+        }
+      }
+      return { mode, packageCount, ppk, pieceCount }
+    },
+    /** Rreshti i faturës: sasia e dukshme + njësia (kompletet zbërthehen në copë) */
+    invoiceLineQtyParts(item, fmtQty) {
+      const iq = this.orderItemInvoiceQty(item)
+      if (iq.mode === 'package' && iq.ppk > 0) {
+        const nbsp = '\u00A0'
+        const q = iq.packageCount
+        const total = iq.pieceCount
+        const ppk = iq.ppk
+        const html =
+          '<span class="inv-qty-stack inv-qty-stack--pkg">' +
+          '<span class="inv-qty-line inv-qty-line1">' + fmtQty(q) + nbsp + 'komplete</span>' +
+          '<span class="inv-qty-line inv-qty-line2">×' + nbsp + ppk + nbsp + 'cp</span>' +
+          '<span class="inv-qty-line inv-qty-line3">=' + nbsp + fmtQty(total) + nbsp + 'cp</span>' +
+          '</span>'
+        const plain = fmtQty(q) + ' komplete × ' + ppk + ' cp = ' + fmtQty(total) + ' cp'
+        return { qtyHtml: html, qtyPlain: plain, unit: 'Copë' }
+      }
+      const pcs = iq.pieceCount
+      return { qtyHtml: fmtQty(pcs), qtyPlain: fmtQty(pcs), unit: 'Copë' }
+    },
     printOrder(order) {
       if (!order) return
 
-      const totalAmount = order.total_amount ? this.formatPrice(order.total_amount) : 'Sipas kërkesës'
       const createdAt = this.formatDate(order.created_at)
-      const paidAt = order.paid_at ? this.formatDate(order.paid_at) : null
+      const invoiceDateFormatted = this.formatDate(order.created_at)
       const isPaid = order.is_paid === true || order.is_paid === 1
-      const paymentStatus = isPaid ? 'E PAGUAR' : 'JO E PAGUAR'
-      const paymentStatusClass = isPaid ? 'color: #059669; font-weight: bold;' : 'color: #dc2626; font-weight: bold;'
+      const hasVat = order.has_vat === true || order.has_vat === 1
+      const vatRate = 18
+      const fmtNum = (n) => (n != null && !isNaN(n) ? Number(n).toFixed(2) : '-')
+      const fmtQty = (n) => {
+        if (n == null || isNaN(n)) return '-'
+        const num = Number(n)
+        return Number.isInteger(num) ? String(num) : num.toFixed(2)
+      }
+      const amountBeforeVat = hasVat && order.total_amount ? parseFloat(order.total_amount) / 1.18 : (order.amount_before_vat != null ? parseFloat(order.amount_before_vat) : (order.total_amount ? parseFloat(order.total_amount) : null))
+      const vatAmount = hasVat && order.total_amount ? parseFloat(order.total_amount) - (parseFloat(order.total_amount) / 1.18) : (order.vat_amount != null ? parseFloat(order.vat_amount) : 0)
+      const totalItemDiscounts = (order.items || []).reduce((sum, item) => sum + (parseFloat(item.discount_amount) || 0), 0)
+      const orderDiscount = parseFloat(order.discount_amount) || 0
+      const hasDiscount = totalItemDiscounts > 0.009 || orderDiscount > 0.009
+      const totalDiscountAmount = totalItemDiscounts + orderDiscount
+      const valueBeforeDiscount = (order.subtotal != null ? parseFloat(order.subtotal) : null) || (order.items || []).reduce((s, i) => s + (parseFloat(i.total_price) || 0), 0)
+
+      const invoiceItemRowCells = (item, idx) => {
+        const barcode = (item.barcode != null && item.barcode !== '') ? String(item.barcode) : (item.product && item.product.barcode != null && item.product.barcode !== '' ? String(item.product.barcode) : '')
+        const qp = this.invoiceLineQtyParts(item, fmtQty)
+        const piecesForLine = this.orderItemInvoiceQty(item).pieceCount
+        const unitPrice = item.unit_price != null ? parseFloat(item.unit_price) : null
+        const lineTotal = item.total_price != null ? parseFloat(item.total_price) : (unitPrice ? unitPrice * piecesForLine : 0)
+        const unitPriceNoVat = hasVat && unitPrice ? unitPrice / 1.18 : unitPrice
+        const discountPct = 0
+        const base = '<td class="inv-num">' + (idx + 1) + '</td>' +
+          '<td class="inv-code">' + (barcode || '-') + '</td>' +
+          '<td class="inv-desc">' + (item.product_name || '') + '</td>' +
+          '<td class="inv-qty">' + qp.qtyHtml + '</td>' +
+          '<td class="inv-unit">' + qp.unit + '</td>'
+        if (hasVat) {
+          let rest = '<td class="inv-num">' + (unitPriceNoVat != null ? fmtNum(unitPriceNoVat) : '-') + '</td>'
+          if (hasDiscount) rest += '<td class="inv-num">' + fmtNum(discountPct) + '</td>'
+          rest += '<td class="inv-num">' + vatRate + '</td>' +
+            '<td class="inv-num">' + (unitPrice != null ? fmtNum(unitPrice) : '-') + '</td>' +
+            '<td class="inv-num">' + (lineTotal > 0 ? fmtNum(lineTotal) : '-') + '</td>'
+          return base + rest
+        }
+        let rest = ''
+        if (hasDiscount) rest += '<td class="inv-num">' + fmtNum(discountPct) + '</td>'
+        rest += '<td class="inv-num">' + (unitPrice != null ? fmtNum(unitPrice) : '-') + '</td>' +
+          '<td class="inv-num">' + (lineTotal > 0 ? fmtNum(lineTotal) : '-') + '</td>'
+        return base + rest
+      }
+
+      const itemsHeaderHtml = '<th>No</th><th>Barcode</th><th>Emertimi</th><th>Sasia</th><th>Njesia</th>' +
+        (hasVat ? '<th>Çmimi pa TVSH</th>' : '') +
+        (hasDiscount ? '<th>Rabati %</th>' : '') +
+        (hasVat ? '<th>TVSH %</th><th>Çmimi me TVSH</th><th>Vlera me TVSH</th>' : '<th>Çmimi</th><th>Vlera</th>')
 
       const itemsRows = (order.items || [])
-        .map(item => {
-          const quantityText = this.formatQuantity(item)
-          const unitPrice = item.unit_price ? this.formatPrice(item.unit_price) : 'Sipas kërkesës'
-
-          let itemSubtotal = 0
-          if (item.unit_price) {
-            if (item.sold_by_package && item.pieces_per_package) {
-              itemSubtotal = item.unit_price * item.quantity * item.pieces_per_package
-            } else {
-              itemSubtotal = item.unit_price * item.quantity
-            }
-          }
-
-          const itemDiscount = item.discount_amount || 0
-          const itemTotal = item.total_price || (itemSubtotal > 0 ? itemSubtotal - itemDiscount : 0)
-
-          return `
-            <tr>
-              <td>${item.product_name}</td>
-              <td>${quantityText}</td>
-              <td>${unitPrice}</td>
-              <td>
-                ${itemSubtotal > 0 ? this.formatPrice(itemSubtotal) : 'Sipas kërkesës'}
-                ${itemDiscount > 0 ? '<br><span style="color: #dc2626; font-size: 11px;">- ' + this.formatPrice(itemDiscount) + '</span>' : ''}
-                <br><strong>${itemTotal > 0 ? this.formatPrice(itemTotal) : 'Sipas kërkesës'}</strong>
-              </td>
-            </tr>
-          `
-        })
+        .map((item, idx) => '<tbody class="inv-tbody-item" style="page-break-inside:avoid;break-inside:avoid;-webkit-region-break:avoid"><tr>' + invoiceItemRowCells(item, idx) + '</tr></tbody>')
         .join('')
 
-      // Calculate total item discounts
-      const totalItemDiscounts = (order.items || []).reduce((sum, item) => {
-        return sum + (parseFloat(item.discount_amount) || 0)
-      }, 0)
+      const buyerName = (order.business_name || order.customer_name || 'N/A').trim()
+      const buyerAddress = order.location_street_number || ''
+      const buyerCity = (order.location_city || order.city || 'N/A').trim()
+      const buyerFiscal = (order.fiscal_number || '').trim() || '-'
+      const expDate = invoiceDateFormatted
 
-      const orderDataJson = JSON.stringify({
-        order_number: order.order_number || 'N/A',
-        customer_name: order.customer_name || 'N/A',
-        business_name: order.business_name || 'N/A',
-        fiscal_number: order.fiscal_number || 'N/A',
-        city: order.city || 'N/A',
-        phone: order.phone || 'N/A',
-        location_unit_name: order.location_unit_name || null,
-        location_street_number: order.location_street_number || null,
-        location_city: order.location_city || null,
-        location_phone: order.location_phone || null,
-        total_amount: order.total_amount
-      })
+      const taxBase18 = amountBeforeVat != null ? fmtNum(amountBeforeVat) : '0.00'
+      const taxVat18 = hasVat ? fmtNum(vatAmount) : '0.00'
+      const taxVal18 = order.total_amount ? fmtNum(parseFloat(order.total_amount)) : '0.00'
+      const valBeforeDiscount = valueBeforeDiscount != null ? fmtNum(valueBeforeDiscount) : '0.00'
+      const discountVal = hasDiscount ? fmtNum(totalDiscountAmount) : '0.00'
+      const valNoVat = amountBeforeVat != null ? fmtNum(amountBeforeVat) : '0.00'
+      const paymentDone = isPaid ? (order.total_amount ? fmtNum(parseFloat(order.total_amount)) : '0.00') : '0.00'
+      const totalForPay = order.total_amount ? fmtNum(parseFloat(order.total_amount)) : '-'
+      const mbetjaVal = order.total_amount ? (isPaid ? '0.00' : fmtNum(parseFloat(order.total_amount))) : '-'
+      const paymentBadgeHtml = isPaid
+        ? '<span class="inv-paid inv-paid--yes">E Paguar</span>'
+        : '<span class="inv-paid inv-paid--no">E PaPaguar</span>'
 
-      const scriptTag = '<' + 'script' + '>'
-      const scriptClose = '<' + '/' + 'script' + '>'
+      const htmlContent = '<!DOCTYPE html><html lang="sq">' +
+        '<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">' +
+        '<title>Faturë ' + (order.order_number || 'N/A') + '</title>' +
+        '<style>' +
+        '*{box-sizing:border-box}' +
+        'html,body{-webkit-print-color-adjust:exact;print-color-adjust:exact;color-adjust:exact}' +
+        'body{font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;padding:24px 32px;color:#111827;font-size:13px;line-height:1.4;max-width:900px;margin:0 auto;background:#fff}' +
+        '.inv-table-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch;margin-bottom:16px}' +
+        '.inv-header{display:flex;flex-direction:column;gap:0;margin-bottom:20px;padding-bottom:16px;border-bottom:2px solid #0d9488}' +
+        '.inv-header-row1{display:flex;justify-content:space-between;align-items:flex-start;gap:20px;width:100%;margin-bottom:14px}' +
+        '.inv-header-row2{display:flex;justify-content:space-between;align-items:flex-start;gap:20px;width:100%}' +
+        '.inv-header-address{text-align:right;flex:1;max-width:52%;display:flex;flex-direction:column;align-items:flex-end}' +
+        '.inv-header-address .inv-title{margin-top:8px}.inv-header-address .inv-title:first-child{margin-top:0}' +
+        '.inv-header-address>div:not(.inv-title){max-width:100%;word-break:break-word}' +
+        '.inv-seller-contact{flex:1;min-width:200px;max-width:55%}' +
+        '.inv-seller-contact .inv-title{margin-top:8px}.inv-seller-contact .inv-title:first-child{margin-top:0}' +
+        '.inv-invoice-no-block{margin:0;padding:0;border:none;width:auto;max-width:280px;text-align:right;flex-shrink:0}' +
+        '.inv-invoice-no-block .inv-nr{text-align:right;margin-top:4px}' +
+        '.inv-title{font-size:11px;color:#6b7280;text-transform:uppercase;letter-spacing:0.05em;margin-bottom:2px}' +
+        '.inv-company{font-weight:700;font-size:18px;color:#0f766e;margin:0;padding:0;line-height:1.2;display:block;flex-shrink:0}' +
+        '.inv-nr{text-align:right;font-weight:700;font-size:14px;color:#0d9488}' +
+        '.inv-bleresi{background:#f8fafc;padding:12px 16px;border-radius:8px;margin-bottom:16px;border:1px solid #e2e8f0}' +
+        '.inv-bleresi h3{font-size:12px;text-transform:uppercase;color:#64748b;margin:0 0 8px 0}' +
+        '.inv-paid{display:inline-block;padding:4px 10px;border-radius:999px;font-size:11px;font-weight:700;letter-spacing:0.02em;border:1px solid transparent}' +
+        '.inv-paid--yes{background:#ecfdf5;color:#065f46;border-color:#a7f3d0}' +
+        '.inv-paid--no{background:#fff7ed;color:#9a3412;border-color:#fed7aa}' +
+        '.inv-meta{width:100%;border-collapse:collapse;margin-bottom:16px;font-size:12px}' +
+        '.inv-meta th,.inv-meta td{border:1px solid #e2e8f0;padding:6px 10px;text-align:left}' +
+        '.inv-meta th{background:#f1f5f9;font-weight:600;color:#475569}' +
+        '.inv-table{width:100%;border-collapse:collapse;margin-bottom:16px;font-size:12px}' +
+        '.inv-table th,.inv-table td{border:1px solid #e2e8f0;padding:6px 8px}' +
+        '.inv-table th{background:#0d9488;color:#fff;font-weight:600;text-align:center}' +
+        '.inv-table .inv-num{text-align:right}.inv-table .inv-desc{text-align:left}.inv-table .inv-code{text-align:center}' +
+        '.inv-table .inv-qty{text-align:right;vertical-align:top}.inv-qty-stack{display:block;text-align:right}' +
+        '.inv-qty-stack--pkg{display:flex;flex-direction:column;align-items:flex-end;gap:3px;text-align:right}' +
+        '.inv-qty-stack--pkg .inv-qty-line{font-variant-numeric:tabular-nums;line-height:1.3;display:block}' +
+        '.inv-qty-stack--pkg .inv-qty-line1{font-size:12px;font-weight:600;color:#0f172a;letter-spacing:-0.02em}' +
+        '.inv-qty-stack--pkg .inv-qty-line2{font-size:11px;font-weight:400;color:#64748b}' +
+        '.inv-qty-stack--pkg .inv-qty-line3{font-size:12px;font-weight:800;color:#0f172a;letter-spacing:-0.02em}' +
+        '.inv-tax{width:100%;max-width:320px;margin-left:auto;border-collapse:collapse;font-size:12px;margin-bottom:12px}' +
+        '.inv-tax th,.inv-tax td{border:1px solid #e2e8f0;padding:6px 10px;text-align:right}' +
+        '.inv-tax th{background:#f1f5f9;font-weight:600}' +
+        '.inv-totals{max-width:280px;margin-left:auto;font-size:13px}' +
+        '.inv-totals .row{display:flex;justify-content:space-between;padding:4px 0;border-bottom:1px solid #e2e8f0}' +
+        '.inv-totals .row.status{border-bottom:none;padding-bottom:6px}' +
+        '.inv-totals .row.total{font-weight:700;font-size:15px;color:#0d9488;border-bottom:none;padding-top:8px;margin-top:4px;border-top:2px solid #0d9488}' +
+        '.inv-footer{display:flex;justify-content:space-between;align-items:flex-end;gap:24px;margin-top:40px;padding-top:24px;border-top:2px solid #e2e8f0}' +
+        '.inv-sig{min-width:200px;max-width:45%}' +
+        '.inv-sig--left{text-align:left}' +
+        '.inv-sig--right{text-align:right;margin-left:auto}' +
+        '.inv-sig .line{border-top:1px solid #111827;padding-top:4px;margin-top:32px;font-weight:600;font-size:12px}' +
+        '.inv-sig .sub{font-size:11px;color:#64748b;margin-top:4px}' +
+        '.inv-bank{font-size:12px;color:#64748b;margin-top:16px}' +
+        '@page{size:A4;margin:12mm}' +
+        '@media print{' +
+        'body{padding:0!important;max-width:100%!important;margin:0!important;background:#fff!important}' +
+        '.inv-table-wrap{overflow:visible!important;margin-left:0!important;margin-right:0!important;padding:0!important;-webkit-overflow-scrolling:auto!important}' +
+        '.inv-table{min-width:0!important;width:100%!important;page-break-inside:auto}' +
+        '.inv-meta{page-break-inside:auto}' +
+        'thead{display:table-header-group}' +
+        'tbody.inv-tbody-item{break-inside:avoid!important;page-break-inside:avoid!important}' +
+        'tbody.inv-tbody-item tr{break-inside:avoid!important;page-break-inside:avoid!important}' +
+        'tbody.inv-tbody-item td{break-inside:avoid!important;page-break-inside:avoid!important}' +
+        '.inv-bleresi,.inv-totals,.inv-tax,.inv-footer,.inv-bank,.inv-sig{break-inside:avoid;page-break-inside:avoid}' +
+        '.inv-footer{flex-direction:row!important;justify-content:space-between!important;align-items:flex-end!important;gap:32px!important}' +
+        '.inv-footer .inv-sig--right{margin-left:auto!important;text-align:right!important}' +
+        '.inv-footer .inv-sig--left{text-align:left!important}' +
+        '.inv-footer{border-top-color:#e2e8f0!important}' +
+        '.inv-header{border-bottom-color:#0d9488!important}' +
+        '.inv-table th{background:#0d9488!important;color:#fff!important}' +
+        '.inv-meta th,.inv-tax th{background:#f1f5f9!important}' +
+        '}' +
+        '@media (max-width:768px){' +
+        'body{padding:12px 16px;font-size:12px;max-width:100%}' +
+        '.inv-header-row1{display:flex!important;flex-direction:row!important;justify-content:space-between!important;align-items:flex-start!important;gap:10px!important;margin-bottom:12px!important}' +
+        '.inv-header-row2{display:flex!important;flex-direction:row!important;justify-content:space-between!important;align-items:flex-start!important;gap:10px!important}' +
+        '.inv-company{font-size:15px!important;line-height:1.15!important;margin:0!important;max-width:44%!important;flex:0 1 auto!important;min-width:0!important;word-break:break-word!important}' +
+        '.inv-header-address{flex:1!important;min-width:0!important;max-width:56%!important;text-align:right!important;align-items:flex-end!important;font-size:11px!important}' +
+        '.inv-header-address .inv-title{font-size:10px!important;letter-spacing:0.03em!important}' +
+        '.inv-seller-contact{flex:1!important;min-width:0!important;max-width:55%!important;font-size:11px!important}' +
+        '.inv-invoice-no-block{flex:0 0 auto!important;max-width:45%!important;text-align:right!important;min-width:0!important}' +
+        '.inv-invoice-no-block .inv-nr{text-align:right!important;font-size:13px!important}' +
+        '.inv-invoice-no-block .inv-title{text-align:right!important}' +
+        '.inv-meta{font-size:11px}.inv-meta th,.inv-meta td{padding:6px 8px}' +
+        '.inv-table-wrap{margin-left:-16px;margin-right:-16px;padding:0 16px}' +
+        '.inv-table{font-size:11px;min-width:720px}' +
+        '.inv-table.inv-table--simple{min-width:480px}' +
+        '.inv-table th,.inv-table td{padding:6px 4px}' +
+        '.inv-tax{max-width:100%;font-size:11px}' +
+        '.inv-totals{max-width:100%;font-size:12px}' +
+        '.inv-footer{flex-direction:column;gap:24px;margin-top:24px;align-items:stretch}' +
+        '.inv-sig{min-width:auto;max-width:100%;text-align:left}' +
+        '.inv-sig--right{margin-left:0;text-align:left}.inv-sig .line{margin-top:16px}' +
+        '.inv-qty-stack--pkg{gap:4px}' +
+        '.inv-qty-stack--pkg .inv-qty-line1{font-size:11px;font-weight:600}' +
+        '.inv-qty-stack--pkg .inv-qty-line2{font-size:10px;font-weight:400;color:#64748b}' +
+        '.inv-qty-stack--pkg .inv-qty-line3{font-size:12px;font-weight:800;margin-top:1px}' +
+        '}' +
+        '</style></head><body>' +
+        '<div class="inv-header">' +
+        '<div class="inv-header-row1">' +
+        '<h2 class="inv-company">Aron Trade</h2>' +
+        '<div class="inv-header-address">' +
+        '<div class="inv-title">Adresë</div><div>Ferizaj, Kosovë, Rruga Lidhja e Prizrenit</div>' +
+        '<div class="inv-title">Nrb</div><div>' + (order.company_nrb || '—') + '</div>' +
+        '<div class="inv-title">Tvsh</div><div>' + (order.company_tvsh || '—') + '</div>' +
+        '</div></div>' +
+        '<div class="inv-header-row2">' +
+        '<div class="inv-seller-contact">' +
+        '<div class="inv-title">Nrf / NIPT</div><div>' + (order.company_nrf || '—') + '</div>' +
+        '<div class="inv-title">tel</div><div>+383 48 75 66 46 / +383 44 82 43 14</div>' +
+        '<div class="inv-title">email</div><div>svalon95@gmail.com</div>' +
+        '</div>' +
+        '<div class="inv-invoice-no-block">' +
+        '<div class="inv-title">Nr. Faturës</div>' +
+        '<div class="inv-nr">' + (order.order_number || 'N/A') + '</div>' +
+        '</div></div></div>' +
+        '<div class="inv-bleresi">' +
+        '<h3>Bleresi</h3>' +
+        '<div><strong>' + buyerName + '</strong></div>' +
+        (buyerAddress ? '<div>Adresa: ' + buyerAddress + '</div>' : '') +
+        '<div>Qyteti: ' + buyerCity + '</div>' +
+        '<div>No fiskal: ' + buyerFiscal + '</div>' +
+        '<div>Numri unik: ' + buyerFiscal + '</div>' +
+        (order.phone ? '<div>Telefon: ' + order.phone + '</div>' : '') +
+        '</div>' +
+        '<div class="inv-table-wrap"><table class="inv-meta">' +
+        '<tr><th>Data fatura</th><th>Kushtet</th><th>Data e skadimit</th><th>User</th><th>Referenca</th><th>Lokacioni</th></tr>' +
+        '<tr><td>' + invoiceDateFormatted + '</td><td></td><td>' + expDate + '</td><td>Klient</td><td></td><td>' + (order.location_unit_name || '-') + '</td></tr>' +
+        '</table></div>' +
+        '<div class="inv-table-wrap"><table class="inv-table' + (!hasVat && !hasDiscount ? ' inv-table--simple' : '') + '">' +
+        '<thead><tr>' + itemsHeaderHtml + '</tr></thead>' + itemsRows + '</table></div>' +
+        (hasVat
+          ? '<table class="inv-tax">' +
+            '<tr><th>Normat Tatimore</th><th>Baza</th><th>TVSH</th><th>Vlera</th></tr>' +
+            '<tr><td>TVSH 0%</td><td>0.00</td><td>0.00</td><td>0.00</td></tr>' +
+            '<tr><td>TVSH 18%</td><td>' + taxBase18 + '</td><td>' + taxVat18 + '</td><td>' + taxVal18 + '</td></tr>' +
+            '</table>'
+          : '') +
+        '<div class="inv-totals">' +
+        '<div class="row status"><span>Statusi</span><span>' + paymentBadgeHtml + '</span></div>' +
+        (hasDiscount
+          ? '<div class="row"><span>Vlera para zbritjes</span><span>' + valBeforeDiscount + '</span></div>' +
+            '<div class="row"><span>Rabati</span><span>' + discountVal + '</span></div>'
+          : '') +
+        (hasVat
+          ? '<div class="row"><span>Vlera pa TVSH</span><span>' + valNoVat + '</span></div>' +
+            '<div class="row"><span>TVSH</span><span>' + taxVat18 + '</span></div>'
+          : '') +
+        '<div class="row total"><span>Vlera për pagesë (EUR)</span><span>' + totalForPay + '</span></div>' +
+        '<div class="row"><span>Pagesa</span><span>' + paymentDone + '</span></div>' +
+        '<div class="row"><span>Mbetja</span><span>' + mbetjaVal + '</span></div>' +
+        '</div>' +
+        '<div class="inv-footer">' +
+        '<div class="inv-sig inv-sig--left"><div class="line">Dërgoi</div><div class="sub">Aron Trade</div></div>' +
+        '<div class="inv-sig inv-sig--right"><div class="line">Pranoi</div><div class="sub">' + buyerName + '</div></div>' +
+        '</div>' +
+        '<div class="inv-bank">Llogaria bankare:</div>' +
+        '</body></html>'
 
-      const printWindow = window.open('', '_blank', 'width=900,height=650')
+      const printWindow = window.open('', '_blank')
       if (!printWindow) {
         alert('Lejoni hapjen e dritareve të reja për të printuar porosinë.')
         return
       }
-
-      const htmlContent = '<html>' +
-        '<head>' +
-        '<title>Faturë ' + (order.order_number || 'N/A') + '</title>' +
-        '<style>' +
-        'body { font-family: Arial, sans-serif; padding: 24px; color: #111827; }' +
-        'h1 { font-size: 24px; margin-bottom: 8px; }' +
-        '.meta { margin-bottom: 16px; font-size: 14px; }' +
-        '.payment-status { margin-top: 12px; padding: 8px 12px; border-radius: 4px; display: inline-block; font-size: 14px; }' +
-        '.payment-status.paid { background-color: #d1fae5; color: #059669; font-weight: bold; }' +
-        '.payment-status.unpaid { background-color: #fee2e2; color: #dc2626; font-weight: bold; }' +
-        'table { width: 100%; border-collapse: collapse; margin-top: 16px; }' +
-        'th, td { border: 1px solid #e5e7eb; padding: 8px; text-align: left; font-size: 14px; }' +
-        'th { background-color: #f9fafb; }' +
-        '.totals { margin-top: 16px; font-weight: bold; }' +
-        '</style>' +
-        '</head>' +
-        '<body>' +
-        '<h1>Faturë ' + (order.order_number || 'N/A') + '</h1>' +
-        '<div class="meta">' +
-        '<p><strong>Data e Porosisë:</strong> ' + createdAt + '</p>' +
-        // Always show client data
-        '<div style="margin-bottom: 12px;">' +
-        '<p><strong>Klienti:</strong> ' + (order.customer_name || 'N/A') + ' — ' + (order.business_name || 'N/A') + '</p>' +
-        '<p><strong>Nr. Fiskal:</strong> ' + (order.fiscal_number || 'N/A') + '</p>' +
-        '<p><strong>Qyteti:</strong> ' + (order.city || 'N/A') + '</p>' +
-        '<p><strong>Telefon/Viber:</strong> ' + (order.phone || 'N/A') + '</p>' +
-        '</div>' +
-        // If location data exists, show it as well
-        (order.location_unit_name || order.location_street_number || order.location_city || order.location_phone || order.location_viber ? (
-          '<div style="background-color: #f0f9ff; padding: 12px; border-radius: 6px; margin-bottom: 12px; border-left: 4px solid #3b82f6;">' +
-          '<p style="margin: 0 0 8px 0; font-weight: bold; color: #1e40af; font-size: 14px;">📍 Të Dhënat e Njësisë</p>' +
-          (order.location_unit_name ? '<p style="margin: 4px 0;"><strong>Pika/Njësia:</strong> ' + order.location_unit_name + '</p>' : '') +
-          (order.location_street_number ? '<p style="margin: 4px 0;"><strong>Adresa:</strong> ' + order.location_street_number + '</p>' : '') +
-          (order.location_city ? '<p style="margin: 4px 0;"><strong>Vendi/Qyteti:</strong> ' + order.location_city + '</p>' : '') +
-          (order.location_phone ? '<p style="margin: 4px 0;"><strong>Telefon:</strong> ' + order.location_phone + '</p>' : '') +
-          (order.location_viber ? '<p style="margin: 4px 0;"><strong>Viber:</strong> ' + order.location_viber + '</p>' : '') +
-          '</div>'
-        ) : '') +
-        (isPaid ? '<div class="payment-status paid">' +
-        '<strong>Statusi i Pagesës:</strong> ' + paymentStatus +
-        (paidAt ? '<br><span style="font-size: 12px;">E paguar më: ' + paidAt + '</span>' : '') +
-        '</div>' : '') +
-        '</div>' +
-        '<table>' +
-        '<thead>' +
-        '<tr><th>Produkti</th><th>Sasia</th><th>Çmimi Njësi</th><th>Totali</th></tr>' +
-        '</thead>' +
-        '<tbody>' +
-        itemsRows +
-        '</tbody>' +
-        '</table>' +
-        '<div class="totals">' +
-        '<div style="margin-bottom: 8px;">' +
-        '<p><strong>Totali i produkteve:</strong> ' + (order.items ? order.items.length : order.total_items || 0) + '</p>' +
-        (order.subtotal ? '<p><strong>Nëntotali (para zbritjeve):</strong> ' + this.formatPrice(order.subtotal) + '</p>' : '') +
-        (totalItemDiscounts > 0 ? '<p style="color: #dc2626;"><strong>Totali i zbritjeve të produkteve:</strong> -' + this.formatPrice(totalItemDiscounts) + '</p>' : '') +
-        (order.discount_amount && order.discount_amount > 0 ? '<p style="color: #dc2626;"><strong>Zbritje e përgjithshme ' + (order.discount_type === 'percentage' ? order.discount_value + '%' : 'fikse') + ':</strong> -' + this.formatPrice(order.discount_amount) + '</p>' : '') +
-        (order.has_vat && order.amount_before_vat && order.vat_amount ? 
-          '<div style="margin-top: 12px; padding-top: 12px; border-top: 1px solid #e5e7eb;">' +
-          '<p><strong>Shuma para TVSH:</strong> ' + this.formatPrice(order.amount_before_vat) + '</p>' +
-          '<p><strong>TVSH (18%):</strong> ' + this.formatPrice(order.vat_amount) + '</p>' +
-          '<p style="font-size: 16px; margin-top: 8px;"><strong>Vlera Totale me TVSH:</strong> ' + totalAmount + '</p>' +
-          '</div>' :
-          '<p style="font-size: 16px; margin-top: 8px;"><strong>Vlera Totale:</strong> ' + totalAmount + '</p>'
-        ) +
-        '</div>' +
-        '</div>' +
-        '<div style="margin-top: 48px; padding-top: 24px; border-top: 2px solid #e5e7eb;">' +
-        '<div style="display: flex; justify-content: space-between; margin-bottom: 60px;">' +
-        '<div style="width: 45%; text-align: center;">' +
-        '<p style="font-weight: bold; margin-bottom: 40px; border-top: 1px solid #111827; padding-top: 4px; display: inline-block; min-width: 200px;">Nënshkrimi i Blerësit</p>' +
-        '<p style="font-size: 12px; color: #6b7280; margin-top: 8px;">' + (order.business_name || order.customer_name || '') + '</p>' +
-        '</div>' +
-        '<div style="width: 45%; text-align: center;">' +
-        '<p style="font-weight: bold; margin-bottom: 40px; border-top: 1px solid #111827; padding-top: 4px; display: inline-block; min-width: 200px;">Nënshkrimi i Shitësit</p>' +
-        '<p style="font-size: 12px; color: #6b7280; margin-top: 8px;">AronTrade</p>' +
-        '</div>' +
-        '</div>' +
-        '<div style="text-align: center; margin-top: 24px; font-size: 12px; color: #6b7280;">' +
-        '<p><strong>Data e lëshimit:</strong> ' + createdAt + '</p>' +
-        '</div>' +
-        '</div>' +
-        '<div style="margin-top: 24px; padding: 16px; border-top: 2px solid #e5e7eb; text-align: center;">' +
-        '<h3 style="margin-bottom: 12px; font-size: 16px;">Ndaj Faturën:</h3>' +
-        '<div style="display: flex; gap: 8px; justify-content: center; flex-wrap: wrap;">' +
-        '<button onclick="shareToViber()" style="padding: 8px 16px; background-color: #7360F2; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 14px;">💬 Viber</button>' +
-        '<button onclick="shareToWhatsApp()" style="padding: 8px 16px; background-color: #25D366; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 14px;">📱 WhatsApp</button>' +
-        '<button onclick="shareToGmail()" style="padding: 8px 16px; background-color: #EA4335; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 14px;">📧 Gmail</button>' +
-        '<button onclick="window.print()" style="padding: 8px 16px; background-color: #6B7280; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 14px;">🖨 Printo</button>' +
-        '</div>' +
-        '</div>' +
-        scriptTag +
-        'const orderData = ' + orderDataJson + ';' +
-        'function shareToViber() {' +
-        'const orderText = "📦 Faturë " + orderData.order_number + "\\n\\nKlienti: " + orderData.customer_name + " — " + orderData.business_name + "\\nQyteti: " + orderData.city + "\\nTelefon: " + orderData.phone + "\\n\\nTotal: " + (orderData.total_amount ? orderData.total_amount.toFixed(2) + " €" : "Sipas kërkesës");' +
-        'if (navigator.share) {' +
-        'navigator.share({' +
-        'title: "Faturë " + orderData.order_number,' +
-        'text: orderText' +
-        '}).catch(function(err) {' +
-        'console.log("Error sharing:", err);' +
-        'fallbackShareViber(orderText);' +
-        '});' +
-        '} else {' +
-        'fallbackShareViber(orderText);' +
-        '}' +
-        '}' +
-        'function fallbackShareViber(text) {' +
-        'if (navigator.clipboard) {' +
-        'navigator.clipboard.writeText(text).then(function() {' +
-        'alert("Teksti u kopjua në clipboard. Mund ta ngjitni në Viber.");' +
-        '}).catch(function(err) {' +
-        'console.error("Failed to copy:", err);' +
-        'prompt("Kopjoni këtë tekst dhe ngjisni në Viber:", text);' +
-        '});' +
-        '} else {' +
-        'prompt("Kopjoni këtë tekst dhe ngjisni në Viber:", text);' +
-        '}' +
-        '}' +
-        'function shareToWhatsApp() {' +
-        'let orderText = "📦 Faturë " + orderData.order_number + "\\n\\nKlienti: " + orderData.customer_name + " — " + orderData.business_name + "\\nQyteti: " + orderData.city + "\\nTelefon: " + orderData.phone;' +
-        (order.location_unit_name ? 'orderText += "\\nPika/Njësia: " + orderData.location_unit_name;' : '') +
-        (order.location_street_number ? 'orderText += "\\nAdresa: " + orderData.location_street_number;' : '') +
-        (order.location_city ? 'orderText += "\\nVendi/Qyteti: " + orderData.location_city;' : '') +
-        (order.location_phone ? 'orderText += "\\nTelefon i Pikës: " + orderData.location_phone;' : '') +
-        'orderText += "\\n\\nTotal: " + (orderData.total_amount ? orderData.total_amount.toFixed(2) + " €" : "Sipas kërkesës");' +
-        'const whatsappUrl = "https://wa.me/?text=" + encodeURIComponent(orderText);' +
-        'window.open(whatsappUrl, "_blank");' +
-        '}' +
-        'function shareToGmail() {' +
-        'const subject = encodeURIComponent("Faturë " + orderData.order_number);' +
-        'let bodyText = "Faturë: " + orderData.order_number + "\\n\\nKlienti: " + orderData.customer_name + " — " + orderData.business_name + "\\nQyteti: " + orderData.city + "\\nTelefon: " + orderData.phone;' +
-        (order.location_unit_name ? 'bodyText += "\\nPika/Njësia: " + orderData.location_unit_name;' : '') +
-        (order.location_street_number ? 'bodyText += "\\nAdresa: " + orderData.location_street_number;' : '') +
-        (order.location_city ? 'bodyText += "\\nVendi/Qyteti: " + orderData.location_city;' : '') +
-        (order.location_phone ? 'bodyText += "\\nTelefon i Pikës: " + orderData.location_phone;' : '') +
-        'bodyText += "\\n\\nTotal: " + (orderData.total_amount ? orderData.total_amount.toFixed(2) + " €" : "Sipas kërkesës");' +
-        'const body = encodeURIComponent(bodyText);' +
-        'const gmailUrl = "mailto:svalon95@gmail.com?subject=" + subject + "&body=" + body;' +
-        'window.location.href = gmailUrl;' +
-        '}' +
-        scriptClose +
-        '</body>' +
-        '</html>'
-
+      printWindow.document.open()
       printWindow.document.write(htmlContent)
       printWindow.document.close()
+      printWindow.focus()
     },
     async updateOrderStatus(order) {
       try {
