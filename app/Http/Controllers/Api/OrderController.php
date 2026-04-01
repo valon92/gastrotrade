@@ -9,6 +9,7 @@ use App\Models\Order;
 use App\Models\Product;
 use App\Models\StockMovement;
 use App\Mail\OrderConfirmationMail;
+use Illuminate\Database\QueryException;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
 use Illuminate\Support\Facades\DB;
@@ -170,7 +171,6 @@ class OrderController extends Controller
         $orderData = [
             'client_id' => $client?->id,
             'client_location_id' => $clientLocationId,
-            'order_number' => $orderNumber,
             'customer_name' => $customer['name'],
             'business_name' => $businessName,
             'fiscal_number' => $fiscalNumber,
@@ -204,9 +204,21 @@ class OrderController extends Controller
             $orderData['location_city'] = $locationData['location_city'];
         }
 
+        if (!\Illuminate\Support\Facades\Schema::hasColumn('orders', 'client_location_id')) {
+            unset($orderData['client_location_id']);
+        }
+
         try {
-            $order = DB::transaction(function () use ($orderData, $items) {
-                $order = Order::create($orderData);
+            $order = null;
+            $currentOrderNumber = $orderNumber;
+            $maxAttempts = 5;
+
+            for ($attempt = 1; $attempt <= $maxAttempts; $attempt++) {
+                $payload = array_merge($orderData, ['order_number' => $currentOrderNumber]);
+
+                try {
+                    $order = DB::transaction(function () use ($payload, $items) {
+                        $order = Order::create($payload);
 
                 foreach ($items as $item) {
                     $order->items()->create([
@@ -305,8 +317,25 @@ class OrderController extends Controller
                     }
                 }
 
-                return $order;
-            });
+                        return $order;
+                    });
+
+                    break;
+                } catch (QueryException $e) {
+                    if ($attempt >= $maxAttempts || !$this->isDuplicateOrderNumberConstraint($e)) {
+                        throw $e;
+                    }
+                    \Log::warning('Order store: duplicate order_number, retrying', [
+                        'attempt' => $attempt,
+                        'order_number' => $currentOrderNumber,
+                    ]);
+                    $currentOrderNumber = $this->generateUniqueOrderNumberFallback();
+                }
+            }
+
+            if (!$order) {
+                throw new \RuntimeException('Nuk u gjenerua dot numër unik porosie.');
+            }
 
             $order->load(['items.product']);
             if (
@@ -678,6 +707,41 @@ class OrderController extends Controller
         $countPart = str_pad((string) $count, 3, '0', STR_PAD_LEFT);
 
         return "GT-{$datePart}-{$countPart}{$randomPart}";
+    }
+
+    /**
+     * Numër rezervë kur UNIQUE në DB përputhet me rresht të fshirë (soft delete)
+     * ose me përplasje të rrallë — validimi Laravel nuk përputhet gjithmonë me indeksin e MySQL.
+     */
+    private function generateUniqueOrderNumberFallback(): string
+    {
+        return 'GT-' . now()->format('Ymd') . '-' . strtoupper(Str::random(8));
+    }
+
+    private function isDuplicateOrderNumberConstraint(QueryException $e): bool
+    {
+        $message = $e->getMessage();
+        if (!str_contains(strtolower($message), 'order_number')) {
+            return false;
+        }
+
+        $sqlState = $e->errorInfo[0] ?? '';
+        $driverCode = $e->errorInfo[1] ?? null;
+
+        if ($sqlState === '23505') {
+            return true;
+        }
+
+        if ((int) $driverCode === 1062) {
+            return true;
+        }
+
+        if ((int) $driverCode === 19 && str_contains($message, 'UNIQUE')) {
+            return true;
+        }
+
+        return str_contains($message, 'Duplicate entry')
+            || str_contains($message, 'UNIQUE constraint failed');
     }
 }
 
