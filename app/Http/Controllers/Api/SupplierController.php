@@ -38,7 +38,10 @@ class SupplierController extends Controller
 
         if ($request->has('active_only') && $request->active_only) {
             if (Schema::hasColumn('suppliers', 'is_active')) {
-                $query->where('is_active', true);
+                // Legacy data: is_active mund të jetë NULL. E trajtojmë si aktiv.
+                $query->where(function ($q) {
+                    $q->where('is_active', true)->orWhereNull('is_active');
+                });
             }
         }
 

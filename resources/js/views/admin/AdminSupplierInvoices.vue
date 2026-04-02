@@ -470,13 +470,23 @@
                   <div>
                     <div class="flex items-center justify-between gap-3 mb-2">
                       <label class="block text-sm font-medium text-gray-700">Prodhuesi *</label>
-                      <button
-                        type="button"
-                        @click="openCreateSupplierModal"
-                        class="text-xs font-semibold text-primary-700 hover:text-primary-800 underline"
-                      >
-                        + Shto Furnitor
-                      </button>
+                      <div class="flex items-center gap-3">
+                        <button
+                          type="button"
+                          @click="openCreateSupplierModal"
+                          class="text-xs font-semibold text-primary-700 hover:text-primary-800 underline"
+                        >
+                          + Shto Furnitor
+                        </button>
+                        <button
+                          type="button"
+                          @click="openEditSupplierModal"
+                          :disabled="!newInvoiceForm.supplier_id"
+                          class="text-xs font-semibold text-gray-700 hover:text-gray-900 underline disabled:opacity-50 disabled:pointer-events-none"
+                        >
+                          ✏️ Edito
+                        </button>
+                      </div>
                     </div>
                     <select
                       v-model="newInvoiceForm.supplier_id"
@@ -484,10 +494,19 @@
                       class="w-full px-3 py-2 border border-gray-300 rounded-md"
                     >
                       <option value="">Zgjidh Prodhuesin</option>
-                      <option v-for="supplier in suppliers" :key="supplier.id" :value="supplier.id">
+                      <option v-for="supplier in suppliers" :key="supplier.id" :value="String(supplier.id)">
                         {{ supplier.name }}
                       </option>
                     </select>
+                    <p v-if="suppliersLoading" class="mt-1 text-xs text-gray-500">Duke i ngarkuar furnitorët…</p>
+                    <div v-else-if="suppliersError" class="mt-2 text-xs text-red-600 flex items-center justify-between gap-3">
+                      <span>{{ suppliersError }}</span>
+                      <button type="button" class="underline font-semibold" @click="loadSuppliers">Riprovo</button>
+                    </div>
+                    <div v-else-if="!suppliers.length" class="mt-2 text-xs text-amber-700 flex items-center justify-between gap-3">
+                      <span>Nuk u gjet asnjë furnitor. Nëse sapo keni shtuar një, klikoni “Rifresko”.</span>
+                      <button type="button" class="underline font-semibold" @click="loadSuppliers">Rifresko</button>
+                    </div>
                   </div>
                   <div>
                     <label class="block text-sm font-medium text-gray-700 mb-2">Data e Faturës *</label>
@@ -900,6 +919,105 @@
           </div>
         </div>
       </div>
+
+      <!-- Edit Supplier Modal -->
+      <div v-if="showEditSupplierModal" class="fixed inset-0 bg-gray-900 bg-opacity-50 overflow-y-auto h-full w-full z-[60]">
+        <div class="relative top-0 sm:top-10 mx-auto max-w-xl w-full p-3 sm:p-6">
+          <div class="bg-white rounded-xl shadow-2xl overflow-hidden">
+            <div class="flex items-center justify-between px-4 sm:px-6 py-4 border-b border-gray-200">
+              <h3 class="text-lg sm:text-xl font-bold text-gray-900">Edito Furnitorin</h3>
+              <button @click="closeEditSupplierModal" class="text-gray-500 hover:text-gray-700 text-2xl leading-none">
+                &times;
+              </button>
+            </div>
+            <div class="px-4 sm:px-6 py-4">
+              <form @submit.prevent="saveEditedSupplier" class="space-y-4">
+                <div>
+                  <label class="block text-sm font-medium text-gray-700 mb-1">Emri *</label>
+                  <input
+                    v-model.trim="editSupplierForm.name"
+                    type="text"
+                    required
+                    class="w-full px-3 py-2 border border-gray-300 rounded-md"
+                  >
+                </div>
+
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Kontakti</label>
+                    <input
+                      v-model.trim="editSupplierForm.contact_person"
+                      type="text"
+                      class="w-full px-3 py-2 border border-gray-300 rounded-md"
+                    >
+                  </div>
+                  <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Telefoni</label>
+                    <input
+                      v-model.trim="editSupplierForm.phone"
+                      type="text"
+                      class="w-full px-3 py-2 border border-gray-300 rounded-md"
+                    >
+                  </div>
+                </div>
+
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Email</label>
+                    <input
+                      v-model.trim="editSupplierForm.email"
+                      type="email"
+                      class="w-full px-3 py-2 border border-gray-300 rounded-md"
+                    >
+                  </div>
+                  <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Aktiv</label>
+                    <select v-model="editSupplierForm.is_active" class="w-full px-3 py-2 border border-gray-300 rounded-md">
+                      <option :value="true">Po</option>
+                      <option :value="false">Jo</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div>
+                  <label class="block text-sm font-medium text-gray-700 mb-1">Adresa</label>
+                  <input
+                    v-model.trim="editSupplierForm.address"
+                    type="text"
+                    class="w-full px-3 py-2 border border-gray-300 rounded-md"
+                  >
+                </div>
+
+                <div>
+                  <label class="block text-sm font-medium text-gray-700 mb-1">Shënime</label>
+                  <textarea
+                    v-model.trim="editSupplierForm.notes"
+                    rows="3"
+                    class="w-full px-3 py-2 border border-gray-300 rounded-md"
+                  ></textarea>
+                </div>
+
+                <div class="pt-2 flex flex-col sm:flex-row justify-end gap-3">
+                  <button
+                    type="button"
+                    @click="closeEditSupplierModal"
+                    class="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-200 rounded-md hover:bg-gray-300"
+                  >
+                    Anulo
+                  </button>
+                  <button
+                    type="submit"
+                    :disabled="updatingSupplier"
+                    class="px-4 py-2 text-sm font-medium text-white bg-primary-600 rounded-md hover:bg-primary-700 disabled:opacity-60"
+                  >
+                    {{ updatingSupplier ? 'Duke ruajtur...' : 'Ruaj Ndryshimet' }}
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
   </AdminLayout>
 </template>
@@ -919,6 +1037,8 @@ export default {
       invoices: [],
       suppliers: [],
       allProducts: [], // Store all products for checking product details
+      suppliersLoading: false,
+      suppliersError: null,
       paymentStats: {
         paidCount: 0,
         paidTotal: 0,
@@ -944,7 +1064,19 @@ export default {
       savingInvoice: false,
       showCreateSupplierModal: false,
       creatingSupplier: false,
+      showEditSupplierModal: false,
+      updatingSupplier: false,
       newSupplierForm: {
+        name: '',
+        contact_person: '',
+        email: '',
+        phone: '',
+        address: '',
+        notes: '',
+        is_active: true,
+      },
+      editSupplierForm: {
+        id: null,
         name: '',
         contact_person: '',
         email: '',
@@ -1016,11 +1148,38 @@ export default {
     },
     // Logout is now handled by AdminLayout
     async loadSuppliers() {
+      this.suppliersLoading = true
+      this.suppliersError = null
       try {
-        const response = await axios.get('/api/suppliers', { params: { active_only: true } })
-        this.suppliers = response.data.data || []
+        // Në këtë faqe na duhen të gjithë furnitorët (edhe legacy me is_active NULL).
+        const response = await axios.get('/api/suppliers')
+        const r = response.data
+        const raw = Array.isArray(r)
+          ? r
+          : Array.isArray(r?.data)
+            ? r.data
+            : Array.isArray(r?.data?.data)
+              ? r.data.data
+              : []
+
+        this.suppliers = raw
+          .filter(s => s && s.id != null)
+          .map(s => ({
+            ...s,
+            id: s.id,
+            name: s.name || s.supplier_name || s.company_name || '',
+          }))
       } catch (error) {
         console.error('Error loading suppliers:', error)
+        const status = error.response?.status
+        if (status === 401 || status === 403) {
+          this.suppliersError = 'Nuk keni autorizim për furnitorët (provoni me relogin në admin).'
+        } else {
+          this.suppliersError = 'Gabim në ngarkimin e furnitorëve. Provoni përsëri.'
+        }
+        this.suppliers = []
+      } finally {
+        this.suppliersLoading = false
       }
     },
     openCreateSupplierModal() {
@@ -1038,6 +1197,34 @@ export default {
     closeCreateSupplierModal() {
       this.showCreateSupplierModal = false
     },
+    openEditSupplierModal() {
+      const selectedId = this.newInvoiceForm.supplier_id
+      if (!selectedId) {
+        alert('Zgjidhni furnitorin për ta edituar.')
+        return
+      }
+
+      const supplier = this.suppliers.find(s => String(s?.id) === String(selectedId))
+      if (!supplier) {
+        alert('Furnitori nuk u gjet. Rifreskoni listën dhe provoni përsëri.')
+        return
+      }
+
+      this.editSupplierForm = {
+        id: supplier.id,
+        name: supplier.name || '',
+        contact_person: supplier.contact_person || '',
+        email: supplier.email || '',
+        phone: supplier.phone || '',
+        address: supplier.address || '',
+        notes: supplier.notes || '',
+        is_active: supplier.is_active !== false && supplier.is_active !== 0,
+      }
+      this.showEditSupplierModal = true
+    },
+    closeEditSupplierModal() {
+      this.showEditSupplierModal = false
+    },
     async saveNewSupplier() {
       if (!this.newSupplierForm.name || !this.newSupplierForm.name.trim()) {
         alert('Ju lutem vendosni emrin e furnitorit.')
@@ -1051,10 +1238,18 @@ export default {
         const response = await axios.post('/api/suppliers', payload)
         const supplier = response.data.data
 
+        // Set selected immediately (string) to avoid losing selection on re-render.
+        if (supplier && supplier.id) {
+          this.newInvoiceForm.supplier_id = String(supplier.id)
+        }
+
         await this.loadSuppliers()
 
         if (supplier && supplier.id) {
-          this.newInvoiceForm.supplier_id = supplier.id
+          // Keep supplier_id as string for <select> matching
+          this.newInvoiceForm.supplier_id = String(supplier.id)
+          // Ensure DOM updates + v-model matching after options refresh.
+          await this.$nextTick()
         }
 
         this.showCreateSupplierModal = false
@@ -1065,6 +1260,44 @@ export default {
         alert(`❌ ${msg}`)
       } finally {
         this.creatingSupplier = false
+      }
+    },
+    async saveEditedSupplier() {
+      if (!this.editSupplierForm?.id) {
+        alert('Furnitori i zgjedhur nuk është valid.')
+        return
+      }
+      if (!this.editSupplierForm.name || !this.editSupplierForm.name.trim()) {
+        alert('Ju lutem vendosni emrin e furnitorit.')
+        return
+      }
+      if (this.updatingSupplier) return
+      this.updatingSupplier = true
+      try {
+        const payload = {
+          name: this.editSupplierForm.name,
+          contact_person: this.editSupplierForm.contact_person || null,
+          email: this.editSupplierForm.email || null,
+          phone: this.editSupplierForm.phone || null,
+          address: this.editSupplierForm.address || null,
+          notes: this.editSupplierForm.notes || null,
+          is_active: !!this.editSupplierForm.is_active,
+        }
+        await axios.put(`/api/suppliers/${this.editSupplierForm.id}`, payload)
+
+        const keepSelected = String(this.editSupplierForm.id)
+        await this.loadSuppliers()
+        this.newInvoiceForm.supplier_id = keepSelected
+        await this.$nextTick()
+
+        this.showEditSupplierModal = false
+        alert('✅ Furnitori u përditësua me sukses!')
+      } catch (error) {
+        console.error('Error updating supplier:', error)
+        const msg = error.response?.data?.message || 'Gabim gjatë përditësimit të furnitorit.'
+        alert(`❌ ${msg}`)
+      } finally {
+        this.updatingSupplier = false
       }
     },
     async loadProducts() {
@@ -1298,7 +1531,7 @@ export default {
       this.savingInvoice = true
       try {
         const payload = {
-          supplier_id: this.newInvoiceForm.supplier_id,
+          supplier_id: this.newInvoiceForm.supplier_id ? parseInt(this.newInvoiceForm.supplier_id, 10) : null,
           invoice_date: this.newInvoiceForm.invoice_date,
           due_date: this.newInvoiceForm.due_date || null,
           stock_receipt_id: this.newInvoiceForm.stock_receipt_id || null,
