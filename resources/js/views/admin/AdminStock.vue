@@ -1579,6 +1579,7 @@
 import axios from 'axios'
 import AdminLayout from '../../components/admin/AdminLayout.vue'
 import { adminStore } from '../../stores/adminStore'
+import { OFFICIAL_ORDER_EMAIL } from '../../config/site'
 
 // Ensure token is set from localStorage on import
 const adminToken = localStorage.getItem('admin_token')
@@ -3037,7 +3038,7 @@ export default {
         'function shareToGmail() {' +
         'const subject = encodeURIComponent("Faturë Prodhuesi " + invoiceData.invoice_number);' +
         'const body = encodeURIComponent(generateInvoiceText());' +
-        'const gmailUrl = "mailto:svalon95@gmail.com?subject=" + subject + "&body=" + body;' +
+        'const gmailUrl = "mailto:' + OFFICIAL_ORDER_EMAIL + '?subject=" + subject + "&body=" + body;' +
         'window.location.href = gmailUrl;' +
         '}' +
         scriptClose +

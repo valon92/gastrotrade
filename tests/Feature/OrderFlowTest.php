@@ -86,7 +86,9 @@ class OrderFlowTest extends TestCase
         ]);
 
         $response->assertOk()
-            ->assertJsonPath('success', true);
+            ->assertJsonPath('success', true)
+            ->assertJsonPath('delivery.reached_inbox', false)
+            ->assertJsonPath('delivery.recipient', 'svalon95@gmail.com');
 
         Mail::assertSent(OrderConfirmationMail::class);
     }

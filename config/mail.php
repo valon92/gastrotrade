@@ -1,5 +1,9 @@
 <?php
 
+$officialOrderEmail = env('OFFICIAL_ORDER_EMAIL', 'svalon95@gmail.com');
+$mailFromAddress = env('MAIL_FROM_ADDRESS', $officialOrderEmail);
+$mailOrderInbox = env('MAIL_ORDER_INBOX') ?: $officialOrderEmail;
+
 return [
 
     /*
@@ -41,9 +45,9 @@ return [
             'transport' => 'smtp',
             'scheme' => env('MAIL_SCHEME'),
             'url' => env('MAIL_URL'),
-            'host' => env('MAIL_HOST', '127.0.0.1'),
-            'port' => env('MAIL_PORT', 2525),
-            'username' => env('MAIL_USERNAME'),
+            'host' => env('MAIL_HOST', 'smtp.gmail.com'),
+            'port' => (int) env('MAIL_PORT', 587),
+            'username' => env('MAIL_USERNAME') ?: $mailFromAddress,
             'password' => env('MAIL_PASSWORD'),
             'timeout' => null,
             'local_domain' => env('MAIL_EHLO_DOMAIN', parse_url((string) env('APP_URL', 'http://localhost'), PHP_URL_HOST)),
@@ -111,8 +115,20 @@ return [
     */
 
     'from' => [
-        'address' => env('MAIL_FROM_ADDRESS', 'hello@example.com'),
-        'name' => env('MAIL_FROM_NAME', 'Example'),
+        'address' => $mailFromAddress,
+        'name' => env('MAIL_FROM_NAME', 'Aron Trade'),
     ],
+
+    /*
+    |--------------------------------------------------------------------------
+    | Inbox për njoftime porosish (konfirmo-porosine → «Email Zyrtar»)
+    |--------------------------------------------------------------------------
+    |
+    | Parazgjedhja: OFFICIAL_ORDER_EMAIL (shih config/arontrade.php). Mund të
+    | mbikohet me MAIL_ORDER_INBOX. MAIL_FROM_ADDRESS është dërguesi SMTP.
+    |
+    */
+
+    'order_inbox' => $mailOrderInbox,
 
 ];

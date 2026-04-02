@@ -64,7 +64,7 @@
           <div class="space-y-3 text-sm text-slate-300">
             <p class="flex items-start gap-2">
               <span class="text-primary-300">✉</span>
-              <span class="break-all">svalon95@gmail.com</span>
+              <span class="break-all">{{ officialOrderEmail }}</span>
             </p>
             <p class="flex items-start gap-2">
               <span class="text-primary-300">☎</span>
@@ -105,8 +105,15 @@
 </template>
 
 <script>
+import { OFFICIAL_ORDER_EMAIL } from '../config/site'
+
 export default {
   name: 'Footer',
+  data() {
+    return {
+      officialOrderEmail: OFFICIAL_ORDER_EMAIL
+    }
+  },
   computed: {
     currentYear() {
       return new Date().getFullYear()

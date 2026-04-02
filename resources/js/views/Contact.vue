@@ -128,7 +128,7 @@
                 </div>
                 <div>
                   <h4 class="font-semibold text-slate-900">Email</h4>
-                  <p class="text-slate-600">svalon95@gmail.com</p>
+                  <p class="text-slate-600">{{ officialOrderEmail }}</p>
                 </div>
               </div>
               
@@ -203,10 +203,13 @@
 </template>
 
 <script>
+import { OFFICIAL_ORDER_EMAIL } from '../config/site'
+
 export default {
   name: 'Contact',
   data() {
     return {
+      officialOrderEmail: OFFICIAL_ORDER_EMAIL,
       form: {
         name: '',
         email: '',

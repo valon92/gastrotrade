@@ -3,8 +3,8 @@
 namespace App\Mail;
 
 use Illuminate\Bus\Queueable;
-use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Mail\Mailable;
+use Illuminate\Mail\Mailables\Address;
 use Illuminate\Mail\Mailables\Content;
 use Illuminate\Mail\Mailables\Envelope;
 use Illuminate\Queue\SerializesModels;
@@ -14,9 +14,13 @@ class OrderConfirmationMail extends Mailable
     use Queueable, SerializesModels;
 
     public $orderData;
+
     public $customerData;
+
     public $cartItems;
+
     public $totalItems;
+
     public $totalPrice;
 
     /**
@@ -37,8 +41,16 @@ class OrderConfirmationMail extends Mailable
     public function envelope(): Envelope
     {
         $orderNumber = $this->orderData['order_number'] ?? 'N/A';
+        $replyTo = [];
+        $clientEmail = $this->customerData['email'] ?? null;
+        if (is_string($clientEmail) && filter_var($clientEmail, FILTER_VALIDATE_EMAIL)) {
+            $name = $this->customerData['name'] ?? null;
+            $replyTo[] = new Address($clientEmail, is_string($name) && $name !== '' ? $name : null);
+        }
+
         return new Envelope(
             subject: "Porosi e Re #{$orderNumber} - AronTrade",
+            replyTo: $replyTo,
         );
     }
 

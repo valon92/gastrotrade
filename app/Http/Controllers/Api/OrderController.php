@@ -4,17 +4,17 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\StoreOrderRequest;
+use App\Mail\OrderConfirmationMail;
 use App\Models\Client;
 use App\Models\Order;
 use App\Models\Product;
 use App\Models\StockMovement;
-use App\Mail\OrderConfirmationMail;
 use Illuminate\Database\QueryException;
 use Illuminate\Http\Request;
-use Illuminate\Support\Str;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Schema;
+use Illuminate\Support\Str;
 
 class OrderController extends Controller
 {
@@ -37,7 +37,7 @@ class OrderController extends Controller
         }
 
         if ($request->search) {
-            $searchTerm = '%' . $request->search . '%';
+            $searchTerm = '%'.$request->search.'%';
             $query->where(function ($q) use ($searchTerm) {
                 $q->where('order_number', 'like', $searchTerm)
                     ->orWhere('customer_name', 'like', $searchTerm)
@@ -47,7 +47,7 @@ class OrderController extends Controller
         }
 
         // If no filters, get more orders for statistics
-        if (!$request->client_id && !$request->status && !$request->search) {
+        if (! $request->client_id && ! $request->status && ! $request->search) {
             $orders = $query->limit(1000)->get();
         } else {
             $orders = $query->limit(50)->get();
@@ -66,25 +66,25 @@ class OrderController extends Controller
         $allOrders = Order::whereNotNull('total_amount')
             ->where('total_amount', '>', 0)
             ->get();
-        
+
         // Separate paid and unpaid orders correctly
         $paidOrders = $allOrders->filter(function ($order) {
             return $order->is_paid === true || $order->is_paid === 1;
         });
-        
+
         $unpaidOrders = $allOrders->filter(function ($order) {
-            return !$order->is_paid || $order->is_paid === false || $order->is_paid === 0;
+            return ! $order->is_paid || $order->is_paid === false || $order->is_paid === 0;
         });
 
         // Calculate totals
         $paidTotal = $paidOrders->sum(function ($order) {
             return (float) $order->total_amount;
         });
-        
+
         $unpaidTotal = $unpaidOrders->sum(function ($order) {
             return (float) $order->total_amount;
         });
-        
+
         $totalAmount = $allOrders->sum(function ($order) {
             return (float) $order->total_amount;
         });
@@ -112,14 +112,14 @@ class OrderController extends Controller
         $fiscalNumber = strtoupper(preg_replace('/\s+/', '', $customer['fiscal_number']));
 
         $client = null;
-        if (!empty($validated['client_id'])) {
+        if (! empty($validated['client_id'])) {
             $client = Client::find($validated['client_id']);
         }
 
         if (
-            !$client &&
-            !empty($businessName) &&
-            !empty($fiscalNumber)
+            ! $client &&
+            ! empty($businessName) &&
+            ! empty($fiscalNumber)
         ) {
             $client = Client::where('is_active', true)
                 ->whereRaw('LOWER(store_name) = ?', [mb_strtolower($businessName)])
@@ -127,7 +127,7 @@ class OrderController extends Controller
                 ->first();
         }
 
-        if (!$client && !empty($customer['phone'])) {
+        if (! $client && ! empty($customer['phone'])) {
             $client = Client::where('phone', $customer['phone'])
                 ->orWhere('viber', $customer['phone'])
                 ->first();
@@ -142,8 +142,8 @@ class OrderController extends Controller
             'location_viber' => null,
             'location_city' => null,
         ];
-        
-        if (!empty($validated['client_location_id'])) {
+
+        if (! empty($validated['client_location_id'])) {
             // Verify that the location belongs to the client
             if ($client && Schema::hasTable('client_locations')) {
                 $location = \App\Models\ClientLocation::where('id', $validated['client_location_id'])
@@ -165,10 +165,10 @@ class OrderController extends Controller
         }
 
         // Use provided order_number or generate new one
-        $orderNumber = !empty($validated['order_number']) 
-            ? $validated['order_number'] 
+        $orderNumber = ! empty($validated['order_number'])
+            ? $validated['order_number']
             : $this->generateOrderNumber();
-        
+
         $orderData = [
             'client_id' => $client?->id,
             'client_location_id' => $clientLocationId,
@@ -195,9 +195,9 @@ class OrderController extends Controller
             ],
             'status' => 'ruajtur',
             'is_paid' => $validated['is_paid'] ?? false,
-            'paid_at' => !empty($validated['paid_at']) ? $validated['paid_at'] : null,
+            'paid_at' => ! empty($validated['paid_at']) ? $validated['paid_at'] : null,
         ];
-        
+
         // Only add location fields if columns exist
         if (Schema::hasColumn('orders', 'location_unit_name')) {
             $orderData['location_unit_name'] = $locationData['location_unit_name'];
@@ -207,7 +207,7 @@ class OrderController extends Controller
             $orderData['location_city'] = $locationData['location_city'];
         }
 
-        if (!Schema::hasColumn('orders', 'client_location_id')) {
+        if (! Schema::hasColumn('orders', 'client_location_id')) {
             unset($orderData['client_location_id']);
         }
 
@@ -242,7 +242,7 @@ class OrderController extends Controller
                             ]);
                             $order->items()->create($itemPayload);
 
-                            if (!empty($item['product_id'])) {
+                            if (! empty($item['product_id'])) {
                                 $product = Product::lockForUpdate()->find($item['product_id']);
                                 if ($product && Schema::hasColumn('products', 'stock_quantity')) {
                                     $quantityToDeduct = $item['sold_by_package'] && $item['pieces_per_package']
@@ -268,7 +268,7 @@ class OrderController extends Controller
                                             'total_cost' => $product->cost_price ? $product->cost_price * $effectiveDeduct : null,
                                             'stock_before' => $stockBefore,
                                             'stock_after' => $stockAfter,
-                                            'notes' => 'Shitje - Porosia #' . $order->order_number,
+                                            'notes' => 'Shitje - Porosia #'.$order->order_number,
                                         ]));
                                     }
 
@@ -277,15 +277,15 @@ class OrderController extends Controller
                                         $missingCp = $missing;
 
                                         $missingPackages = null;
-                                        if (!empty($item['sold_by_package']) && !empty($item['pieces_per_package'])) {
+                                        if (! empty($item['sold_by_package']) && ! empty($item['pieces_per_package'])) {
                                             $missingPackages = $missingCp / $item['pieces_per_package'];
                                         }
 
                                         $categoryName = $product->category?->name;
 
-                                        $notes = 'Mungesë stoku - ' . $product->name;
+                                        $notes = 'Mungesë stoku - '.$product->name;
                                         if ($categoryName) {
-                                            $notes .= ' - ' . $categoryName;
+                                            $notes .= ' - '.$categoryName;
                                         }
 
                                         if ($missingPackages !== null) {
@@ -320,7 +320,7 @@ class OrderController extends Controller
 
                     break;
                 } catch (QueryException $e) {
-                    if ($attempt >= $maxAttempts || !$this->isDuplicateOrderNumberConstraint($e)) {
+                    if ($attempt >= $maxAttempts || ! $this->isDuplicateOrderNumberConstraint($e)) {
                         throw $e;
                     }
                     \Log::warning('Order store: duplicate order_number, retrying', [
@@ -331,7 +331,7 @@ class OrderController extends Controller
                 }
             }
 
-            if (!$order) {
+            if (! $order) {
                 throw new \RuntimeException('Nuk u gjenerua dot numër unik porosie.');
             }
 
@@ -376,7 +376,7 @@ class OrderController extends Controller
             'client_id' => ['nullable', 'exists:clients,id'],
         ]);
 
-        if (!$request->phone && !$request->client_id) {
+        if (! $request->phone && ! $request->client_id) {
             return response()->json([
                 'success' => false,
                 'message' => 'Kërkohet telefoni ose klienti për të marrë historinë.',
@@ -395,15 +395,15 @@ class OrderController extends Controller
 
         // Get orders and remove duplicates by ID
         $orders = $query->limit(20)->get()->unique('id')->take(10)->values();
-        
+
         // Only load clientLocation if the column exists and table exists
-        if (\Illuminate\Support\Facades\Schema::hasTable('client_locations') && 
+        if (\Illuminate\Support\Facades\Schema::hasTable('client_locations') &&
             \Illuminate\Support\Facades\Schema::hasColumn('orders', 'client_location_id')) {
             try {
                 $orders->load('clientLocation');
             } catch (\Exception $e) {
                 // If clientLocation relation fails, continue without it
-                \Log::warning('Failed to load clientLocation relation: ' . $e->getMessage());
+                \Log::warning('Failed to load clientLocation relation: '.$e->getMessage());
             }
         }
 
@@ -456,6 +456,7 @@ class OrderController extends Controller
                 if (array_key_exists('discount_amount', $item) && $item['discount_amount'] === '') {
                     $item['discount_amount'] = null;
                 }
+
                 return $item;
             })->toArray();
             $request->merge(['items' => $normalizedItems]);
@@ -513,7 +514,7 @@ class OrderController extends Controller
             'is_paid',
             'paid_at',
         ]);
-        
+
         // NEVER allow order_number to be changed - it must remain the same from creation
         if (isset($updateData['order_number'])) {
             unset($updateData['order_number']);
@@ -521,12 +522,12 @@ class OrderController extends Controller
 
         // Payment status: allow manual paid_at (e.g. paid later than invoice date)
         if ($request->has('is_paid')) {
-            if (!$request->boolean('is_paid')) {
+            if (! $request->boolean('is_paid')) {
                 $updateData['paid_at'] = null;
             } else {
                 // If client provided a paid_at, keep it. Otherwise set on transition unpaid -> paid.
-                if (!$request->has('paid_at') || $request->input('paid_at') === null || $request->input('paid_at') === '') {
-                    if (!$order->is_paid) {
+                if (! $request->has('paid_at') || $request->input('paid_at') === null || $request->input('paid_at') === '') {
+                    if (! $order->is_paid) {
                         $updateData['paid_at'] = now();
                     } else {
                         unset($updateData['paid_at']); // keep existing paid_at
@@ -546,15 +547,15 @@ class OrderController extends Controller
         if ($request->has('items')) {
             $items = $request->input('items');
             $existingItemIds = collect($items)->pluck('id')->filter()->toArray();
-            
+
             // Delete items that are not in the new list
             $order->items()->whereNotIn('id', $existingItemIds)->delete();
-            
+
             // Update or create items
             $totalItems = 0;
             $itemsSubtotal = 0;
             $itemsTotalAfterDiscount = 0;
-            
+
             foreach ($items as $itemData) {
                 if (isset($itemData['id']) && $itemData['id']) {
                     // Update existing item
@@ -583,12 +584,12 @@ class OrderController extends Controller
                         'pieces_per_package' => $itemData['pieces_per_package'] ?? null,
                         'unit_price' => $itemData['unit_price'] ?? null,
                         'total_price' => $itemData['total_price'] ?? null,
-                            'discount_amount' => $itemData['discount_amount'] ?? 0,
-                            'discount_type' => $itemData['discount_type'] ?? null,
-                            'discount_value' => $itemData['discount_value'] ?? 0,
+                        'discount_amount' => $itemData['discount_amount'] ?? 0,
+                        'discount_type' => $itemData['discount_type'] ?? null,
+                        'discount_value' => $itemData['discount_value'] ?? 0,
                     ]);
                 }
-                
+
                 // Calculate totals
                 $quantity = $itemData['quantity'];
                 if (isset($itemData['sold_by_package']) && $itemData['sold_by_package'] && isset($itemData['pieces_per_package'])) {
@@ -596,7 +597,7 @@ class OrderController extends Controller
                 } else {
                     $totalItems += $quantity;
                 }
-                
+
                 $itemBaseAmount = 0;
                 if (isset($itemData['unit_price']) && $itemData['unit_price']) {
                     if (isset($itemData['sold_by_package']) && $itemData['sold_by_package'] && isset($itemData['pieces_per_package'])) {
@@ -614,7 +615,7 @@ class OrderController extends Controller
                 $itemTotalValue = $itemData['total_price'] ?? max(0, $itemBaseAmount - $itemDiscount);
                 $itemsTotalAfterDiscount += $itemTotalValue;
             }
-            
+
             // Update order totals
             $generalDiscountAmount = $request->input('discount_amount', $order->discount_amount ?? 0) ?? 0;
             $generalDiscountType = $request->input('discount_type', $order->discount_type);
@@ -670,11 +671,17 @@ class OrderController extends Controller
             $totalItems = $request->total_items;
             $totalPrice = $request->total_price ?? 0;
 
-            // Email zyrtar i AronTrade
-            $officialEmail = env('MAIL_FROM_ADDRESS', 'svalon95@gmail.com');
+            $orderInbox = config('arontrade.order_inbox');
+
+            if (empty($orderInbox) || ! is_string($orderInbox)) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Emaili i porosive nuk është konfiguruar. Vendosni OFFICIAL_ORDER_EMAIL ose MAIL_ORDER_INBOX në .env.',
+                ], 500);
+            }
 
             // Dërgo emailin
-            Mail::to($officialEmail)->send(
+            Mail::to($orderInbox)->send(
                 new OrderConfirmationMail(
                     $orderData,
                     $customerData,
@@ -684,15 +691,26 @@ class OrderController extends Controller
                 )
             );
 
+            $mailer = (string) config('mail.default');
+            $reachesInbox = ! in_array($mailer, ['log', 'array'], true);
+
             return response()->json([
                 'success' => true,
-                'message' => 'Porosia u dërgua me sukses në emailin zyrtar të AronTrade.'
+                'message' => $reachesInbox
+                    ? 'Porosia u dërgua në inbox.'
+                    : 'Porosia u përpunua, por nuk u dërgua në Gmail (mënyra e postës është vetëm për regjistrim lokal).',
+                'delivery' => [
+                    'mode' => $mailer,
+                    'reached_inbox' => $reachesInbox,
+                    'recipient' => $orderInbox,
+                ],
             ]);
         } catch (\Exception $e) {
-            \Log::error('Error sending order email: ' . $e->getMessage());
+            \Log::error('Error sending order email: '.$e->getMessage());
+
             return response()->json([
                 'success' => false,
-                'message' => 'Gabim gjatë dërgimit të emailit: ' . $e->getMessage()
+                'message' => 'Gabim gjatë dërgimit të emailit: '.$e->getMessage(),
             ], 500);
         }
     }
@@ -714,7 +732,7 @@ class OrderController extends Controller
      */
     private static function filterToTableColumns(string $table, array $row): array
     {
-        if (!Schema::hasTable($table)) {
+        if (! Schema::hasTable($table)) {
             return [];
         }
 
@@ -739,14 +757,14 @@ class OrderController extends Controller
      */
     private function generateUniqueOrderNumberFallback(): string
     {
-        return 'GT-' . now()->format('Ymd') . '-' . strtoupper(Str::random(8));
+        return 'GT-'.now()->format('Ymd').'-'.strtoupper(Str::random(8));
     }
 
     private function isDuplicateOrderNumberConstraint(QueryException $e): bool
     {
         $message = $e->getMessage();
         $lower = strtolower($message);
-        if (!str_contains($lower, 'order_number') && !str_contains($lower, 'orders_order_number')) {
+        if (! str_contains($lower, 'order_number') && ! str_contains($lower, 'orders_order_number')) {
             return false;
         }
 
@@ -769,4 +787,3 @@ class OrderController extends Controller
             || str_contains($message, 'UNIQUE constraint failed');
     }
 }
-

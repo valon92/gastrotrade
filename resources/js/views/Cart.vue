@@ -629,7 +629,7 @@
               <p class="text-sm text-gray-600 text-center">
                 Ose na kontaktoni direkt:<br>
                 📞 048 75 66 46 / 044 82 43 14<br>
-                📧 svalon95@gmail.com
+                📧 {{ officialOrderEmail }}
               </p>
             </div>
           </div>
@@ -780,11 +780,13 @@
 <script>
 import cartStore from '../store/cart'
 import axios from 'axios'
+import { OFFICIAL_ORDER_EMAIL } from '../config/site'
 
 export default {
   name: 'Cart',
   data() {
     return {
+      officialOrderEmail: OFFICIAL_ORDER_EMAIL,
       cartStore: cartStore,
       customerData: {
         name: '',
@@ -1384,9 +1386,17 @@ export default {
         this.historyLoading = false
       }
     },
+    /** Të dhëna klienti për localStorage + email (përgjigje në mail kur është kyçur). */
+    customerPayloadForOrder() {
+      const base = { ...this.customerData }
+      delete base.password
+      if (this.cartStore?.client?.email) {
+        base.email = this.cartStore.client.email
+      }
+      return base
+    },
     persistCustomerData() {
-      const toStore = { ...this.customerData }
-      delete toStore.password
+      const toStore = this.customerPayloadForOrder()
       const existing = localStorage.getItem('gastrotrade_customer_data')
       const merged = existing ? { ...JSON.parse(existing), ...toStore } : toStore
       delete merged.password
@@ -1747,7 +1757,7 @@ export default {
         'ARON TRADE\n' +
         'Nrf/NIPT: ' + (order.company_nrf || '—') + '\n' +
         'tel: +383 48 75 66 46 / +383 44 82 43 14\n' +
-        'email: svalon95@gmail.com\n' +
+        'email: ' + OFFICIAL_ORDER_EMAIL + '\n' +
         'Adresë: Ferizaj, Kosovë, Rruga Lidhja e Prizrenit\n' +
         'Nrb: ' + (order.company_nrb || '—') + '\n' +
         'Tvsh: ' + (order.company_tvsh || '—') + '\n\n' +
@@ -1902,7 +1912,7 @@ export default {
         '<div class="inv-seller-contact">' +
         '<div class="inv-title">Nrf / NIPT</div><div>' + (order.company_nrf || '—') + '</div>' +
         '<div class="inv-title">tel</div><div>+383 48 75 66 46 / +383 44 82 43 14</div>' +
-        '<div class="inv-title">email</div><div>svalon95@gmail.com</div>' +
+        '<div class="inv-title">email</div><div>' + OFFICIAL_ORDER_EMAIL + '</div>' +
         '</div>' +
         '<div class="inv-invoice-no-block">' +
         '<div class="inv-title">Nr. Faturës</div>' +
@@ -1982,7 +1992,7 @@ export default {
       if (!text) return
       const subject = encodeURIComponent('Faturë ' + (this.invoiceOrderNumber || ''))
       const body = encodeURIComponent(text)
-      window.location.href = 'mailto:svalon95@gmail.com?subject=' + subject + '&body=' + body
+      window.location.href = 'mailto:' + OFFICIAL_ORDER_EMAIL + '?subject=' + subject + '&body=' + body
     },
     printInvoiceFromModal() {
       if (!this.invoiceHtml) return
@@ -2217,7 +2227,7 @@ export default {
       }
 
       message += '\n📞 KONTAKT:\n'
-      message += 'Email: svalon95@gmail.com\n'
+      message += 'Email: ' + OFFICIAL_ORDER_EMAIL + '\n'
       message += 'Telefon: 048 75 66 46 / 044 82 43 14\n'
       message += 'Viber: +383 48 75 66 46 / +383 44 82 43 14\n'
       message += '📍 Adresa: Ferizaj, Kosovë, Rruga Lidhja E Prizerent\n'
@@ -2263,13 +2273,14 @@ export default {
         // After successful save, navigate to OrderConfirmation page
         if (this.saveSuccess && this.savedOrder) {
           this.persistCustomerData()
-          localStorage.setItem('gastrotrade_order_data', JSON.stringify(this.customerData))
+          const orderCustomer = this.customerPayloadForOrder()
+          localStorage.setItem('gastrotrade_order_data', JSON.stringify(orderCustomer))
           
           // Navigate to OrderConfirmation page with order data
           this.$router.push({
             name: 'OrderConfirmation',
             params: {
-              customerData: encodeURIComponent(JSON.stringify(this.customerData)),
+              customerData: encodeURIComponent(JSON.stringify(orderCustomer)),
               orderNumber: this.savedOrder.order_number
             }
           })
@@ -2289,12 +2300,13 @@ export default {
 
       this.persistCustomerData()
 
-      localStorage.setItem('gastrotrade_order_data', JSON.stringify(this.customerData))
+      const orderCustomer = this.customerPayloadForOrder()
+      localStorage.setItem('gastrotrade_order_data', JSON.stringify(orderCustomer))
       
       this.$router.push({
         name: 'OrderConfirmation',
         params: {
-          customerData: encodeURIComponent(JSON.stringify(this.customerData))
+          customerData: encodeURIComponent(JSON.stringify(orderCustomer))
         }
       })
     },

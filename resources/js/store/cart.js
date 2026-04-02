@@ -1,4 +1,5 @@
 import { reactive } from 'vue'
+import { OFFICIAL_ORDER_EMAIL } from '../config/site'
 
 // Cart store using Vue's reactive API
 const cartStore = reactive({
@@ -349,7 +350,7 @@ const cartStore = reactive({
       }
       
       message += '\n📞 KONTAKT:\n'
-      message += 'Email: svalon95@gmail.com\n'
+      message += `Email: ${OFFICIAL_ORDER_EMAIL}\n`
       message += 'Telefon: 048 75 66 46 / 044 82 43 14\n'
       message += 'Viber: +383 48 75 66 46 / +383 44 82 43 14\n'
       message += '📍 Adresa: Ferizaj, Kosovë, Rruga Lidhja E Prizerent\n'

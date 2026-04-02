@@ -928,6 +928,7 @@
 import axios from 'axios'
 import { adminStore } from '../../stores/adminStore'
 import AdminLayout from '../../components/admin/AdminLayout.vue'
+import { OFFICIAL_ORDER_EMAIL } from '../../config/site'
 
 export default {
   name: 'AdminClients',
@@ -1627,7 +1628,7 @@ export default {
         '<div class="inv-seller-contact">' +
         '<div class="inv-title">Nrf / NIPT</div><div>' + (order.company_nrf || '—') + '</div>' +
         '<div class="inv-title">tel</div><div>+383 48 75 66 46 / +383 44 82 43 14</div>' +
-        '<div class="inv-title">email</div><div>svalon95@gmail.com</div>' +
+        '<div class="inv-title">email</div><div>' + OFFICIAL_ORDER_EMAIL + '</div>' +
         '</div>' +
         '<div class="inv-invoice-no-block">' +
         '<div class="inv-title">Nr. Faturës</div>' +

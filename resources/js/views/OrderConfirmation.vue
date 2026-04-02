@@ -210,11 +210,13 @@
 <script>
 import cartStore from '../store/cart'
 import axios from 'axios'
+import { OFFICIAL_ORDER_EMAIL } from '../config/site'
 
 export default {
   name: 'OrderConfirmation',
   data() {
     return {
+      officialOrderEmail: OFFICIAL_ORDER_EMAIL,
       cartStore: cartStore,
       customerData: {
         name: '',
@@ -540,7 +542,19 @@ export default {
 
         if (response.data.success) {
           this.emailSent = true
-          alert('✅ Porosia u dërgua me sukses në emailin zyrtar të AronTrade!\n\nEmail: svalon95@gmail.com')
+          const d = response.data.delivery
+          if (d && d.reached_inbox === false) {
+            alert(
+              '⚠️ Nuk ka dërgim real në Gmail për momentin.\n\n' +
+                `Mënyra e serverit: «${d.mode}» (zakonisht për testim shkruhet në log, jo në inbox).\n\n` +
+                `Adresa e synuar kur të aktivizohet SMTP: ${d.recipient || '—'}\n\n` +
+                `Për të marrë email në ${OFFICIAL_ORDER_EMAIL}: në skedarin .env vendosni MAIL_MAILER=smtp, MAIL_HOST=smtp.gmail.com, MAIL_PORT=587, OFFICIAL_ORDER_EMAIL, MAIL_USERNAME dhe MAIL_PASSWORD (App Password nga Google), pastaj php artisan config:clear.`
+            )
+          } else {
+            alert(
+              `✅ Porosia u dërgua. Kontrolloni inbox-in ${d && d.recipient ? `(${d.recipient}) ` : ''}dhe dosjen Spam nëse nuk e shihni menjëherë.`
+            )
+          }
         } else {
           throw new Error(response.data.message || 'Gabim i panjohur')
         }
