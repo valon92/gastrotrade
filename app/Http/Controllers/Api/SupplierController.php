@@ -4,11 +4,25 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\Supplier;
+use Illuminate\Database\Eloquent\SoftDeletingScope;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Schema;
 
 class SupplierController extends Controller
 {
+    private function supplierQuery()
+    {
+        $query = Supplier::query();
+
+        // Prod mund të mos ketë kolonën deleted_at, ndërsa modeli përdor SoftDeletes.
+        // Në atë rast, global scope i soft-deletes e prish query-n (Unknown column).
+        if (Schema::hasTable('suppliers') && ! Schema::hasColumn('suppliers', 'deleted_at')) {
+            $query->withoutGlobalScope(SoftDeletingScope::class);
+        }
+
+        return $query;
+    }
+
     public function index(Request $request)
     {
         if (!Schema::hasTable('suppliers')) {
@@ -18,7 +32,7 @@ class SupplierController extends Controller
             ]);
         }
 
-        $query = Supplier::query();
+        $query = $this->supplierQuery();
 
         if ($request->has('search')) {
             $search = $request->search;
@@ -80,6 +94,8 @@ class SupplierController extends Controller
 
     public function show(Supplier $supplier)
     {
+        // Nëse prod s'ka deleted_at, route model binding mund të mos punojë siç duhet
+        // në disa raste; prandaj e mbajmë show të thjeshtë me modelin e injektuar.
         return response()->json([
             'success' => true,
             'data' => $supplier->load(['products', 'stockReceipts']),
