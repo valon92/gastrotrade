@@ -38,13 +38,6 @@
             PRODUKTET
           </router-link>
           <router-link
-            to="/rreth-nesh"
-            class="text-slate-600 hover:text-primary-700 hover:bg-primary-50 px-3 py-2 rounded-xl text-sm font-semibold transition-colors duration-200"
-            active-class="text-primary-700 bg-primary-50"
-          >
-            RRETH NESH
-          </router-link>
-          <router-link
             to="/kontakt"
             class="text-slate-600 hover:text-primary-700 hover:bg-primary-50 px-3 py-2 rounded-xl text-sm font-semibold transition-colors duration-200"
             active-class="text-primary-700 bg-primary-50"
@@ -175,16 +168,6 @@
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8 4-8-4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" /></svg>
               </span>
               PRODUKTET
-            </router-link>
-            <router-link
-              to="/rreth-nesh"
-              class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-gray-700 hover:bg-primary-50 hover:text-primary-700 text-sm font-medium transition-colors"
-              @click="closeMobileMenu"
-            >
-              <span class="flex items-center justify-center w-8 h-8 rounded-lg bg-gray-100 text-gray-600">
-                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
-              </span>
-              RRETH NESH
             </router-link>
             <router-link
               to="/kontakt"

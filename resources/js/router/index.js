@@ -3,7 +3,6 @@ import axios from 'axios'
 import Home from '../views/Home.vue'
 import Products from '../views/Products.vue'
 import ProductDetail from '../views/ProductDetail.vue'
-import About from '../views/About.vue'
 import Contact from '../views/Contact.vue'
 import Cart from '../views/Cart.vue'
 import Kycu from '../views/Kycu.vue'
@@ -40,8 +39,7 @@ const routes = [
   },
   {
     path: '/rreth-nesh',
-    name: 'About',
-    component: About
+    redirect: '/'
   },
   {
     path: '/kontakt',

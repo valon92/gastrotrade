@@ -125,6 +125,7 @@ Route::post('/clients/find-by-business-and-fiscal', [ClientController::class, 'f
 // Order routes
 Route::post('/orders', [OrderController::class, 'store']);
 Route::post('/orders/send-email', [OrderController::class, 'sendOrderEmail']);
+Route::post('/orders/invoice-pdf', [OrderController::class, 'generateInvoicePdf']);
 Route::get('/orders/history', [OrderController::class, 'history']);
 Route::get('/orders/{order}', [OrderController::class, 'show']);
 

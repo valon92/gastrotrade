@@ -11,10 +11,12 @@ use App\Models\Product;
 use App\Models\StockMovement;
 use Illuminate\Database\QueryException;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Str;
+use Barryvdh\DomPDF\Facade\Pdf;
 
 class OrderController extends Controller
 {
@@ -662,6 +664,7 @@ class OrderController extends Controller
             'cart_items' => ['required', 'array'],
             'total_items' => ['required', 'integer', 'min:0'],
             'total_price' => ['nullable', 'numeric', 'min:0'],
+            'invoice_html' => ['nullable', 'string'],
         ]);
 
         try {
@@ -670,6 +673,7 @@ class OrderController extends Controller
             $cartItems = $request->cart_items;
             $totalItems = $request->total_items;
             $totalPrice = $request->total_price ?? 0;
+            $invoiceHtml = $request->input('invoice_html');
 
             $orderInbox = config('arontrade.order_inbox');
 
@@ -680,14 +684,27 @@ class OrderController extends Controller
                 ], 500);
             }
 
-            // Dërgo emailin
+            $pdfBinary = null;
+            $pdfFilename = null;
+            if (is_string($invoiceHtml) && trim($invoiceHtml) !== '') {
+                $orderNumber = $orderData['order_number'] ?? null;
+                $safeOrderNumber = is_string($orderNumber) && $orderNumber !== ''
+                    ? preg_replace('/[^A-Za-z0-9\-_]/', '-', $orderNumber)
+                    : 'PA-NR';
+                $pdfFilename = 'Fature-'.$safeOrderNumber.'.pdf';
+                $pdfBinary = Pdf::loadHTML($invoiceHtml)->setPaper('a4')->output();
+            }
+
+            // Dërgo emailin (me PDF nëse u gjenerua)
             Mail::to($orderInbox)->send(
                 new OrderConfirmationMail(
                     $orderData,
                     $customerData,
                     $cartItems,
                     $totalItems,
-                    $totalPrice
+                    $totalPrice,
+                    $pdfBinary,
+                    $pdfFilename
                 )
             );
 
@@ -711,6 +728,50 @@ class OrderController extends Controller
             return response()->json([
                 'success' => false,
                 'message' => 'Gabim gjatë dërgimit të emailit: '.$e->getMessage(),
+            ], 500);
+        }
+    }
+
+    public function generateInvoicePdf(Request $request)
+    {
+        $request->validate([
+            'order_number' => ['required', 'string', 'max:64'],
+            'invoice_html' => ['required', 'string'],
+        ]);
+
+        try {
+            $orderNumber = (string) $request->input('order_number');
+            $invoiceHtml = (string) $request->input('invoice_html');
+
+            $safeOrderNumber = preg_replace('/[^A-Za-z0-9\-_]/', '-', $orderNumber);
+            $fileName = 'Fature-'.$safeOrderNumber.'.pdf';
+            $relativePath = 'invoices/'.$fileName;
+
+            $pdfBinary = Pdf::loadHTML($invoiceHtml)->setPaper('a4')->output();
+            Storage::disk('public')->put($relativePath, $pdfBinary);
+
+            $publicPath = Storage::disk('public')->url($relativePath); // zakonisht "/storage/..."
+            $absoluteUrl = rtrim($request->getSchemeAndHttpHost(), '/').$publicPath;
+
+            return response()->json([
+                'success' => true,
+                'data' => [
+                    'order_number' => $orderNumber,
+                    'pdf_path' => $publicPath,
+                    'pdf_url' => $absoluteUrl,
+                    'file_name' => $fileName,
+                ],
+            ]);
+        } catch (\Throwable $e) {
+            \Log::error('Invoice PDF generation failed', [
+                'message' => $e->getMessage(),
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'message' => config('app.debug')
+                    ? $e->getMessage()
+                    : 'Nuk u arrit të krijohet PDF. Ju lutem provoni përsëri.',
             ], 500);
         }
     }

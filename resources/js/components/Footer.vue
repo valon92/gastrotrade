@@ -45,12 +45,6 @@
               </router-link>
             </li>
             <li>
-              <router-link to="/rreth-nesh" class="inline-flex items-center gap-2 text-slate-300 hover:text-white transition-colors duration-200">
-                <span class="h-1.5 w-1.5 rounded-full bg-primary-400"></span>
-                Rreth Nesh
-              </router-link>
-            </li>
-            <li>
               <router-link to="/kontakt" class="inline-flex items-center gap-2 text-slate-300 hover:text-white transition-colors duration-200">
                 <span class="h-1.5 w-1.5 rounded-full bg-primary-400"></span>
                 Kontakt
@@ -62,10 +56,6 @@
         <div class="lg:col-span-4">
           <h3 class="text-sm font-semibold uppercase tracking-[0.14em] text-slate-300 mb-4">Kontakt</h3>
           <div class="space-y-3 text-sm text-slate-300">
-            <p class="flex items-start gap-2">
-              <span class="text-primary-300">✉</span>
-              <span class="break-all">{{ officialOrderEmail }}</span>
-            </p>
             <p class="flex items-start gap-2">
               <span class="text-primary-300">☎</span>
               <span class="flex flex-wrap gap-x-3 gap-y-1">
@@ -105,15 +95,8 @@
 </template>
 
 <script>
-import { OFFICIAL_ORDER_EMAIL } from '../config/site'
-
 export default {
   name: 'Footer',
-  data() {
-    return {
-      officialOrderEmail: OFFICIAL_ORDER_EMAIL
-    }
-  },
   computed: {
     currentYear() {
       return new Date().getFullYear()

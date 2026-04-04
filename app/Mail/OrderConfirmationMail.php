@@ -5,6 +5,7 @@ namespace App\Mail;
 use Illuminate\Bus\Queueable;
 use Illuminate\Mail\Mailable;
 use Illuminate\Mail\Mailables\Address;
+use Illuminate\Mail\Mailables\Attachment;
 use Illuminate\Mail\Mailables\Content;
 use Illuminate\Mail\Mailables\Envelope;
 use Illuminate\Queue\SerializesModels;
@@ -23,16 +24,30 @@ class OrderConfirmationMail extends Mailable
 
     public $totalPrice;
 
+    public $invoicePdfBinary;
+
+    public $invoicePdfFilename;
+
     /**
      * Create a new message instance.
      */
-    public function __construct($orderData, $customerData, $cartItems, $totalItems, $totalPrice)
+    public function __construct(
+        $orderData,
+        $customerData,
+        $cartItems,
+        $totalItems,
+        $totalPrice,
+        $invoicePdfBinary = null,
+        $invoicePdfFilename = null
+    )
     {
         $this->orderData = $orderData;
         $this->customerData = $customerData;
         $this->cartItems = $cartItems;
         $this->totalItems = $totalItems;
         $this->totalPrice = $totalPrice;
+        $this->invoicePdfBinary = $invoicePdfBinary;
+        $this->invoicePdfFilename = $invoicePdfFilename;
     }
 
     /**
@@ -71,6 +86,17 @@ class OrderConfirmationMail extends Mailable
      */
     public function attachments(): array
     {
+        if (is_string($this->invoicePdfBinary) && $this->invoicePdfBinary !== '') {
+            $fileName = is_string($this->invoicePdfFilename) && $this->invoicePdfFilename !== ''
+                ? $this->invoicePdfFilename
+                : 'Fature-AronTrade.pdf';
+
+            return [
+                Attachment::fromData(fn () => $this->invoicePdfBinary, $fileName)
+                    ->withMime('application/pdf'),
+            ];
+        }
+
         return [];
     }
 }
