@@ -72,13 +72,12 @@
               @click="showBarcodeSheet = true"
             >
               <div
-                class="w-full min-w-0 overflow-x-auto overflow-y-hidden overscroll-x-contain [-webkit-overflow-scrolling:touch] [scrollbar-width:thin]"
+                class="barcode-mobile-line w-full min-w-0 px-0.5"
+                :style="{ '--bc-chars': String(mobileBarcodeCharCount) }"
               >
-                <!-- whitespace-nowrap: pa të, hapësirat EAN thyhen në 2–3 rreshta në mobile -->
-                <span
-                  class="mx-auto block w-max max-w-none whitespace-nowrap px-0.5 text-center font-mono text-[clamp(8px,2.85vw,11px)] font-semibold leading-none tabular-nums tracking-tight text-slate-900 [font-variant-numeric:tabular-nums] min-[400px]:text-[11px] min-[400px]:tracking-wide"
-                >
-                  {{ mobileBarcodeGrouped }}
+                <!-- Shifra pa hapësira + font nga gjerësia e kartës (container query) për një rresht -->
+                <span class="barcode-mobile-line__text">
+                  {{ mobileBarcodeDigitsOnly }}
                 </span>
               </div>
             </button>
@@ -435,6 +434,15 @@ export default {
       }
       return s.replace(/(.{4})/g, '$1 ').trim()
     },
+    /** Vetëm shifra — më pak gjerësi se grupimi me hapësira, për një rresht në grid 3-kolona */
+    mobileBarcodeDigitsOnly() {
+      return this.displayBarcodeDigits.replace(/\D/g, '')
+    },
+    /** Divisor për calc(100cqi / …): ~0.62 × gjatësia e vargut për mono tabular */
+    mobileBarcodeCharCount() {
+      const n = this.mobileBarcodeDigitsOnly.length
+      return Math.max(7, n)
+    },
     // Numri total i copave bazuar në numrin e kompleteve
     totalPiecesFromPackages() {
       if (!this.product.sold_by_package || !this.product.pieces_per_package) return null
@@ -645,5 +653,39 @@ export default {
   line-clamp: 1;
   -webkit-box-orient: vertical;
   overflow: hidden;
+}
+
+/* Mobile / tablet < xl: madhësi fonti sipas gjerësisë së kartës — EAN i plotë në një rresht */
+.barcode-mobile-line {
+  container-type: inline-size;
+  overflow: hidden;
+}
+
+.barcode-mobile-line__text {
+  display: block;
+  width: 100%;
+  text-align: center;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: clip;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  line-height: 1;
+  letter-spacing: -0.02em;
+  color: rgb(15 23 42);
+  /* 0.62 ≈ raport i përafërt gjerësi/shkronjë për shifra mono; min për lexueshmëri */
+  font-size: clamp(
+    4.25px,
+    calc(100cqi / (var(--bc-chars, 13) * 0.62)),
+    10px
+  );
+}
+
+/* Shfletues pa container queries: përdor viewport si fallback (3 kolona në mobile) */
+@supports not (container-type: inline-size) {
+  .barcode-mobile-line__text {
+    font-size: clamp(4.25px, calc((100vw - 2.5rem) / 3 / (var(--bc-chars, 13) * 0.62)), 10px);
+  }
 }
 </style>
