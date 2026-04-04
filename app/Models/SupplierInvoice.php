@@ -6,7 +6,6 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
-use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Str;
 
 class SupplierInvoice extends Model
@@ -74,10 +73,9 @@ class SupplierInvoice extends Model
     protected static function generateInvoiceNumber(): string
     {
         $datePart = date('Ymd');
-        $base = Schema::hasColumn('supplier_invoices', 'deleted_at')
-            ? static::query()
-            : static::withoutGlobalScopes();
-        $count = $base->whereDate('created_at', today())->count() + 1;
+        // Gjithmonë pa SoftDeletes scope: nëse deleted_at nuk ekziston në DB por schema:cache thotë po,
+        // query() me scope thyen SQL-in («Unknown column deleted_at») para INSERT-it.
+        $count = static::withoutGlobalScopes()->whereDate('created_at', today())->count() + 1;
         $countPart = str_pad((string) $count, 4, '0', STR_PAD_LEFT);
         $randomPart = strtoupper(Str::random(6));
 

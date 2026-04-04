@@ -138,9 +138,7 @@ class SupplierInvoiceController extends Controller
                         : null,
                 ];
 
-                $invoice = Schema::hasColumn('supplier_invoices', 'deleted_at')
-                    ? SupplierInvoice::create($createPayload)
-                    : SupplierInvoice::withoutGlobalScopes()->create($createPayload);
+                $invoice = SupplierInvoice::create($createPayload);
 
                 foreach ($validated['items'] as $item) {
                     $qty = (float) $item['quantity'];
@@ -158,7 +156,8 @@ class SupplierInvoiceController extends Controller
                     SupplierInvoiceItem::create($itemPayload);
                 }
 
-                $fresh = $this->supplierInvoiceBaseQuery()->whereKey($invoice->id)->first();
+                // Jo supplierInvoiceBaseQuery(): e njëjta problematikë si generateInvoiceNumber (schema:cache vs kolona reale).
+                $fresh = SupplierInvoice::withoutGlobalScopes()->whereKey($invoice->id)->first();
                 $model = $fresh ?? $invoice;
                 try {
                     $model->load(['supplier', 'stockReceipt', 'items.product']);
