@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Models\SupplierInvoice;
 use App\Models\SupplierInvoiceItem;
+use Illuminate\Database\QueryException;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
@@ -117,6 +118,8 @@ class SupplierInvoiceController extends Controller
                 $vatAmount = $validated['has_vat'] ? ($subtotal * $vatRate / 100) : 0;
                 $totalAmount = $subtotal + $vatAmount;
 
+                // Mos përdor Schema::getColumnListing() këtu: me «php artisan schema:cache» lista mund të jetë e vjetër
+                // dhe të përfshijë kolona që nuk ekzistojnë në DB → SQL «Unknown column».
                 $createPayload = [
                     'supplier_id' => $validated['supplier_id'],
                     'stock_receipt_id' => $validated['stock_receipt_id'] ?? null,
@@ -133,7 +136,6 @@ class SupplierInvoiceController extends Controller
                         ? ($validated['paid_date'] ?? now()->toDateString())
                         : null,
                 ];
-                $createPayload = $this->filterToTableColumns('supplier_invoices', $createPayload);
 
                 $invoice = Schema::hasColumn('supplier_invoices', 'deleted_at')
                     ? SupplierInvoice::create($createPayload)
@@ -152,17 +154,36 @@ class SupplierInvoiceController extends Controller
                         'total_price' => $totalPrice,
                         'notes' => $item['notes'] ?? null,
                     ];
-                    $itemPayload = $this->filterToTableColumns('supplier_invoice_items', $itemPayload);
                     SupplierInvoiceItem::create($itemPayload);
                 }
 
                 $fresh = $this->supplierInvoiceBaseQuery()->whereKey($invoice->id)->first();
+                $model = $fresh ?? $invoice;
+                try {
+                    $model->load(['supplier', 'stockReceipt', 'items.product']);
+                } catch (\Throwable $loadEx) {
+                    \Log::warning('SupplierInvoice store: eager load failed', [
+                        'message' => $loadEx->getMessage(),
+                        'invoice_id' => $model->id,
+                    ]);
+                }
 
                 return response()->json([
                     'success' => true,
-                    'data' => $fresh ? $fresh->load(['supplier', 'stockReceipt', 'items.product']) : $invoice->load(['supplier', 'stockReceipt', 'items.product']),
+                    'data' => $model,
                 ], 201);
             });
+        } catch (QueryException $e) {
+            \Log::error('SupplierInvoice store SQL', [
+                'message' => $e->getMessage(),
+                'sql' => $e->getSql() ?? null,
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Gabim në databazë. Ekzekutoni: php artisan migrate --force pastaj php artisan schema:clear (ose cache:clear). Shikoni storage/logs.',
+                'detail' => config('app.debug') ? $e->getMessage() : null,
+            ], 500);
         } catch (\Throwable $e) {
             \Log::error('SupplierInvoice store failed', [
                 'message' => $e->getMessage(),
@@ -175,23 +196,9 @@ class SupplierInvoiceController extends Controller
                 'message' => config('app.debug')
                     ? $e->getMessage()
                     : 'Ruajtja e faturës dështoi. Ekzekutoni migrimet në server (php artisan migrate) ose shikoni storage/logs.',
+                'detail' => null,
             ], 500);
         }
-    }
-
-    /**
-     * @param  array<string, mixed>  $row
-     * @return array<string, mixed>
-     */
-    private function filterToTableColumns(string $table, array $row): array
-    {
-        if (! Schema::hasTable($table)) {
-            return $row;
-        }
-
-        $allowed = array_flip(Schema::getColumnListing($table));
-
-        return array_intersect_key($row, $allowed);
     }
 
     public function show(SupplierInvoice $supplierInvoice)

@@ -1555,7 +1555,11 @@ export default {
         await this.loadInvoices()
       } catch (error) {
         console.error('Error creating invoice:', error)
-        const errorMessage = error.response?.data?.message || 'Gabim në krijimin e faturës'
+        const d = error.response?.data
+        let errorMessage = d?.message || 'Gabim në krijimin e faturës'
+        if (d?.detail) {
+          errorMessage += '\n\n' + d.detail
+        }
         alert(errorMessage)
       } finally {
         this.savingInvoice = false
