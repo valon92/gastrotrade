@@ -1131,6 +1131,17 @@ export default {
     this.calculatePaymentStats()
   },
   methods: {
+    supplierInvoiceApiErrorMessage(error, fallback) {
+      const d = error.response?.data
+      let msg = d?.message || fallback
+      if (d?.reference) {
+        msg += '\n\nKod referencë: ' + d.reference
+      }
+      if (d?.detail) {
+        msg += '\n\n' + d.detail
+      }
+      return msg
+    },
     async checkAuth() {
       try {
         const token = localStorage.getItem('admin_token')
@@ -1460,7 +1471,7 @@ export default {
         await this.loadInvoices()
       } catch (error) {
         console.error('Error saving invoice:', error)
-        alert('Gabim në ruajtjen e faturës')
+        alert(this.supplierInvoiceApiErrorMessage(error, 'Gabim në ruajtjen e faturës'))
       } finally {
         this.savingInvoice = false
       }
@@ -1476,7 +1487,7 @@ export default {
           await this.loadInvoices()
         } catch (error) {
           console.error('Error marking as paid:', error)
-          alert('Gabim në shënimin e faturës si të paguar')
+          alert(this.supplierInvoiceApiErrorMessage(error, 'Gabim në shënimin e faturës si të paguar'))
         }
       }
     },
@@ -1555,12 +1566,7 @@ export default {
         await this.loadInvoices()
       } catch (error) {
         console.error('Error creating invoice:', error)
-        const d = error.response?.data
-        let errorMessage = d?.message || 'Gabim në krijimin e faturës'
-        if (d?.detail) {
-          errorMessage += '\n\n' + d.detail
-        }
-        alert(errorMessage)
+        alert(this.supplierInvoiceApiErrorMessage(error, 'Gabim në krijimin e faturës'))
       } finally {
         this.savingInvoice = false
       }

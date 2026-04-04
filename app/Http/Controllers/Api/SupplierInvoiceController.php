@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Models\SupplierInvoice;
 use App\Models\SupplierInvoiceItem;
+use App\Support\SupportReference;
 use Illuminate\Database\QueryException;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -172,31 +173,27 @@ class SupplierInvoiceController extends Controller
                     'success' => true,
                     'data' => $model,
                 ], 201);
-            });
+            }, 3);
         } catch (QueryException $e) {
-            \Log::error('SupplierInvoice store SQL', [
-                'message' => $e->getMessage(),
-                'sql' => $e->getSql() ?? null,
+            $ref = SupportReference::report('SupplierInvoice store SQL', $e, [
+                'sql' => $e->getSql(),
+                'bindings' => $e->getBindings(),
             ]);
 
             return response()->json([
                 'success' => false,
-                'message' => 'Gabim në databazë. Pa terminal: hapni run-maintenance.php?key=… (me CACHE_CLEAR_KEY nga .env). Ose: php artisan migrate --force && php artisan optimize:clear. Shikoni storage/logs.',
+                'message' => 'Të dhënat e faturës nuk u ruajtën në databazë. Provoni përsëri; nëse problemi vazhdon, jepni kodin e referencës mbështetjes.',
+                'reference' => $ref,
                 'detail' => config('app.debug') ? $e->getMessage() : null,
             ], 500);
         } catch (\Throwable $e) {
-            \Log::error('SupplierInvoice store failed', [
-                'message' => $e->getMessage(),
-                'file' => $e->getFile(),
-                'line' => $e->getLine(),
-            ]);
+            $ref = SupportReference::report('SupplierInvoice store', $e);
 
             return response()->json([
                 'success' => false,
-                'message' => config('app.debug')
-                    ? $e->getMessage()
-                    : 'Ruajtja e faturës dështoi. Ekzekutoni migrimet në server (php artisan migrate) ose shikoni storage/logs.',
-                'detail' => null,
+                'message' => 'Ruajtja e faturës në databazë dështoi. Provoni përsëri; nëse vazhdon, jepni kodin e referencës.',
+                'reference' => $ref,
+                'detail' => config('app.debug') ? $e->getMessage() : null,
             ], 500);
         }
     }
@@ -230,104 +227,127 @@ class SupplierInvoiceController extends Controller
             'items.*.notes' => ['nullable', 'string'],
         ]);
 
-        return DB::transaction(function () use ($validated, $supplierInvoice) {
-            // Update items if provided
-            if (isset($validated['items'])) {
-                $subtotal = 0;
-                $existingItemIds = collect($validated['items'])->pluck('id')->filter()->toArray();
+        try {
+            return DB::transaction(function () use ($validated, $supplierInvoice) {
+                // Update items if provided
+                if (isset($validated['items'])) {
+                    $subtotal = 0;
+                    $existingItemIds = collect($validated['items'])->pluck('id')->filter()->toArray();
 
-                // Delete items that are not in the new list
-                $supplierInvoice->items()->whereNotIn('id', $existingItemIds)->delete();
+                    // Delete items that are not in the new list
+                    $supplierInvoice->items()->whereNotIn('id', $existingItemIds)->delete();
 
-                foreach ($validated['items'] as $itemData) {
-                    $totalPrice = $itemData['quantity'] * $itemData['unit_price'];
-                    $subtotal += $totalPrice;
+                    foreach ($validated['items'] as $itemData) {
+                        $totalPrice = $itemData['quantity'] * $itemData['unit_price'];
+                        $subtotal += $totalPrice;
 
-                    if (isset($itemData['id']) && $itemData['id']) {
-                        // Update existing item
-                        $item = $supplierInvoice->items()->find($itemData['id']);
-                        if ($item) {
-                            $item->update([
-                                'product_id' => $itemData['product_id'] ?? $item->product_id,
+                        if (isset($itemData['id']) && $itemData['id']) {
+                            // Update existing item
+                            $item = $supplierInvoice->items()->find($itemData['id']);
+                            if ($item) {
+                                $item->update([
+                                    'product_id' => $itemData['product_id'] ?? $item->product_id,
+                                    'product_name' => $itemData['product_name'],
+                                    'quantity' => $itemData['quantity'],
+                                    'unit_price' => $itemData['unit_price'],
+                                    'total_price' => $totalPrice,
+                                    'unit_type' => $itemData['unit_type'] ?? $item->unit_type,
+                                    'notes' => $itemData['notes'] ?? null,
+                                ]);
+                            }
+                        } else {
+                            // Create new item
+                            $supplierInvoice->items()->create([
+                                'product_id' => $itemData['product_id'] ?? null,
                                 'product_name' => $itemData['product_name'],
                                 'quantity' => $itemData['quantity'],
                                 'unit_price' => $itemData['unit_price'],
                                 'total_price' => $totalPrice,
-                                'unit_type' => $itemData['unit_type'] ?? $item->unit_type,
+                                'unit_type' => $itemData['unit_type'] ?? null,
                                 'notes' => $itemData['notes'] ?? null,
                             ]);
                         }
-                    } else {
-                        // Create new item
-                        $supplierInvoice->items()->create([
-                            'product_id' => $itemData['product_id'] ?? null,
-                            'product_name' => $itemData['product_name'],
-                            'quantity' => $itemData['quantity'],
-                            'unit_price' => $itemData['unit_price'],
-                            'total_price' => $totalPrice,
-                            'unit_type' => $itemData['unit_type'] ?? null,
-                            'notes' => $itemData['notes'] ?? null,
-                        ]);
                     }
-                }
 
-                // Recalculate totals
-                $hasVat = $validated['has_vat'] ?? $supplierInvoice->has_vat;
-                $vatRate = $hasVat ? ($validated['vat_rate'] ?? $supplierInvoice->vat_rate ?? 18.00) : 0;
-                $vatAmount = $hasVat ? ($subtotal * $vatRate / 100) : 0;
-                $totalAmount = $subtotal + $vatAmount;
-
-                $validated['subtotal'] = $subtotal;
-                $validated['vat_rate'] = $vatRate;
-                $validated['vat_amount'] = $vatAmount;
-                $validated['total_amount'] = $totalAmount;
-            } else {
-                // Just update VAT if changed
-                if (isset($validated['has_vat']) || isset($validated['vat_rate'])) {
+                    // Recalculate totals
                     $hasVat = $validated['has_vat'] ?? $supplierInvoice->has_vat;
                     $vatRate = $hasVat ? ($validated['vat_rate'] ?? $supplierInvoice->vat_rate ?? 18.00) : 0;
-                    $subtotal = $supplierInvoice->subtotal;
                     $vatAmount = $hasVat ? ($subtotal * $vatRate / 100) : 0;
                     $totalAmount = $subtotal + $vatAmount;
 
+                    $validated['subtotal'] = $subtotal;
                     $validated['vat_rate'] = $vatRate;
                     $validated['vat_amount'] = $vatAmount;
                     $validated['total_amount'] = $totalAmount;
+                } else {
+                    // Just update VAT if changed
+                    if (isset($validated['has_vat']) || isset($validated['vat_rate'])) {
+                        $hasVat = $validated['has_vat'] ?? $supplierInvoice->has_vat;
+                        $vatRate = $hasVat ? ($validated['vat_rate'] ?? $supplierInvoice->vat_rate ?? 18.00) : 0;
+                        $subtotal = $supplierInvoice->subtotal;
+                        $vatAmount = $hasVat ? ($subtotal * $vatRate / 100) : 0;
+                        $totalAmount = $subtotal + $vatAmount;
+
+                        $validated['vat_rate'] = $vatRate;
+                        $validated['vat_amount'] = $vatAmount;
+                        $validated['total_amount'] = $totalAmount;
+                    }
                 }
-            }
 
-            // Update status and paid_date
-            if (isset($validated['status']) && $validated['status'] === 'paid' && ! $supplierInvoice->paid_date) {
-                $validated['paid_date'] = $validated['paid_date'] ?? now()->toDateString();
-            } elseif (isset($validated['status']) && $validated['status'] !== 'paid') {
-                $validated['paid_date'] = null;
-            }
+                // Update status and paid_date
+                if (isset($validated['status']) && $validated['status'] === 'paid' && ! $supplierInvoice->paid_date) {
+                    $validated['paid_date'] = $validated['paid_date'] ?? now()->toDateString();
+                } elseif (isset($validated['status']) && $validated['status'] !== 'paid') {
+                    $validated['paid_date'] = null;
+                }
 
-            $supplierInvoice->update($validated);
+                $supplierInvoice->update($validated);
 
-            // If stock_receipt_id was updated, clear stock cache and sync stock
-            if (isset($validated['stock_receipt_id'])) {
-                \Illuminate\Support\Facades\Cache::forget('valid_receipt_ids');
-                // Sync stock for all products related to this receipt
-                if ($validated['stock_receipt_id']) {
-                    $receipt = \App\Models\StockReceipt::find($validated['stock_receipt_id']);
-                    if ($receipt) {
-                        $productIds = $receipt->movements()->distinct()->pluck('product_id')->toArray();
-                        foreach ($productIds as $productId) {
-                            $product = \App\Models\Product::find($productId);
-                            if ($product) {
-                                $product->syncStockFromMovements();
+                // If stock_receipt_id was updated, clear stock cache and sync stock
+                if (isset($validated['stock_receipt_id'])) {
+                    \Illuminate\Support\Facades\Cache::forget('valid_receipt_ids');
+                    // Sync stock for all products related to this receipt
+                    if ($validated['stock_receipt_id']) {
+                        $receipt = \App\Models\StockReceipt::find($validated['stock_receipt_id']);
+                        if ($receipt) {
+                            $productIds = $receipt->movements()->distinct()->pluck('product_id')->toArray();
+                            foreach ($productIds as $productId) {
+                                $product = \App\Models\Product::find($productId);
+                                if ($product) {
+                                    $product->syncStockFromMovements();
+                                }
                             }
                         }
                     }
                 }
-            }
+
+                return response()->json([
+                    'success' => true,
+                    'data' => $supplierInvoice->load(['supplier', 'stockReceipt', 'items.product']),
+                ]);
+            }, 3);
+        } catch (QueryException $e) {
+            $ref = SupportReference::report('SupplierInvoice update SQL', $e, [
+                'sql' => $e->getSql(),
+                'bindings' => $e->getBindings(),
+            ]);
 
             return response()->json([
-                'success' => true,
-                'data' => $supplierInvoice->load(['supplier', 'stockReceipt', 'items.product']),
-            ]);
-        });
+                'success' => false,
+                'message' => 'Përditësimi i faturës në databazë dështoi. Provoni përsëri; nëse vazhdon, jepni kodin e referencës.',
+                'reference' => $ref,
+                'detail' => config('app.debug') ? $e->getMessage() : null,
+            ], 500);
+        } catch (\Throwable $e) {
+            $ref = SupportReference::report('SupplierInvoice update', $e);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Ruajtja e ndryshimeve të faturës dështoi. Provoni përsëri; nëse vazhdon, jepni kodin e referencës.',
+                'reference' => $ref,
+                'detail' => config('app.debug') ? $e->getMessage() : null,
+            ], 500);
+        }
     }
 
     public function destroy(Request $request, SupplierInvoice $supplierInvoice)
