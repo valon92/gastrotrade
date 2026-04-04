@@ -181,7 +181,7 @@ class SupplierInvoiceController extends Controller
 
             return response()->json([
                 'success' => false,
-                'message' => 'Gabim në databazë. Ekzekutoni: php artisan migrate --force pastaj php artisan schema:clear (ose cache:clear). Shikoni storage/logs.',
+                'message' => 'Gabim në databazë. Pa terminal: hapni run-maintenance.php?key=… (me CACHE_CLEAR_KEY nga .env). Ose: php artisan migrate --force && php artisan optimize:clear. Shikoni storage/logs.',
                 'detail' => config('app.debug') ? $e->getMessage() : null,
             ], 500);
         } catch (\Throwable $e) {

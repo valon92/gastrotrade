@@ -3,6 +3,7 @@
  * Fshin cache-in e Laravel (view, config) pas deploy.
  * Thirret nga GitHub Actions pas ngarkimit FTP.
  * URL: https://www.arontrade.net/clear-cache.php?key=JEKODI
+ * Për migrime + pastrim të plotë pa SSH, përdor run-maintenance.php (i njëjti CACHE_CLEAR_KEY).
  * Vendos CACHE_CLEAR_KEY në .env në server (dhe në GitHub Secrets nëse e përdor në workflow).
  */
 $key = $_GET['key'] ?? '';
