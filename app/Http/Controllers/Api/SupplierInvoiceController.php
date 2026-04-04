@@ -3,6 +3,9 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Models\Product;
+use App\Models\StockReceipt;
+use App\Models\Supplier;
 use App\Models\SupplierInvoice;
 use App\Models\SupplierInvoiceItem;
 use App\Support\SupportReference;
@@ -23,6 +26,85 @@ class SupplierInvoiceController extends Controller
         }
 
         return SupplierInvoice::query();
+    }
+
+    /**
+     * Ngarko marrëdhëniet për përgjigje API pa SoftDeletes scope në query të brendshëm.
+     * Nëse deleted_at mungon në një tabelë (DB e papërditësuar) por modeli përdor SoftDeletes,
+     * load() standard thyen SQL-in («Unknown column deleted_at»).
+     */
+    private function loadSupplierInvoiceApiRelations(SupplierInvoice $invoice): void
+    {
+        try {
+            $invoice->load(['items']);
+        } catch (\Throwable $e) {
+            \Log::warning('SupplierInvoice API: load items failed', [
+                'message' => $e->getMessage(),
+                'invoice_id' => $invoice->id,
+            ]);
+        }
+
+        try {
+            $invoice->setRelation(
+                'supplier',
+                $invoice->supplier_id
+                    ? Supplier::withoutGlobalScopes()->whereKey($invoice->supplier_id)->first()
+                    : null
+            );
+        } catch (\Throwable $e) {
+            \Log::warning('SupplierInvoice API: supplier relation failed', [
+                'message' => $e->getMessage(),
+                'invoice_id' => $invoice->id,
+            ]);
+            $invoice->setRelation('supplier', null);
+        }
+
+        try {
+            $receipt = $invoice->stock_receipt_id
+                ? StockReceipt::withoutGlobalScopes()->whereKey($invoice->stock_receipt_id)->first()
+                : null;
+            $invoice->setRelation('stockReceipt', $receipt);
+            if ($receipt) {
+                try {
+                    $receipt->load('items');
+                } catch (\Throwable $e2) {
+                    \Log::warning('SupplierInvoice API: stockReceipt.items failed', [
+                        'message' => $e2->getMessage(),
+                        'invoice_id' => $invoice->id,
+                    ]);
+                }
+            }
+        } catch (\Throwable $e) {
+            \Log::warning('SupplierInvoice API: stockReceipt relation failed', [
+                'message' => $e->getMessage(),
+                'invoice_id' => $invoice->id,
+            ]);
+            $invoice->setRelation('stockReceipt', null);
+        }
+
+        if (! $invoice->relationLoaded('items')) {
+            return;
+        }
+
+        foreach ($invoice->items as $item) {
+            if (! $item->product_id) {
+                $item->setRelation('product', null);
+
+                continue;
+            }
+            try {
+                $item->setRelation(
+                    'product',
+                    Product::withoutGlobalScopes()->whereKey($item->product_id)->first()
+                );
+            } catch (\Throwable $e) {
+                \Log::warning('SupplierInvoice API: product relation failed', [
+                    'message' => $e->getMessage(),
+                    'item_id' => $item->id,
+                ]);
+                $item->setRelation('product', null);
+            }
+        }
     }
 
     public function index(Request $request)
@@ -159,14 +241,7 @@ class SupplierInvoiceController extends Controller
                 // Jo supplierInvoiceBaseQuery(): e njëjta problematikë si generateInvoiceNumber (schema:cache vs kolona reale).
                 $fresh = SupplierInvoice::withoutGlobalScopes()->whereKey($invoice->id)->first();
                 $model = $fresh ?? $invoice;
-                try {
-                    $model->load(['supplier', 'stockReceipt', 'items.product']);
-                } catch (\Throwable $loadEx) {
-                    \Log::warning('SupplierInvoice store: eager load failed', [
-                        'message' => $loadEx->getMessage(),
-                        'invoice_id' => $model->id,
-                    ]);
-                }
+                $this->loadSupplierInvoiceApiRelations($model);
 
                 return response()->json([
                     'success' => true,
@@ -199,9 +274,11 @@ class SupplierInvoiceController extends Controller
 
     public function show(SupplierInvoice $supplierInvoice)
     {
+        $this->loadSupplierInvoiceApiRelations($supplierInvoice);
+
         return response()->json([
             'success' => true,
-            'data' => $supplierInvoice->load(['supplier', 'stockReceipt.items', 'items.product']),
+            'data' => $supplierInvoice,
         ]);
     }
 
@@ -320,9 +397,11 @@ class SupplierInvoiceController extends Controller
                     }
                 }
 
+                $this->loadSupplierInvoiceApiRelations($supplierInvoice);
+
                 return response()->json([
                     'success' => true,
-                    'data' => $supplierInvoice->load(['supplier', 'stockReceipt', 'items.product']),
+                    'data' => $supplierInvoice,
                 ]);
             }, 3);
         } catch (QueryException $e) {
