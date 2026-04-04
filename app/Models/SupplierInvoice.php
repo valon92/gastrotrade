@@ -6,10 +6,13 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Support\Facades\Schema;
+use Illuminate\Support\Str;
 
 class SupplierInvoice extends Model
 {
     use SoftDeletes;
+
     protected $fillable = [
         'invoice_number',
         'supplier_id',
@@ -71,9 +74,13 @@ class SupplierInvoice extends Model
     protected static function generateInvoiceNumber(): string
     {
         $datePart = date('Ymd');
-        $count = static::whereDate('created_at', today())->count() + 1;
-        $countPart = str_pad($count, 4, '0', STR_PAD_LEFT);
-        $randomPart = strtoupper(substr(md5(uniqid()), 0, 4));
+        $base = Schema::hasColumn('supplier_invoices', 'deleted_at')
+            ? static::query()
+            : static::withoutGlobalScopes();
+        $count = $base->whereDate('created_at', today())->count() + 1;
+        $countPart = str_pad((string) $count, 4, '0', STR_PAD_LEFT);
+        $randomPart = strtoupper(Str::random(6));
+
         return "SI-{$datePart}-{$countPart}{$randomPart}";
     }
 }

@@ -5,27 +5,34 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Models\SupplierInvoice;
 use App\Models\SupplierInvoiceItem;
-use App\Models\StockReceipt;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 
 class SupplierInvoiceController extends Controller
 {
+    /**
+     * Kur kolona deleted_at mungon në DB (migrime të papërfunduara), SoftDeletes global scope thyen SQL-in.
+     */
+    private function supplierInvoiceBaseQuery()
+    {
+        if (! Schema::hasColumn('supplier_invoices', 'deleted_at')) {
+            return SupplierInvoice::withoutGlobalScopes();
+        }
+
+        return SupplierInvoice::query();
+    }
+
     public function index(Request $request)
     {
-        if (!Schema::hasTable('supplier_invoices')) {
+        if (! Schema::hasTable('supplier_invoices')) {
             return response()->json([
                 'success' => true,
                 'data' => [],
             ]);
         }
 
-        // Only show non-deleted invoices (exclude soft-deleted invoices)
-        $query = SupplierInvoice::query();
-        if (Schema::hasColumn('supplier_invoices', 'deleted_at')) {
-            $query->whereNull('deleted_at');
-        }
+        $query = $this->supplierInvoiceBaseQuery();
 
         try {
             $query->with(['supplier', 'stockReceipt', 'items.product']);
@@ -57,8 +64,8 @@ class SupplierInvoiceController extends Controller
 
         try {
             $invoices = $query
-                ->when(Schema::hasColumn('supplier_invoices', 'invoice_date'), fn($q) => $q->orderBy('invoice_date', 'desc'))
-                ->when(Schema::hasColumn('supplier_invoices', 'created_at'), fn($q) => $q->orderBy('created_at', 'desc'))
+                ->when(Schema::hasColumn('supplier_invoices', 'invoice_date'), fn ($q) => $q->orderBy('invoice_date', 'desc'))
+                ->when(Schema::hasColumn('supplier_invoices', 'created_at'), fn ($q) => $q->orderBy('created_at', 'desc'))
                 ->get();
         } catch (\Throwable $e) {
             \Log::warning('SupplierInvoice index failed', ['message' => $e->getMessage()]);
@@ -73,6 +80,11 @@ class SupplierInvoiceController extends Controller
 
     public function store(Request $request)
     {
+        $request->merge([
+            'stock_receipt_id' => $request->filled('stock_receipt_id') ? $request->input('stock_receipt_id') : null,
+            'supplier_id' => $request->filled('supplier_id') ? $request->input('supplier_id') : null,
+        ]);
+
         $validated = $request->validate([
             'supplier_id' => ['required', 'exists:suppliers,id'],
             'stock_receipt_id' => ['nullable', 'exists:stock_receipts,id'],
@@ -86,59 +98,100 @@ class SupplierInvoiceController extends Controller
             'items' => ['required', 'array', 'min:1'],
             'items.*.product_id' => ['nullable', 'exists:products,id'],
             'items.*.product_name' => ['required', 'string', 'max:255'],
-            'items.*.quantity' => ['required', 'integer', 'min:1'],
+            'items.*.quantity' => ['required', 'numeric', 'min:0.0001'],
             'items.*.unit_price' => ['required', 'numeric', 'min:0'],
             'items.*.notes' => ['nullable', 'string'],
         ]);
 
-        return DB::transaction(function () use ($validated) {
-            $subtotal = 0;
+        try {
+            return DB::transaction(function () use ($validated) {
+                $subtotal = 0;
 
-            foreach ($validated['items'] as $item) {
-                $totalPrice = $item['quantity'] * $item['unit_price'];
-                $subtotal += $totalPrice;
-            }
+                foreach ($validated['items'] as $item) {
+                    $qty = (float) $item['quantity'];
+                    $totalPrice = $qty * (float) $item['unit_price'];
+                    $subtotal += $totalPrice;
+                }
 
-            $vatRate = $validated['has_vat'] ? ($validated['vat_rate'] ?? 18.00) : 0;
-            $vatAmount = $validated['has_vat'] ? ($subtotal * $vatRate / 100) : 0;
-            $totalAmount = $subtotal + $vatAmount;
+                $vatRate = $validated['has_vat'] ? ($validated['vat_rate'] ?? 18.00) : 0;
+                $vatAmount = $validated['has_vat'] ? ($subtotal * $vatRate / 100) : 0;
+                $totalAmount = $subtotal + $vatAmount;
 
-            $invoice = SupplierInvoice::create([
-                'supplier_id' => $validated['supplier_id'],
-                'stock_receipt_id' => $validated['stock_receipt_id'] ?? null,
-                'invoice_date' => $validated['invoice_date'],
-                'due_date' => $validated['due_date'] ?? null,
-                'subtotal' => $subtotal,
-                'has_vat' => $validated['has_vat'] ?? false,
-                'vat_rate' => $vatRate,
-                'vat_amount' => $vatAmount,
-                'total_amount' => $totalAmount,
-                'notes' => $validated['notes'] ?? null,
-                'status' => $validated['status'] ?? 'pending',
-                'paid_date' => (isset($validated['status']) && $validated['status'] === 'paid')
-                    ? ($validated['paid_date'] ?? now()->toDateString())
-                    : null,
+                $createPayload = [
+                    'supplier_id' => $validated['supplier_id'],
+                    'stock_receipt_id' => $validated['stock_receipt_id'] ?? null,
+                    'invoice_date' => $validated['invoice_date'],
+                    'due_date' => $validated['due_date'] ?? null,
+                    'subtotal' => $subtotal,
+                    'has_vat' => $validated['has_vat'] ?? false,
+                    'vat_rate' => $vatRate,
+                    'vat_amount' => $vatAmount,
+                    'total_amount' => $totalAmount,
+                    'notes' => $validated['notes'] ?? null,
+                    'status' => $validated['status'] ?? 'pending',
+                    'paid_date' => (isset($validated['status']) && $validated['status'] === 'paid')
+                        ? ($validated['paid_date'] ?? now()->toDateString())
+                        : null,
+                ];
+                $createPayload = $this->filterToTableColumns('supplier_invoices', $createPayload);
+
+                $invoice = Schema::hasColumn('supplier_invoices', 'deleted_at')
+                    ? SupplierInvoice::create($createPayload)
+                    : SupplierInvoice::withoutGlobalScopes()->create($createPayload);
+
+                foreach ($validated['items'] as $item) {
+                    $qty = (float) $item['quantity'];
+                    $totalPrice = $qty * (float) $item['unit_price'];
+
+                    $itemPayload = [
+                        'supplier_invoice_id' => $invoice->id,
+                        'product_id' => $item['product_id'] ?? null,
+                        'product_name' => $item['product_name'],
+                        'quantity' => $qty,
+                        'unit_price' => $item['unit_price'],
+                        'total_price' => $totalPrice,
+                        'notes' => $item['notes'] ?? null,
+                    ];
+                    $itemPayload = $this->filterToTableColumns('supplier_invoice_items', $itemPayload);
+                    SupplierInvoiceItem::create($itemPayload);
+                }
+
+                $fresh = $this->supplierInvoiceBaseQuery()->whereKey($invoice->id)->first();
+
+                return response()->json([
+                    'success' => true,
+                    'data' => $fresh ? $fresh->load(['supplier', 'stockReceipt', 'items.product']) : $invoice->load(['supplier', 'stockReceipt', 'items.product']),
+                ], 201);
+            });
+        } catch (\Throwable $e) {
+            \Log::error('SupplierInvoice store failed', [
+                'message' => $e->getMessage(),
+                'file' => $e->getFile(),
+                'line' => $e->getLine(),
             ]);
 
-            foreach ($validated['items'] as $item) {
-                $totalPrice = $item['quantity'] * $item['unit_price'];
-                
-                SupplierInvoiceItem::create([
-                    'supplier_invoice_id' => $invoice->id,
-                    'product_id' => $item['product_id'] ?? null,
-                    'product_name' => $item['product_name'],
-                    'quantity' => $item['quantity'],
-                    'unit_price' => $item['unit_price'],
-                    'total_price' => $totalPrice,
-                    'notes' => $item['notes'] ?? null,
-                ]);
-            }
-
             return response()->json([
-                'success' => true,
-                'data' => $invoice->load(['supplier', 'stockReceipt', 'items.product']),
-            ], 201);
-        });
+                'success' => false,
+                'message' => config('app.debug')
+                    ? $e->getMessage()
+                    : 'Ruajtja e faturës dështoi. Ekzekutoni migrimet në server (php artisan migrate) ose shikoni storage/logs.',
+            ], 500);
+        }
+    }
+
+    /**
+     * @param  array<string, mixed>  $row
+     * @return array<string, mixed>
+     */
+    private function filterToTableColumns(string $table, array $row): array
+    {
+        if (! Schema::hasTable($table)) {
+            return $row;
+        }
+
+        $allowed = array_flip(Schema::getColumnListing($table));
+
+        return array_intersect_key($row, $allowed);
     }
 
     public function show(SupplierInvoice $supplierInvoice)
@@ -175,10 +228,10 @@ class SupplierInvoiceController extends Controller
             if (isset($validated['items'])) {
                 $subtotal = 0;
                 $existingItemIds = collect($validated['items'])->pluck('id')->filter()->toArray();
-                
+
                 // Delete items that are not in the new list
                 $supplierInvoice->items()->whereNotIn('id', $existingItemIds)->delete();
-                
+
                 foreach ($validated['items'] as $itemData) {
                     $totalPrice = $itemData['quantity'] * $itemData['unit_price'];
                     $subtotal += $totalPrice;
@@ -237,14 +290,14 @@ class SupplierInvoiceController extends Controller
             }
 
             // Update status and paid_date
-            if (isset($validated['status']) && $validated['status'] === 'paid' && !$supplierInvoice->paid_date) {
+            if (isset($validated['status']) && $validated['status'] === 'paid' && ! $supplierInvoice->paid_date) {
                 $validated['paid_date'] = $validated['paid_date'] ?? now()->toDateString();
             } elseif (isset($validated['status']) && $validated['status'] !== 'paid') {
                 $validated['paid_date'] = null;
             }
 
             $supplierInvoice->update($validated);
-            
+
             // If stock_receipt_id was updated, clear stock cache and sync stock
             if (isset($validated['stock_receipt_id'])) {
                 \Illuminate\Support\Facades\Cache::forget('valid_receipt_ids');
@@ -286,12 +339,12 @@ class SupplierInvoiceController extends Controller
 
         // Delete invoice items first (cascade should handle this, but being explicit)
         $supplierInvoice->items()->delete();
-        
+
         // Update invoice with deletion info before soft delete
         $supplierInvoice->deleted_reason = $deletedReason;
         $supplierInvoice->deleted_by = $deletedBy;
         $supplierInvoice->save();
-        
+
         // Delete the invoice (soft delete)
         $supplierInvoice->delete();
 
@@ -301,4 +354,3 @@ class SupplierInvoiceController extends Controller
         ]);
     }
 }
-

@@ -1598,11 +1598,68 @@ export default {
       }
     },
     printInvoice(invoice) {
-      const printWindow = window.open('', '_blank')
       const invoiceHtml = this.generateInvoiceHtml(invoice)
-      printWindow.document.write(invoiceHtml)
-      printWindow.document.close()
-      printWindow.print()
+      const printWindow = window.open('', '_blank')
+      if (printWindow) {
+        try {
+          printWindow.document.write(invoiceHtml)
+          printWindow.document.close()
+          printWindow.focus()
+          setTimeout(() => {
+            try {
+              printWindow.print()
+            } catch (e) {
+              console.error('printWindow.print:', e)
+            }
+          }, 250)
+        } catch (e) {
+          console.error('printInvoice window:', e)
+          printWindow.close()
+          this.printInvoiceViaIframe(invoiceHtml)
+        }
+        return
+      }
+      this.printInvoiceViaIframe(invoiceHtml)
+    },
+    /** Kur popup bllokohet (Cursor browser, etj.) — print nga iframe i fshehur */
+    printInvoiceViaIframe(invoiceHtml) {
+      let iframe = null
+      try {
+        iframe = document.createElement('iframe')
+        iframe.style.cssText =
+          'position:fixed;right:0;bottom:0;width:0;height:0;border:0;opacity:0;pointer-events:none'
+        iframe.setAttribute('aria-hidden', 'true')
+        document.body.appendChild(iframe)
+        const win = iframe.contentWindow
+        const doc = win?.document
+        if (!doc) {
+          alert('Nuk u hap dot printimi. Lejoni popup-et për këtë faqe ose përdorni Chrome/Firefox.')
+          return
+        }
+        doc.open()
+        doc.write(invoiceHtml)
+        doc.close()
+        win.focus()
+        setTimeout(() => {
+          try {
+            win.print()
+          } catch (e) {
+            console.error('iframe print:', e)
+            alert('Nuk u arrit të printohet. Provoni përsëri ose lejoni popup-et.')
+          }
+        }, 250)
+      } catch (e) {
+        console.error('printInvoiceViaIframe:', e)
+        alert('Nuk u arrit të printohet. Lejoni popup-et për këtë faqe.')
+      } finally {
+        if (iframe) {
+          setTimeout(() => {
+            try {
+              iframe.remove()
+            } catch (_) {}
+          }, 60_000)
+        }
+      }
     },
     generateInvoiceHtml(invoice) {
       const supplier = invoice.supplier || {}
