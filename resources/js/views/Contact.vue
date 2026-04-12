@@ -124,16 +124,6 @@
             <div class="space-y-6">
               <div class="flex items-start space-x-4">
                 <div class="bg-primary-100 rounded-2xl p-3">
-                  <span class="text-primary-600 text-xl">📧</span>
-                </div>
-                <div>
-                  <h4 class="font-semibold text-slate-900">Email</h4>
-                  <p class="text-slate-600">{{ officialOrderEmail }}</p>
-                </div>
-              </div>
-              
-              <div class="flex items-start space-x-4">
-                <div class="bg-primary-100 rounded-2xl p-3">
                   <span class="text-primary-600 text-xl">📞</span>
                 </div>
                 <div>
@@ -203,13 +193,10 @@
 </template>
 
 <script>
-import { OFFICIAL_ORDER_EMAIL } from '../config/site'
-
 export default {
   name: 'Contact',
   data() {
     return {
-      officialOrderEmail: OFFICIAL_ORDER_EMAIL,
       form: {
         name: '',
         email: '',
