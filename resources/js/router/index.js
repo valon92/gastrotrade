@@ -1,6 +1,7 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import axios from 'axios'
 import Home from '../views/Home.vue'
+import Catalog from '../views/Catalog.vue'
 import Products from '../views/Products.vue'
 import ProductDetail from '../views/ProductDetail.vue'
 import Contact from '../views/Contact.vue'
@@ -21,6 +22,11 @@ import AdminDashboard from '../views/admin/AdminDashboard.vue'
 import { adminStore } from '../stores/adminStore'
 
 const routes = [
+  {
+    path: '/katalogu',
+    name: 'Catalog',
+    component: Catalog
+  },
   {
     path: '/',
     name: 'Home',

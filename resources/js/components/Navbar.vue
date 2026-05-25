@@ -10,7 +10,7 @@
               <rect width="40" height="40" rx="11" fill="currentColor"/>
               <text x="20" y="26" text-anchor="middle" fill="white" font-family="system-ui, sans-serif" font-weight="700" font-size="16">AT</text>
             </svg>
-            <div class="min-w-0">
+            <div class="hidden lg:block min-w-0">
               <h1 class="text-2xl leading-none font-extrabold tracking-tight text-primary-700">AronTrade</h1>
               <p class="hidden lg:flex items-center gap-1 text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-500 mt-1">
                 <span class="inline-block w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
@@ -20,8 +20,15 @@
           </router-link>
         </div>
 
-        <div class="hidden md:flex items-center gap-3">
+        <div class="hidden lg:flex items-center gap-3">
           <div class="flex items-center gap-1 rounded-2xl border border-slate-200 bg-white/80 p-1 shadow-sm">
+          <router-link
+            to="/katalogu"
+            class="text-slate-600 hover:text-primary-700 hover:bg-primary-50 px-3 py-2 rounded-xl text-sm font-semibold transition-colors duration-200"
+            active-class="text-primary-700 bg-primary-50"
+          >
+            KATALOGU
+          </router-link>
           <router-link
             to="/"
             class="text-slate-600 hover:text-primary-700 hover:bg-primary-50 px-3 py-2 rounded-xl text-sm font-semibold transition-colors duration-200"
@@ -89,7 +96,14 @@
           </template>
         </div>
 
-        <div class="md:hidden flex items-center gap-2 flex-shrink-0 min-w-0">
+        <div class="lg:hidden flex items-center gap-2 flex-shrink-0 min-w-0">
+          <router-link
+            to="/katalogu"
+            class="inline-flex items-center rounded-xl border border-primary-200 bg-primary-50 px-3 py-2 text-xs font-extrabold uppercase tracking-wide text-primary-700 shadow-sm transition-colors hover:bg-primary-100 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2"
+            active-class="bg-primary-600 text-white border-primary-600"
+          >
+            Katalogu
+          </router-link>
           <router-link
             to="/shporta"
             class="relative p-2.5 rounded-xl text-gray-700 hover:text-primary-600 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 transition-colors border border-transparent hover:border-slate-200"
@@ -131,7 +145,7 @@
     <Transition name="backdrop">
       <div
         v-show="mobileMenuOpen"
-        class="fixed inset-0 z-[1000] bg-black/20 backdrop-blur-sm md:bg-black/10 md:top-16"
+        class="fixed inset-0 z-[1000] bg-black/20 backdrop-blur-sm lg:bg-black/10 lg:top-16"
         aria-hidden="true"
         @click="closeMobileMenu"
       />
@@ -141,14 +155,24 @@
     <Transition name="menu">
       <div
         v-show="mobileMenuOpen"
-        class="fixed md:absolute top-16 md:top-full left-0 right-0 z-[1001] md:left-auto md:right-4 md:mt-2 md:max-w-sm md:rounded-2xl md:shadow-2xl bg-white border-t md:border border-gray-200 shadow-lg max-h-[85vh] overflow-y-auto"
+        class="fixed lg:absolute top-16 lg:top-full left-0 right-0 z-[1001] lg:left-auto lg:right-4 lg:mt-2 lg:max-w-sm lg:rounded-2xl lg:shadow-2xl bg-white border-t lg:border border-gray-200 shadow-lg max-h-[85vh] overflow-y-auto"
         role="dialog"
         aria-label="Menyja kryesore"
         @click.stop
       >
-        <div class="px-3 py-4 md:py-3">
+        <div class="px-3 py-4 lg:py-3">
           <!-- Navigacion: vetëm në mobile (në desktop lidhjet janë në navbar) -->
-          <div class="md:hidden space-y-0.5 pb-4 border-b border-gray-100">
+          <div class="lg:hidden space-y-0.5 pb-4 border-b border-gray-100">
+            <router-link
+              to="/katalogu"
+              class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-gray-700 hover:bg-primary-50 hover:text-primary-700 text-sm font-medium transition-colors"
+              @click="closeMobileMenu"
+            >
+              <span class="flex items-center justify-center w-8 h-8 rounded-lg bg-gray-100 text-gray-600">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 10h16M4 14h10M4 18h10" /></svg>
+              </span>
+              KATALOGU
+            </router-link>
             <router-link
               to="/"
               class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-gray-700 hover:bg-primary-50 hover:text-primary-700 text-sm font-medium transition-colors"
