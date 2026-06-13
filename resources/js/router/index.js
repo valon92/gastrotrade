@@ -1,5 +1,6 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import axios from 'axios'
+import Home from '../views/Home.vue'
 import Catalog from '../views/Catalog.vue'
 import Products from '../views/Products.vue'
 import ProductDetail from '../views/ProductDetail.vue'
@@ -28,7 +29,8 @@ const routes = [
   },
   {
     path: '/',
-    redirect: '/katalogu'
+    name: 'Home',
+    component: Home
   },
   {
     path: '/produktet',
@@ -43,7 +45,7 @@ const routes = [
   },
   {
     path: '/rreth-nesh',
-    redirect: '/katalogu'
+    redirect: '/'
   },
   {
     path: '/kontakt',
@@ -145,8 +147,21 @@ const router = createRouter({
   }
 })
 
+function isMobileProductLanding() {
+  if (typeof window === 'undefined') return false
+  return window.matchMedia('(max-width: 639px)').matches
+}
+
 // Global navigation guard for admin auth/roles
 router.beforeEach(async (to, from, next) => {
+  if (
+    to.name === 'Home' &&
+    isMobileProductLanding() &&
+    !from.matched.length
+  ) {
+    return next({ name: 'Products', replace: true })
+  }
+
   const requiresAuth = to.meta?.requiresAuth
   const requiresAdmin = to.meta?.requiresAdmin
   const token = localStorage.getItem('admin_token')

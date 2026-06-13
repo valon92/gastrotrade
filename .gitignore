@@ -15,7 +15,6 @@
 /node_modules
 /public/build
 /public/hot
-/public/index.html
 /public/storage
 /public/uploads
 /storage/*.key
@@ -24,4 +23,3 @@
 Homestead.json
 Homestead.yaml
 Thumbs.db
-.vercel

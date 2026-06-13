@@ -78,3 +78,18 @@ Nëse ke kopjuar tashmë përmbajtjen e `public/` në `public_html/`, kontrollo 
 ---
 
 **Pas ndryshimit të document root në `public`, https://www.arontrade.net/ duhet të hapë aplikacionin Laravel, jo listën e dosjeve.**
+
+---
+
+## DNS në Namecheap (kthehu te cPanel)
+
+Nëse ke provuar Vercel dhe domeni tregon atje (A `76.76.21.21`), ktheje te hosting cPanel:
+
+1. **Namecheap** → Domain List → `arontrade.net` → **Advanced DNS**
+2. **Fshi** rekordet A/CNAME që tregojnë te Vercel (`76.76.21.21`, `cname.vercel-dns.com`)
+3. **Vendos** rekordet që jep cPanel/Namecheap hosting (zakonisht **A** `@` → IP e serverit, **CNAME** `www` → `@` ose IP e hostingut)
+4. Mos prek rekordet **MX** / **TXT** (email) nëse i përdor
+5. Prit 5–60 min propagim; pastaj testo `https://www.arontrade.net`
+
+Deploy automatik: çdo push në `main` → GitHub Actions → FTP në `public_html/` (shiko `.github/workflows/deploy-cpanel.yml`).
+
